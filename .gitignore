@@ -1,0 +1,194 @@
+﻿###############################################################################
+# .NET / C#
+###############################################################################
+
+# Build output
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docobj
+
+# Visual Studio cache/options
+.vs/
+.vscode/
+*.VC.db
+*.VC.opendb
+
+# Rider / JetBrains
+.idea/
+*.DotSettings.user
+
+# NuGet
+*.nupkg
+*.snupkg
+*.nuget.props
+*.nuget.targets
+packages/
+!**/packages/build/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+**/[Pp]ackages/
+
+# MSBuild
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+
+# .NET local tools
+.config/dotnet-tools.json
+
+# Publish profiles
+PublishProfiles/
+**/Properties/PublishProfiles/
+
+# Test results
+TestResults/
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+
+# Entity Framework
+Migrations/*.Designer.cs
+
+###############################################################################
+# ASP.NET Core
+###############################################################################
+
+# User secrets
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/appsettings.*.local.json
+**/secrets.json
+
+# HTTPS development certs
+*.pfx
+*.p12
+
+###############################################################################
+# Docker
+###############################################################################
+
+.dockerignore
+
+###############################################################################
+# Terraform
+###############################################################################
+
+**/.terraform/
+**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+terraform.rc
+.terraformrc
+crash.log
+crash.*.log
+
+###############################################################################
+# Kubernetes / Helm
+###############################################################################
+
+# Local cluster kubeconfig overrides
+kubeconfig
+kubeconfig.*
+.kube/
+
+# Helm chart lock files (keep Chart.lock in version control if desired)
+# charts/*.tgz
+
+###############################################################################
+# Environment & Secrets
+###############################################################################
+
+.env
+.env.*
+!.env.example
+*.secret
+*.secrets
+**/secrets/
+**/certs/
+**/keys/
+
+###############################################################################
+# OS generated
+###############################################################################
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+
+###############################################################################
+# Logs & Diagnostics
+###############################################################################
+
+*.log
+*.log.*
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+###############################################################################
+# Misc
+###############################################################################
+
+# JetBrains Rider generated
+*.generated.cs
+
+# Benchmark results
+BenchmarkDotNet.Artifacts/
+
+# SonarQube
+.sonarqube/
+.scannerwork/
+
+# Coverage reports
+coverage/
+coverage-report/
+lcov.info
+
