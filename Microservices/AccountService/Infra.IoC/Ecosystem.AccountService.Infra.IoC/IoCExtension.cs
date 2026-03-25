@@ -1,11 +1,9 @@
-using Ecosystem.AccountService.Application.Interfaces;
-using Ecosystem.AccountService.Application.Mappings;
+﻿using Ecosystem.AccountService.Application.Mappings;
 using Ecosystem.AccountService.Application.Validators.Auth;
 using Ecosystem.AccountService.Data.Context;
 using Ecosystem.AccountService.Data.Repositories;
 using Ecosystem.AccountService.Domain.Interfaces;
 using FluentValidation;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,18 +12,17 @@ namespace Ecosystem.AccountService.Infra.IoC;
 
 public static class IoCExtension
 {
-    public static IServiceCollection AddAccountServiceDependencies(this IServiceCollection services)
+    public static void AddAccountServiceDependencies(this IServiceCollection services, IConfiguration configuration)
     {
-        // MediatR (auto-discovers handlers from Application assembly)
-        services.AddMediatR(cfg =>
-            cfg.RegisterServicesFromAssembly(typeof(Application.Commands.Auth.UserAuthenticationCommand).Assembly));
+        services.AddAccountServiceDbContext(configuration);
+        services.InjectAutoMapper();
+        services.InjectMediatR();
+        services.InjectValidators();
+        services.InjectRepositories();
+    }
 
-        // FluentValidation (auto-discovers validators from Application assembly)
-        services.AddValidatorsFromAssembly(typeof(UserAuthenticationValidator).Assembly);
-
-        // AutoMapper profiles
-        services.AddAutoMapper(typeof(AuthMappingProfile).Assembly);
-
+    private static void InjectRepositories(this IServiceCollection services)
+    {
         // Repositories
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUserAffiliateInfoRepository, UserAffiliateInfoRepository>();
@@ -46,17 +43,28 @@ public static class IoCExtension
         services.AddScoped<ILeaderBoardModel4Repository, LeaderBoardModel4Repository>();
         services.AddScoped<ILeaderBoardModel5Repository, LeaderBoardModel5Repository>();
         services.AddScoped<ILeaderBoardModel6Repository, LeaderBoardModel6Repository>();
-
-        return services;
     }
 
-    public static IServiceCollection AddAccountServiceDbContext(
-        this IServiceCollection services, IConfiguration configuration)
+    private static void InjectMediatR(this IServiceCollection services)
+    {
+        services.AddMediatR(cfg =>
+            cfg.RegisterServicesFromAssembly(typeof(Application.Commands.Auth.UserAuthenticationCommand).Assembly));
+    }
+
+    private static void InjectValidators(this IServiceCollection services)
+    {
+        services.AddValidatorsFromAssembly(typeof(UserAuthenticationValidator).Assembly);
+    }
+
+    private static void InjectAutoMapper(this IServiceCollection services)
+    {
+        services.AddAutoMapper(typeof(AuthMappingProfile).Assembly);
+    }
+
+    private static void AddAccountServiceDbContext(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("PostgreSqlConnection");
         services.AddDbContext<AccountServiceDbContext>(options =>
             options.UseNpgsql(connectionString));
-
-        return services;
     }
 }

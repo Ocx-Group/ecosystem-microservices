@@ -1,3 +1,4 @@
+using Ecosystem.AccountService.Api.Hubs;
 using Ecosystem.AccountService.Api.Middlewares;
 using Ecosystem.AccountService.Infra.IoC;
 using Ecosystem.Infra.IoC;
@@ -10,6 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSignalR();
 
 // Shared infrastructure (RabbitMQ + MassTransit)
 var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq://localhost";
@@ -18,7 +20,7 @@ var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
 builder.Services.AddInfrastructure(rabbitHost, rabbitUser, rabbitPass);
 
 // AccountService dependencies (MediatR, Repositories, Services)
-builder.Services.AddAccountServiceDependencies();
+builder.Services.AddAccountServiceDependencies(builder.Configuration);
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
@@ -40,5 +42,6 @@ app.UseMiddleware<ExceptionMiddleware>();
 
 app.MapHealthChecks("/health");
 app.MapControllers();
+app.MapHub<TicketHubService>("/hubs/tickets");
 
 await app.RunAsync();
