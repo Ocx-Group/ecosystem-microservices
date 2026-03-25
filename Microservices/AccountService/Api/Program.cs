@@ -1,5 +1,7 @@
 using Ecosystem.AccountService.Api.Hubs;
 using Ecosystem.AccountService.Api.Middlewares;
+using Ecosystem.AccountService.Api.Services;
+using Ecosystem.AccountService.Application.Interfaces;
 using Ecosystem.AccountService.Infra.IoC;
 using Ecosystem.Infra.IoC;
 
@@ -11,6 +13,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IBrandService, BrandService>();
 builder.Services.AddSignalR();
 
 // Shared infrastructure (RabbitMQ + MassTransit)
