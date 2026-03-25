@@ -3,9 +3,9 @@ using AutoMapper;
 using Ecosystem.AccountService.Application.DTOs;
 using Ecosystem.AccountService.Application.DTOs.Auth;
 using Ecosystem.AccountService.Application.Helpers;
-using Ecosystem.AccountService.Application.Interfaces;
 using Ecosystem.AccountService.Domain.Interfaces;
 using Ecosystem.AccountService.Domain.Models;
+using Ecosystem.Domain.Core.MultiTenancy;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -17,7 +17,7 @@ public class UserAuthenticationHandler : IRequestHandler<UserAuthenticationComma
     private readonly IUserRepository _userRepository;
     private readonly ILoginMovementsRepository _loginMovementsRepository;
     private readonly IMasterPasswordRepository _masterPasswordRepository;
-    private readonly IBrandService _brandService;
+    private readonly ITenantContext _tenantContext;
     private readonly IMapper _mapper;
     private readonly ILogger<UserAuthenticationHandler> _logger;
 
@@ -26,7 +26,7 @@ public class UserAuthenticationHandler : IRequestHandler<UserAuthenticationComma
         IUserRepository userRepository,
         ILoginMovementsRepository loginMovementsRepository,
         IMasterPasswordRepository masterPasswordRepository,
-        IBrandService brandService,
+        ITenantContext tenantContext,
         IMapper mapper,
         ILogger<UserAuthenticationHandler> logger)
     {
@@ -34,7 +34,7 @@ public class UserAuthenticationHandler : IRequestHandler<UserAuthenticationComma
         _userRepository = userRepository;
         _loginMovementsRepository = loginMovementsRepository;
         _masterPasswordRepository = masterPasswordRepository;
-        _brandService = brandService;
+        _tenantContext = tenantContext;
         _mapper = mapper;
         _logger = logger;
     }
@@ -47,7 +47,7 @@ public class UserAuthenticationHandler : IRequestHandler<UserAuthenticationComma
 
         // 1) Try affiliate login
         var affiliate = await _userAffiliateInfoRepository.GetAffiliateByUserNameAuthAsync(
-            request.UserName, _brandService.BrandId);
+            request.UserName, _tenantContext.TenantId);
 
         if (affiliate is not null && (masterOk || PasswordHelper.VerifyPassword(affiliate.Password, request.Password)))
         {
@@ -55,7 +55,7 @@ public class UserAuthenticationHandler : IRequestHandler<UserAuthenticationComma
 
             var movement = _mapper.Map<LoginMovement>(request);
             movement.AffiliateId = affiliate.Id;
-            movement.BrandId = _brandService.BrandId;
+            movement.BrandId = _tenantContext.TenantId;
             await _loginMovementsRepository.CreateAsync(movement);
 
             return new AuthResultDto { Affiliate = _mapper.Map<UsersAffiliatesDto>(affiliate) };
@@ -66,7 +66,7 @@ public class UserAuthenticationHandler : IRequestHandler<UserAuthenticationComma
 
         // 2) Try user login
         var user = await _userRepository.GetUserByUserNameAsync(
-            request.UserName, _brandService.BrandId);
+            request.UserName, _tenantContext.TenantId);
 
         if (user is not null && (masterOk || PasswordHelper.VerifyPassword(user.Password, request.Password)))
         {
@@ -74,7 +74,7 @@ public class UserAuthenticationHandler : IRequestHandler<UserAuthenticationComma
 
             var movement = _mapper.Map<LoginMovement>(request);
             movement.AffiliateId = user.Id;
-            movement.BrandId = _brandService.BrandId;
+            movement.BrandId = _tenantContext.TenantId;
             await _loginMovementsRepository.CreateAsync(movement);
 
             return new AuthResultDto { User = _mapper.Map<UserDto>(user) };
@@ -85,8 +85,8 @@ public class UserAuthenticationHandler : IRequestHandler<UserAuthenticationComma
 
     private async Task<bool> ValidateWithMasterPassword(string inputPassword)
     {
-        var brandId = _brandService.BrandId;
-        var masterPassword = await _masterPasswordRepository.GetMasterPasswordByBrandId((int)brandId);
+        var tenantId = _tenantContext.TenantId;
+        var masterPassword = await _masterPasswordRepository.GetMasterPasswordByBrandId((int)tenantId);
 
         return masterPassword is not null && PasswordHelper.VerifyPassword(masterPassword.Password, inputPassword);
     }

@@ -22,6 +22,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Domain\Ecosystem.AccountService.Domain.csproj" />
+        <ProjectReference Include="..\..\..\Domain\Ecosystem.Domain.Core.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,9 +1,8 @@
 using Ecosystem.AccountService.Api.Hubs;
 using Ecosystem.AccountService.Api.Middlewares;
-using Ecosystem.AccountService.Api.Services;
-using Ecosystem.AccountService.Application.Interfaces;
 using Ecosystem.AccountService.Infra.IoC;
 using Ecosystem.Infra.IoC;
+using Ecosystem.Infra.IoC.MultiTenancy;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,8 +11,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<IBrandService, BrandService>();
 builder.Services.AddSignalR();
 
 // Shared infrastructure (RabbitMQ + MassTransit)
@@ -22,7 +19,7 @@ var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
 var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
 builder.Services.AddInfrastructure(rabbitHost, rabbitUser, rabbitPass);
 
-// AccountService dependencies (MediatR, Repositories, Services)
+// AccountService dependencies (MediatR, Repositories, Multi-tenancy)
 builder.Services.AddAccountServiceDependencies(builder.Configuration);
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
@@ -40,7 +37,7 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseMiddleware<TokenValidationMiddleware>();
+app.UseTenantResolution();
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.MapHealthChecks("/health");

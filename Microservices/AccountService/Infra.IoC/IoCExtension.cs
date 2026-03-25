@@ -3,6 +3,7 @@ using Ecosystem.AccountService.Application.Validators.Auth;
 using Ecosystem.AccountService.Data.Context;
 using Ecosystem.AccountService.Data.Repositories;
 using Ecosystem.AccountService.Domain.Interfaces;
+using Ecosystem.Infra.IoC.MultiTenancy;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +16,7 @@ public static class IoCExtension
     public static void AddAccountServiceDependencies(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddAccountServiceDbContext(configuration);
+        services.AddMultiTenancy<BrandTenantStore, ApiClientTokenValidator>();
         services.InjectAutoMapper();
         services.InjectMediatR();
         services.InjectValidators();
