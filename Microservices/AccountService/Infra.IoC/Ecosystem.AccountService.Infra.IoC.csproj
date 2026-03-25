@@ -14,9 +14,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Application\Ecosystem.AccountService.Application\Ecosystem.AccountService.Application.csproj" />
-        <ProjectReference Include="..\..\Data\Ecosystem.AccountService.Data\Ecosystem.AccountService.Data.csproj" />
-        <ProjectReference Include="..\..\Domain\Ecosystem.AccountService.Domain\Ecosystem.AccountService.Domain.csproj" />
+        <ProjectReference Include="..\Application\Ecosystem.AccountService.Application.csproj" />
+        <ProjectReference Include="..\Data\Ecosystem.AccountService.Data.csproj" />
+        <ProjectReference Include="..\Domain\Ecosystem.AccountService.Domain.csproj" />
     </ItemGroup>
 
 </Project>

@@ -3,28 +3,28 @@
     <Project Path="Domain/Ecosystem.Domain.Core.csproj" />
   </Folder>
   <Folder Name="/Infra.Bus/">
-    <Project Path="Infra.Bus/Ecosystem.Infra.Bus/Ecosystem.Infra.Bus.csproj" />
+    <Project Path="Infra.Bus/Ecosystem.Infra.Bus.csproj" />
   </Folder>
   <Folder Name="/Infra.IoC/">
-    <Project Path="Infra.IoC/Ecosystem.Infra.IoC/Ecosystem.Infra.IoC.csproj" />
+    <Project Path="Infra.IoC/Ecosystem.Infra.IoC.csproj" />
   </Folder>
   <Folder Name="/Infrastructure/" />
   <Folder Name="/Microservices/" />
   <Folder Name="/Microservices/AccountService/" />
   <Folder Name="/Microservices/AccountService/Api/">
-    <Project Path="Microservices/AccountService/Api/Ecosystem.AccountService.Api/Ecosystem.AccountService.Api.csproj" />
+    <Project Path="Microservices/AccountService/Api/Ecosystem.AccountService.Api.csproj" />
   </Folder>
   <Folder Name="/Microservices/AccountService/Application/">
-    <Project Path="Microservices/AccountService/Application/Ecosystem.AccountService.Application/Ecosystem.AccountService.Application.csproj" />
+    <Project Path="Microservices/AccountService/Application/Ecosystem.AccountService.Application.csproj" />
   </Folder>
   <Folder Name="/Microservices/AccountService/Data/">
-    <Project Path="Microservices/AccountService/Data/Ecosystem.AccountService.Data/Ecosystem.AccountService.Data.csproj" />
+    <Project Path="Microservices/AccountService/Data/Ecosystem.AccountService.Data.csproj" />
   </Folder>
   <Folder Name="/Microservices/AccountService/Domain/">
-    <Project Path="Microservices/AccountService/Domain/Ecosystem.AccountService.Domain/Ecosystem.AccountService.Domain.csproj" />
+    <Project Path="Microservices/AccountService/Domain/Ecosystem.AccountService.Domain.csproj" />
   </Folder>
   <Folder Name="/Microservices/AccountService/Infra.IoC/">
-    <Project Path="Microservices/AccountService/Infra.IoC/Ecosystem.AccountService.Infra.IoC/Ecosystem.AccountService.Infra.IoC.csproj" />
+    <Project Path="Microservices/AccountService/Infra.IoC/Ecosystem.AccountService.Infra.IoC.csproj" />
   </Folder>
   <Folder Name="/Microservices/ConfigurationService/" />
   <Folder Name="/Microservices/GatewayService/" />

@@ -16,9 +16,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Application\Ecosystem.AccountService.Application\Ecosystem.AccountService.Application.csproj" />
-        <ProjectReference Include="..\..\Infra.IoC\Ecosystem.AccountService.Infra.IoC\Ecosystem.AccountService.Infra.IoC.csproj" />
-        <ProjectReference Include="..\..\..\..\Infra.IoC\Ecosystem.Infra.IoC\Ecosystem.Infra.IoC.csproj"/>
+        <ProjectReference Include="..\Application\Ecosystem.AccountService.Application.csproj" />
+        <ProjectReference Include="..\Infra.IoC\Ecosystem.AccountService.Infra.IoC.csproj" />
+        <ProjectReference Include="..\..\..\Infra.IoC\Ecosystem.Infra.IoC.csproj"/>
     </ItemGroup>
 
 </Project>

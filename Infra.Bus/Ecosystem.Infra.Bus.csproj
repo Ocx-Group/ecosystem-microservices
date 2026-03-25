@@ -12,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Domain\Ecosystem.Domain.Core.csproj"/>
+        <ProjectReference Include="..\Domain\Ecosystem.Domain.Core.csproj"/>
     </ItemGroup>
 
 </Project>
