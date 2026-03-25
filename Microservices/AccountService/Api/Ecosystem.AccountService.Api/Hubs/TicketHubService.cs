@@ -1,5 +1,4 @@
 using Ecosystem.AccountService.Application.Commands.Ticket;
-using Ecosystem.AccountService.Application.DTOs.Ticket;
 using Ecosystem.AccountService.Application.Queries.Ticket;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
