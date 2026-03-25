@@ -1,19 +1,16 @@
 using System.Net;
-using System.Runtime.Serialization;
 
 namespace Ecosystem.AccountService.Domain.Exceptions;
 
-public class CustomException : BaseException
+public abstract class CustomException : BaseException
 {
-    public CustomException() { }
+    protected CustomException() { }
 
-    public CustomException(string message) : base(message) { }
+    protected CustomException(string message) : base(message) { }
 
-    public CustomException(string message, Exception innerException) : base(message, innerException) { }
+    protected CustomException(string message, Exception innerException) : base(message, innerException) { }
 
-    public CustomException(SerializationInfo info, StreamingContext context) : base(info, context) { }
-
-    public CustomException(HttpStatusCode statusCode, string exceptionBody)
+    protected CustomException(HttpStatusCode statusCode, string exceptionBody)
     {
         StatusCode = statusCode;
         ExceptionBody = exceptionBody;

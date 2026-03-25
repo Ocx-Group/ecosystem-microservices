@@ -1,44 +1,41 @@
 using System.Net;
-using System.Runtime.Serialization;
 
 namespace Ecosystem.AccountService.Domain.Exceptions;
 
-[Serializable]
 public class BaseException : Exception
 {
-    public BaseException() { }
+    protected BaseException() { }
 
-    public BaseException(string message) : base(message) { }
+    protected BaseException(string message) : base(message) { }
 
-    public BaseException(string format, params object[] args) : base(string.Format(format, args)) { }
+    protected BaseException(string format, params object[] args) : base(string.Format(format, args)) { }
 
-    public BaseException(string message, Exception innerException) : base(message, innerException) { }
+    protected BaseException(string message, Exception innerException) : base(message, innerException) { }
 
-    public BaseException(string format, Exception innerException, params object[] args) : base(string.Format(format, args), innerException) { }
+    protected BaseException(string format, Exception innerException, params object[] args) : base(string.Format(format, args), innerException) { }
 
-    public BaseException(SerializationInfo info, StreamingContext context) : base(info, context) { }
 
-    public BaseException(HttpStatusCode statusCode)
+    protected BaseException(HttpStatusCode statusCode)
     {
         StatusCode = statusCode;
     }
 
-    public BaseException(string message, HttpStatusCode statusCode) : base(message)
+    protected BaseException(string message, HttpStatusCode statusCode) : base(message)
     {
         StatusCode = statusCode;
     }
 
-    public BaseException(string format, HttpStatusCode statusCode, params object[] args) : base(string.Format(format, args))
+    protected BaseException(string format, HttpStatusCode statusCode, params object[] args) : base(string.Format(format, args))
     {
         StatusCode = statusCode;
     }
 
-    public BaseException(string message, HttpStatusCode statusCode, Exception innerException) : base(message, innerException)
+    protected BaseException(string message, HttpStatusCode statusCode, Exception innerException) : base(message, innerException)
     {
         StatusCode = statusCode;
     }
 
-    public BaseException(string format, HttpStatusCode statusCode, Exception innerException, params object[] args) : base(string.Format(format, args), innerException)
+    protected BaseException(string format, HttpStatusCode statusCode, Exception innerException, params object[] args) : base(string.Format(format, args), innerException)
     {
         StatusCode = statusCode;
     }
