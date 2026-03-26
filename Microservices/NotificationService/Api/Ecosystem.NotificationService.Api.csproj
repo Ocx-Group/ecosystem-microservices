@@ -10,16 +10,13 @@
     <ItemGroup>
         <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0" />
         <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
-        <PackageReference Include="Grpc.AspNetCore" Version="2.62.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-        <PackageReference Include="System.Text.Json" Version="9.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Application\Ecosystem.AccountService.Application.csproj" />
-        <ProjectReference Include="..\Infra.IoC\Ecosystem.AccountService.Infra.IoC.csproj" />
-        <ProjectReference Include="..\..\..\Infra.IoC\Ecosystem.Infra.IoC.csproj" />
+        <ProjectReference Include="..\Application\Ecosystem.NotificationService.Application.csproj" />
+        <ProjectReference Include="..\Infra.IoC\Ecosystem.NotificationService.Infra.IoC.csproj" />
     </ItemGroup>
 
 </Project>

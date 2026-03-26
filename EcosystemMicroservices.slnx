@@ -30,6 +30,21 @@
   <Folder Name="/Microservices/GatewayService/" />
   <Folder Name="/Microservices/InventoryService/" />
   <Folder Name="/Microservices/NotificationService/" />
+  <Folder Name="/Microservices/NotificationService/Api/">
+    <Project Path="Microservices/NotificationService/Api/Ecosystem.NotificationService.Api.csproj" />
+  </Folder>
+  <Folder Name="/Microservices/NotificationService/Application/">
+    <Project Path="Microservices/NotificationService/Application/Ecosystem.NotificationService.Application.csproj" />
+  </Folder>
+  <Folder Name="/Microservices/NotificationService/Data/">
+    <Project Path="Microservices/NotificationService/Data/Ecosystem.NotificationService.Data.csproj" />
+  </Folder>
+  <Folder Name="/Microservices/NotificationService/Domain/">
+    <Project Path="Microservices/NotificationService/Domain/Ecosystem.NotificationService.Domain.csproj" />
+  </Folder>
+  <Folder Name="/Microservices/NotificationService/Infra.IoC/">
+    <Project Path="Microservices/NotificationService/Infra.IoC/Ecosystem.NotificationService.Infra.IoC.csproj" />
+  </Folder>
   <Folder Name="/Microservices/WalletService/" />
   <Folder Name="/Tools/" />
 </Solution>
