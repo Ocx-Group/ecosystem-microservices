@@ -27,6 +27,12 @@
     <Project Path="Microservices/AccountService/Infra.IoC/Ecosystem.AccountService.Infra.IoC.csproj" />
   </Folder>
   <Folder Name="/Microservices/ConfigurationService/" />
+  <Folder Name="/Microservices/ConfigurationService/Domain/">
+    <Project Path="Microservices/ConfigurationService/Domain/Ecosystem.ConfigurationService.Domain.csproj" />
+  </Folder>
+  <Folder Name="/Microservices/ConfigurationService/Data/">
+    <Project Path="Microservices/ConfigurationService/Data/Ecosystem.ConfigurationService.Data.csproj" />
+  </Folder>
   <Folder Name="/Microservices/GatewayService/" />
   <Folder Name="/Microservices/InventoryService/" />
   <Folder Name="/Microservices/InventoryService/Api/">
