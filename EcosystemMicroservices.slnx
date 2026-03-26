@@ -33,6 +33,15 @@
   <Folder Name="/Microservices/ConfigurationService/Data/">
     <Project Path="Microservices/ConfigurationService/Data/Ecosystem.ConfigurationService.Data.csproj" />
   </Folder>
+  <Folder Name="/Microservices/ConfigurationService/Application/">
+    <Project Path="Microservices/ConfigurationService/Application/Ecosystem.ConfigurationService.Application.csproj" />
+  </Folder>
+  <Folder Name="/Microservices/ConfigurationService/Api/">
+    <Project Path="Microservices/ConfigurationService/Api/Ecosystem.ConfigurationService.Api.csproj" />
+  </Folder>
+  <Folder Name="/Microservices/ConfigurationService/Infra.IoC/">
+    <Project Path="Microservices/ConfigurationService/Infra.IoC/Ecosystem.ConfigurationService.Infra.IoC.csproj" />
+  </Folder>
   <Folder Name="/Microservices/GatewayService/" />
   <Folder Name="/Microservices/InventoryService/" />
   <Folder Name="/Microservices/InventoryService/Api/">
