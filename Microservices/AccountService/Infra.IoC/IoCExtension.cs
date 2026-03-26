@@ -21,6 +21,7 @@ public static class IoCExtension
         services.InjectMediatR();
         services.InjectValidators();
         services.InjectRepositories();
+        services.InjectServices(configuration);
     }
 
     private static void InjectRepositories(this IServiceCollection services)
@@ -68,5 +69,12 @@ public static class IoCExtension
         var connectionString = configuration.GetConnectionString("PostgreSqlConnection");
         services.AddDbContext<AccountServiceDbContext>(options =>
             options.UseNpgsql(connectionString));
+    }
+
+    private static void InjectServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<Application.Services.BlockchainSettings>(
+            configuration.GetSection(Application.Services.BlockchainSettings.SectionName));
+        services.AddScoped<IBlockchainService, Application.Services.BlockchainService>();
     }
 }
