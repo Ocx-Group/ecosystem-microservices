@@ -9,7 +9,8 @@ public class AuthMappingProfile : Profile
 {
     public AuthMappingProfile()
     {
-        CreateMap<User, UserDto>();
+        CreateMap<User, UserDto>()
+            .ForMember(d => d.RolName, opt => opt.MapFrom(s => s.Rol != null ? s.Rol.Name : string.Empty));
         CreateMap<UsersAffiliate, UsersAffiliatesDto>()
             .ForMember(d => d.CountryNavigation, opt => opt.MapFrom(s => s.CountryNavigation));
         CreateMap<Country, CountryDto>();
