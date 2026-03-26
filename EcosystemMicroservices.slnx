@@ -29,6 +29,21 @@
   <Folder Name="/Microservices/ConfigurationService/" />
   <Folder Name="/Microservices/GatewayService/" />
   <Folder Name="/Microservices/InventoryService/" />
+  <Folder Name="/Microservices/InventoryService/Api/">
+    <Project Path="Microservices/InventoryService/Api/Ecosystem.InventoryService.Api.csproj" />
+  </Folder>
+  <Folder Name="/Microservices/InventoryService/Application/">
+    <Project Path="Microservices/InventoryService/Application/Ecosystem.InventoryService.Application.csproj" />
+  </Folder>
+  <Folder Name="/Microservices/InventoryService/Data/">
+    <Project Path="Microservices/InventoryService/Data/Ecosystem.InventoryService.Data.csproj" />
+  </Folder>
+  <Folder Name="/Microservices/InventoryService/Domain/">
+    <Project Path="Microservices/InventoryService/Domain/Ecosystem.InventoryService.Domain.csproj" />
+  </Folder>
+  <Folder Name="/Microservices/InventoryService/Infra.IoC/">
+    <Project Path="Microservices/InventoryService/Infra.IoC/Ecosystem.InventoryService.Infra.IoC.csproj" />
+  </Folder>
   <Folder Name="/Microservices/NotificationService/" />
   <Folder Name="/Microservices/NotificationService/Api/">
     <Project Path="Microservices/NotificationService/Api/Ecosystem.NotificationService.Api.csproj" />

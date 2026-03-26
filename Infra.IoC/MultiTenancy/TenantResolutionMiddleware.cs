@@ -36,7 +36,7 @@ public class TenantResolutionMiddleware(RequestDelegate next)
             return;
         }
 
-        var token = context.Request.Headers["Authorization"].ToString();
+        var token = context.Request.Headers.Authorization.ToString();
         var secretKey = context.Request.Headers["X-Client-ID"].ToString();
 
         if (string.IsNullOrEmpty(token) && context.Request.HasFormContentType)
