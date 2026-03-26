@@ -76,5 +76,10 @@ public static class IoCExtension
         services.Configure<Application.Services.BlockchainSettings>(
             configuration.GetSection(Application.Services.BlockchainSettings.SectionName));
         services.AddScoped<IBlockchainService, Application.Services.BlockchainService>();
+
+        services.Configure<Application.Settings.AccountServiceSettings>(
+            configuration.GetSection(Application.Settings.AccountServiceSettings.SectionName));
+        services.AddScoped<Application.Adapters.IWalletServiceAdapter, Application.Adapters.WalletServiceAdapter>();
+        services.AddScoped<Application.Adapters.IConfigurationServiceAdapter, Application.Adapters.ConfigurationServiceAdapter>();
     }
 }
