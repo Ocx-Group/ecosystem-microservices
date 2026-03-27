@@ -82,5 +82,14 @@
   <Folder Name="/Microservices/WalletService/Data/">
     <Project Path="Microservices/WalletService/Data/Ecosystem.WalletService.Data.csproj" />
   </Folder>
+  <Folder Name="/Microservices/WalletService/Application/">
+    <Project Path="Microservices/WalletService/Application/Ecosystem.WalletService.Application.csproj" />
+  </Folder>
+  <Folder Name="/Microservices/WalletService/Api/">
+    <Project Path="Microservices/WalletService/Api/Ecosystem.WalletService.Api.csproj" />
+  </Folder>
+  <Folder Name="/Microservices/WalletService/Infra.IoC/">
+    <Project Path="Microservices/WalletService/Infra.IoC/Ecosystem.WalletService.Infra.IoC.csproj" />
+  </Folder>
   <Folder Name="/Tools/" />
 </Solution>
