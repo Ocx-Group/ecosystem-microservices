@@ -1,4 +1,9 @@
 using Asp.Versioning;
+using Ecosystem.WalletService.Application.Commands.Invoice;
+using Ecosystem.WalletService.Application.Queries.Invoice;
+using Ecosystem.WalletService.Domain.Requests.InvoiceRequest;
+using Ecosystem.WalletService.Domain.Requests.PaginationRequest;
+using Ecosystem.WalletService.Domain.Requests.WalletRequest;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,49 +17,94 @@ public class InvoiceController : BaseController
     private readonly IMediator _mediator;
     public InvoiceController(IMediator mediator) => _mediator = mediator;
 
-    // TODO: Implement when Application layer commands/queries are created
-
     [HttpGet("GetAllInvoicesByUserId")]
-    public Task<IActionResult> GetAllInvoicesByUserId([FromQuery] int id)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> GetAllInvoicesByUserId([FromQuery] int id)
+    {
+        var result = await _mediator.Send(new GetAllInvoicesByUserIdQuery(id));
+        return Ok(Success(result));
+    }
 
     [HttpGet("GetAllInvoices")]
-    public Task<IActionResult> GetAllInvoices([FromQuery] int page, [FromQuery] int pageSize)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> GetAllInvoices([FromQuery] PaginationRequest request)
+    {
+        var result = await _mediator.Send(new GetAllInvoicesQuery(request));
+        return Ok(Success(result));
+    }
 
     [HttpPost("RevertCoinPaymentTransactions")]
-    public Task<IActionResult> RevertCoinPaymentTransactions()
-        => throw new NotImplementedException();
+    public async Task<IActionResult> RevertCoinPaymentTransactions()
+    {
+        var result = await _mediator.Send(new RevertCoinPaymentTransactionsCommand());
+        return result
+            ? Ok(Success(result))
+            : BadRequest(Fail("No transactions to revert"));
+    }
 
     [HttpGet("GetAllInvoicesForTradingAcademyPurchases")]
-    public Task<IActionResult> GetAllInvoicesForTradingAcademyPurchases()
-        => throw new NotImplementedException();
+    public async Task<IActionResult> GetAllInvoicesForTradingAcademyPurchases()
+    {
+        var result = await _mediator.Send(new GetTradingAcademyInvoicesQuery());
+        return Ok(Success(result));
+    }
 
     [HttpPost("SendInvitationsForUpcomingCourses")]
-    public Task<IActionResult> SendInvitationsForUpcomingCourses([FromQuery] string link, [FromQuery] string code)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> SendInvitationsForUpcomingCourses([FromQuery] string link, [FromQuery] string code)
+    {
+        var result = await _mediator.Send(new SendCourseInvitationsCommand(link, code));
+        return Ok(Success(result));
+    }
 
     [HttpGet("GetAllInvoicesForModelOneAndTwo")]
-    public Task<IActionResult> GetAllInvoicesForModelOneAndTwo()
-        => throw new NotImplementedException();
+    public async Task<IActionResult> GetAllInvoicesForModelOneAndTwo()
+    {
+        var result = await _mediator.Send(new GetInvoicesModelOneAndTwoQuery());
+        return Ok(Success(result));
+    }
 
     [HttpPost("ProcessAndReturnBalancesForModels1A1B2")]
-    public Task<IActionResult> ProcessAndReturnBalancesForModels1A1B2([FromBody] object request)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> ProcessAndReturnBalancesForModels1A1B2([FromBody] ModelBalancesAndInvoicesRequest request)
+    {
+        var result = await _mediator.Send(new ProcessModelBalancesCommand(request));
+        return result is not null
+            ? Ok(Success(result))
+            : BadRequest(Fail("Error processing model balances"));
+    }
 
     [HttpGet("create_invoice")]
-    public Task<IActionResult> CreateInvoice([FromQuery] int invoiceId)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> CreateInvoice([FromQuery] int invoiceId)
+    {
+        var pdfBytes = await _mediator.Send(new CreateInvoicePdfByIdQuery(invoiceId));
+        if (pdfBytes.Length == 0)
+            return NotFound(Fail("Invoice not found"));
+
+        return File(pdfBytes, "application/pdf", $"invoice_{invoiceId}.pdf");
+    }
 
     [HttpGet("create_invoice_by_reference")]
-    public Task<IActionResult> CreateInvoiceByReference([FromQuery] string reference)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> CreateInvoiceByReference([FromQuery] string reference)
+    {
+        var result = await _mediator.Send(new CreateInvoicePdfByReferenceQuery(reference));
+        if (result is null || result.PdfContent is null || result.PdfContent.Length == 0)
+            return NotFound(Fail("Invoice not found"));
+
+        Response.Headers.Append("X-Brand-Id", result.BrandId.ToString());
+        return File(result.PdfContent, "application/pdf", $"invoice_{reference}.pdf");
+    }
 
     [HttpPost("HandleDebitTransaction")]
-    public Task<IActionResult> HandleDebitTransaction([FromBody] object debitRequest)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> HandleDebitTransaction([FromBody] DebitTransactionRequest debitRequest)
+    {
+        var result = await _mediator.Send(new HandleDebitTransactionCommand(debitRequest));
+        return result is not null
+            ? Ok(Success(result))
+            : BadRequest(Fail("Error processing debit transaction"));
+    }
 
     [HttpGet("ExportToExcel")]
-    public Task<IActionResult> ExportInvoicesToExcel([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> ExportInvoicesToExcel([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+    {
+        var stream = await _mediator.Send(new ExportInvoicesToExcelQuery(startDate, endDate));
+        return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"invoices_{DateTime.Now:yyyyMMdd}.xlsx");
+    }
 }

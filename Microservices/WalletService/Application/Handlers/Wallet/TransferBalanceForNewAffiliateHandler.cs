@@ -6,6 +6,7 @@ using Ecosystem.WalletService.Domain.Enums;
 using Ecosystem.WalletService.Domain.Interfaces;
 using Ecosystem.WalletService.Domain.Models;
 using Ecosystem.WalletService.Domain.Requests.WalletRequest;
+using WalletRequestModel = Ecosystem.WalletService.Domain.Requests.WalletRequest.WalletRequest;
 using Ecosystem.WalletService.Domain.Requests.WalletTransactionRequest;
 using Ecosystem.WalletService.Domain.Responses;
 using Ecosystem.Domain.Core.MultiTenancy;
@@ -192,7 +193,7 @@ public class TransferBalanceForNewAffiliateHandler : IRequestHandler<TransferBal
             Count = 1
         };
 
-        var walletRequest = new WalletRequest
+        var walletRequest = new WalletRequestModel
         {
             AffiliateId = request.AffiliateId,
             AffiliateUserName = request.AffiliateUserName!,

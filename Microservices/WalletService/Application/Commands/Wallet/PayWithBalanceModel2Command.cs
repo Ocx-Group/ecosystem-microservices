@@ -1,6 +1,6 @@
-using Ecosystem.WalletService.Domain.Requests.WalletRequest;
+using WalletRequestModel = Ecosystem.WalletService.Domain.Requests.WalletRequest.WalletRequest;
 using MediatR;
 
 namespace Ecosystem.WalletService.Application.Commands.Wallet;
 
-public record PayWithBalanceModel2Command(WalletRequest Request) : IRequest<bool>;
+public record PayWithBalanceModel2Command(WalletRequestModel Request) : IRequest<bool>;

@@ -6,6 +6,7 @@ using Ecosystem.WalletService.Domain.Extensions;
 using Ecosystem.WalletService.Domain.Interfaces;
 using Ecosystem.WalletService.Domain.Models;
 using Ecosystem.WalletService.Domain.Requests.WalletRequest;
+using WalletRequestModel = Ecosystem.WalletService.Domain.Requests.WalletRequest.WalletRequest;
 using Ecosystem.Domain.Core.MultiTenancy;
 using MediatR;
 using Microsoft.Extensions.Logging;
