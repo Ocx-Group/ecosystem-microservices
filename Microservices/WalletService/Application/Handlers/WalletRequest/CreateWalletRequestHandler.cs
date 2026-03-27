@@ -1,4 +1,6 @@
 using AutoMapper;
+using Ecosystem.Domain.Core.Caching;
+using Ecosystem.WalletService.Application.Extensions;
 using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Commands.WalletRequest;
 using Ecosystem.WalletService.Domain.Constants;

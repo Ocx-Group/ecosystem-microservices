@@ -1,4 +1,5 @@
-using Ecosystem.WalletService.Application.Adapters;
+using Ecosystem.Domain.Core.Caching;
+using Ecosystem.WalletService.Application.Extensions;
 using Ecosystem.WalletService.Application.Commands.Wallet;
 using MediatR;
 using Microsoft.Extensions.Logging;

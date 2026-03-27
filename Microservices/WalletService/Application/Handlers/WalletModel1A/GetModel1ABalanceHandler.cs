@@ -1,4 +1,4 @@
-using Ecosystem.WalletService.Application.Adapters;
+using Ecosystem.Domain.Core.Caching;
 using Ecosystem.WalletService.Application.Queries.WalletModel1A;
 using Ecosystem.WalletService.Domain.Constants;
 using Ecosystem.WalletService.Domain.DTOs.WalletModel1ADto;

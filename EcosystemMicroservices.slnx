@@ -8,6 +8,9 @@
   <Folder Name="/Infra.IoC/">
     <Project Path="Infra.IoC/Ecosystem.Infra.IoC.csproj" />
   </Folder>
+  <Folder Name="/Infra.Cache/">
+    <Project Path="Infra.Cache/Ecosystem.Infra.Cache.csproj" />
+  </Folder>
   <Folder Name="/Infrastructure/" />
   <Folder Name="/Microservices/" />
   <Folder Name="/Microservices/AccountService/" />

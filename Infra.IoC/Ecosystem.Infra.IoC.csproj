@@ -21,6 +21,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Domain\Ecosystem.Domain.Core.csproj" />
         <ProjectReference Include="..\Infra.Bus\Ecosystem.Infra.Bus.csproj" />
+        <ProjectReference Include="..\Infra.Cache\Ecosystem.Infra.Cache.csproj" />
     </ItemGroup>
 
 </Project>

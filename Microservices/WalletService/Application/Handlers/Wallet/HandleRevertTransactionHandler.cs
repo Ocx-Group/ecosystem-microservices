@@ -1,4 +1,5 @@
-using Ecosystem.WalletService.Application.Adapters;
+using Ecosystem.Domain.Core.Caching;
+using Ecosystem.WalletService.Application.Extensions;
 using Ecosystem.WalletService.Application.Commands.Wallet;
 using Ecosystem.WalletService.Domain.Constants;
 using Ecosystem.WalletService.Domain.Enums;

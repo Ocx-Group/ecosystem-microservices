@@ -1,4 +1,4 @@
-using Ecosystem.WalletService.Application.Adapters;
+using Ecosystem.Domain.Core.Caching;
 using Ecosystem.WalletService.Application.Commands.Invoice;
 using Ecosystem.WalletService.Domain.Constants;
 using Ecosystem.WalletService.Domain.DTOs.InvoiceDto;
