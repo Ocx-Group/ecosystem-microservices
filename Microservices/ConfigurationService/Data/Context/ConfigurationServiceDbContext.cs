@@ -22,6 +22,7 @@ public partial class ConfigurationServiceDbContext : DbContext
     public virtual DbSet<PaidConcept> PaidConcepts { get; set; }
     public virtual DbSet<PaymentGroups> PaymentGroups { get; set; }
     public virtual DbSet<MatrixConfiguration> MatrixConfigurations { get; set; }
+    public virtual DbSet<BrandConfiguration> BrandConfigurations { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -395,6 +396,93 @@ public partial class ConfigurationServiceDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
             entity.Property(e => e.DeletedAt).HasColumnName("deleted_at");
+
+            entity.HasQueryFilter(e => !e.DeletedAt.HasValue);
+        });
+
+        modelBuilder.Entity<BrandConfiguration>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("brand_configuration_pkey");
+
+            entity.ToTable("brand_configuration", "configuration_service");
+
+            entity.HasIndex(e => e.BrandId, "idx_brand_configuration_brand_id").IsUnique();
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("nextval('brand_configuration_id_seq'::regclass)")
+                .HasColumnName("id");
+            entity.Property(e => e.BrandId).HasColumnName("brand_id");
+            entity.Property(e => e.AdminUserName).HasColumnName("admin_user_name");
+
+            // Email / notifications
+            entity.Property(e => e.SenderName).HasColumnName("sender_name");
+            entity.Property(e => e.SenderEmail).HasColumnName("sender_email");
+            entity.Property(e => e.EmailTemplateFolder).HasColumnName("email_template_folder");
+
+            // Frontend
+            entity.Property(e => e.ClientUrl).HasColumnName("client_url");
+
+            // Commission
+            entity.Property(e => e.CommissionEnabled).HasColumnName("commission_enabled");
+            entity.Property(e => e.CommissionLevelsJson)
+                .HasColumnType("jsonb")
+                .HasColumnName("commission_levels");
+            entity.Property(e => e.BonusPercentage)
+                .HasDefaultValueSql("0")
+                .HasColumnName("bonus_percentage");
+
+            // PDF / Invoice
+            entity.Property(e => e.PdfTemplateName).HasColumnName("pdf_template_name");
+            entity.Property(e => e.CompanyName).HasColumnName("company_name");
+            entity.Property(e => e.CompanyIdentifier).HasColumnName("company_identifier");
+            entity.Property(e => e.SupportEmail).HasColumnName("support_email");
+            entity.Property(e => e.SupportPhone).HasColumnName("support_phone");
+            entity.Property(e => e.DocumentType).HasColumnName("document_type");
+            entity.Property(e => e.LogoUrl).HasColumnName("logo_url");
+            entity.Property(e => e.PrimaryColor).HasColumnName("primary_color");
+            entity.Property(e => e.SecondaryColor).HasColumnName("secondary_color");
+            entity.Property(e => e.BackgroundColor).HasColumnName("background_color");
+
+            // Affiliate tree
+            entity.Property(e => e.DefaultFatherAffiliateId).HasColumnName("default_father_affiliate_id");
+            entity.Property(e => e.ActivateOnRegistration)
+                .HasDefaultValueSql("true")
+                .HasColumnName("activate_on_registration");
+
+            // Payment groups
+            entity.Property(e => e.DefaultPaymentGroupId).HasColumnName("default_payment_group_id");
+            entity.Property(e => e.TradingAcademyPaymentGroupId).HasColumnName("trading_academy_payment_group_id");
+
+            // Withdrawal rules
+            entity.Property(e => e.WithdrawalValidationType)
+                .HasDefaultValue("None")
+                .HasColumnName("withdrawal_validation_type");
+            entity.Property(e => e.WithdrawalTimeZone).HasColumnName("withdrawal_time_zone");
+            entity.Property(e => e.WithdrawalStartHour).HasColumnName("withdrawal_start_hour");
+            entity.Property(e => e.WithdrawalEndHour).HasColumnName("withdrawal_end_hour");
+            entity.Property(e => e.WithdrawalCapNoDirects).HasColumnName("withdrawal_cap_no_directs");
+            entity.Property(e => e.Requires10PercentPurchaseRule).HasColumnName("requires_10_percent_purchase_rule");
+            entity.Property(e => e.PoolValidationRequired).HasColumnName("pool_validation_required");
+
+            // Crypto / ConPayment
+            entity.Property(e => e.ConPaymentEnabled).HasColumnName("con_payment_enabled");
+            entity.Property(e => e.ConPaymentAddress).HasColumnName("con_payment_address");
+            entity.Property(e => e.BlockchainNetworkId).HasColumnName("blockchain_network_id");
+
+            // Status & audit
+            entity.Property(e => e.IsActive)
+                .HasDefaultValueSql("true")
+                .HasColumnName("is_active");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(e => e.DeletedAt).HasColumnName("deleted_at");
+
+            entity.HasOne(d => d.Brand).WithMany()
+                .HasForeignKey(d => d.BrandId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_brand_configuration_brand");
 
             entity.HasQueryFilter(e => !e.DeletedAt.HasValue);
         });

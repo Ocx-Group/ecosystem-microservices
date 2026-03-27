@@ -72,16 +72,7 @@ public class TenantResolutionMiddleware(RequestDelegate next)
 
     private static bool ShouldSkip(string path)
     {
-        if (SkipPaths.Contains(path))
-            return true;
-
-        foreach (var prefix in SkipPrefixes)
-        {
-            if (path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                return true;
-        }
-
-        return false;
+        return SkipPaths.Contains(path) || SkipPrefixes.Any(prefix => path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
     }
 
     private static async Task RespondUnauthorized(HttpContext context, ILogger logger, string reason)

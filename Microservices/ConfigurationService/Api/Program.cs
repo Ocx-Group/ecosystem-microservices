@@ -1,4 +1,5 @@
 using Ecosystem.ConfigurationService.Infra.IoC;
+using Ecosystem.Infra.Cache;
 using Ecosystem.Infra.IoC;
 using Ecosystem.Infra.IoC.MultiTenancy;
 
@@ -13,6 +14,9 @@ var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq://localhost
 var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
 var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
 builder.Services.AddInfrastructure(rabbitHost, rabbitUser, rabbitPass);
+
+var redisConnection = builder.Configuration.GetConnectionString("RedisConnection") ?? "localhost:6379";
+builder.Services.AddSharedCache(redisConnection);
 
 builder.Services.AddConfigurationServiceDependencies(builder.Configuration);
 

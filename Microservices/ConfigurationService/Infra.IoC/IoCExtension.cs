@@ -1,7 +1,9 @@
+using Ecosystem.ConfigurationService.Application.Extensions;
 using Ecosystem.ConfigurationService.Application.Mappings;
 using Ecosystem.ConfigurationService.Data.Context;
 using Ecosystem.ConfigurationService.Data.Repositories;
 using Ecosystem.ConfigurationService.Domain.Interfaces;
+using Ecosystem.Domain.Core.BrandConfiguration;
 using Ecosystem.Infra.IoC.MultiTenancy;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +37,8 @@ public static class IoCExtension
         services.AddScoped<IApiClientRepository, ApiClientRepository>();
         services.AddScoped<IBrandRepository, BrandRepository>();
         services.AddScoped<IMatrixConfigurationRepository, MatrixConfigurationRepository>();
+        services.AddScoped<IBrandConfigurationRepository, BrandConfigurationRepository>();
+        services.AddScoped<IBrandConfigurationProvider, BrandConfigurationProvider>();
     }
 
     private static void InjectMediatR(this IServiceCollection services)
