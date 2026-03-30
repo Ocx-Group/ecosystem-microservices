@@ -1,8 +1,12 @@
+using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Mappings;
+using Ecosystem.WalletService.Application.Services;
+using Ecosystem.WalletService.Application.Strategies;
 using Ecosystem.WalletService.Data.Context;
 using Ecosystem.WalletService.Data.Repositories;
 using Ecosystem.WalletService.Data.UnitOfWork;
 using Ecosystem.WalletService.Domain.Interfaces;
+using Ecosystem.WalletService.Domain.Services;
 using Ecosystem.Infra.IoC.MultiTenancy;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +27,25 @@ public static class IoCExtension
         services.InjectMediatR();
         services.InjectValidators();
         services.InjectRepositories();
+        services.InjectDomainServices();
+    }
+
+    private static void InjectDomainServices(this IServiceCollection services)
+    {
+        // Payment domain services
+        services.AddScoped<IProductValidationService, ProductValidationService>();
+        services.AddScoped<IPaymentCalculator, PaymentCalculator>();
+        services.AddScoped<IInvoiceDetailFactory, InvoiceDetailFactory>();
+        services.AddScoped<IDebitTransactionBuilder, DebitTransactionBuilder>();
+        services.AddScoped<IBalanceValidationService, BalanceValidationService>();
+        services.AddScoped<IPaymentNotificationService, PaymentNotificationService>();
+
+        // Payment strategy
+        services.AddScoped<IBalancePaymentStrategy, BalancePaymentStrategy>();
+
+        // PDF generation (browser singleton for Chromium reuse)
+        services.AddSingleton<IBrowserProvider, BrowserProvider>();
+        services.AddScoped<IPdfService, PdfService>();
     }
 
     private static void InjectRepositories(this IServiceCollection services)

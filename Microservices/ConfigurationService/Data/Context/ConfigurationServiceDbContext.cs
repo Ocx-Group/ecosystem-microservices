@@ -23,6 +23,7 @@ public partial class ConfigurationServiceDbContext : DbContext
     public virtual DbSet<PaymentGroups> PaymentGroups { get; set; }
     public virtual DbSet<MatrixConfiguration> MatrixConfigurations { get; set; }
     public virtual DbSet<BrandConfiguration> BrandConfigurations { get; set; }
+    public virtual DbSet<PdfTemplate> PdfTemplates { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -483,6 +484,48 @@ public partial class ConfigurationServiceDbContext : DbContext
                 .HasForeignKey(d => d.BrandId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fk_brand_configuration_brand");
+
+            entity.HasQueryFilter(e => !e.DeletedAt.HasValue);
+        });
+
+        modelBuilder.Entity<PdfTemplate>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("pdf_template_pkey");
+
+            entity.ToTable("pdf_template", "configuration_service");
+
+            entity.HasIndex(e => new { e.BrandId, e.TemplateKey }, "idx_pdf_template_brand_key")
+                .IsUnique();
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("nextval('pdf_template_id_seq'::regclass)")
+                .HasColumnName("id");
+            entity.Property(e => e.BrandId).HasColumnName("brand_id");
+            entity.Property(e => e.TemplateKey)
+                .HasMaxLength(50)
+                .HasColumnName("template_key");
+            entity.Property(e => e.HtmlContent)
+                .HasColumnType("text")
+                .HasColumnName("html_content");
+            entity.Property(e => e.CssContent)
+                .HasColumnType("text")
+                .HasColumnName("css_content");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValueSql("true")
+                .HasColumnName("is_active");
+            entity.Property(e => e.Version)
+                .HasDefaultValueSql("1")
+                .HasColumnName("version");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(e => e.DeletedAt).HasColumnName("deleted_at");
+
+            entity.HasOne(d => d.Brand).WithMany()
+                .HasForeignKey(d => d.BrandId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_pdf_template_brand");
 
             entity.HasQueryFilter(e => !e.DeletedAt.HasValue);
         });

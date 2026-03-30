@@ -8,9 +8,11 @@
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="13.0.1" />
         <PackageReference Include="ClosedXML" Version="0.104.2" />
+        <PackageReference Include="Fluid.Core" Version="2.11.1" />
         <PackageReference Include="MediatR" Version="12.2.0" />
         <PackageReference Include="FluentValidation" Version="12.1.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+        <PackageReference Include="PuppeteerSharp" Version="20.0.4" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Domain\Ecosystem.WalletService.Domain.csproj" />

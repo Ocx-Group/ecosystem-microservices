@@ -38,6 +38,7 @@ public static class IoCExtension
         services.AddScoped<IBrandRepository, BrandRepository>();
         services.AddScoped<IMatrixConfigurationRepository, MatrixConfigurationRepository>();
         services.AddScoped<IBrandConfigurationRepository, BrandConfigurationRepository>();
+        services.AddScoped<IPdfTemplateRepository, PdfTemplateRepository>();
         services.AddScoped<IBrandConfigurationProvider, BrandConfigurationProvider>();
     }
 
