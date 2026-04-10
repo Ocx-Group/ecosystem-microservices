@@ -12,7 +12,6 @@ public class CreateCoinPaymentHandler : IRequestHandler<CreateCoinPaymentCommand
 {
     private readonly ICoinPaymentsAdapter _adapter;
     private readonly IMapper _mapper;
-    private readonly ILogger<CreateCoinPaymentHandler> _logger;
 
     public CreateCoinPaymentHandler(
         ICoinPaymentsAdapter adapter,
@@ -21,7 +20,6 @@ public class CreateCoinPaymentHandler : IRequestHandler<CreateCoinPaymentCommand
     {
         _adapter = adapter;
         _mapper = mapper;
-        _logger = logger;
     }
 
     public async Task<CreateConPaymentsTransactionResponse?> Handle(CreateCoinPaymentCommand request, CancellationToken cancellationToken)
