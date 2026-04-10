@@ -1,8 +1,10 @@
 using AutoMapper;
 using Ecosystem.WalletService.Application.Commands.MatrixEarnings;
+using Ecosystem.WalletService.Application.Commands.Pagadito;
 using Ecosystem.WalletService.Application.Commands.WalletHistory;
 using Ecosystem.WalletService.Application.Commands.WalletWait;
 using Ecosystem.WalletService.Application.Commands.WalletWithdrawal;
+using Ecosystem.WalletService.Domain.CustomModels;
 using Ecosystem.WalletService.Domain.DTOs.InvoiceDetailDto;
 using Ecosystem.WalletService.Domain.DTOs.MatrixEarningDto;
 using Ecosystem.WalletService.Domain.DTOs.MatrixQualificationDto;
@@ -14,6 +16,7 @@ using Ecosystem.WalletService.Domain.DTOs.WalletRetentionConfigDto;
 using Ecosystem.WalletService.Domain.DTOs.WalletWaitDto;
 using Ecosystem.WalletService.Domain.DTOs.WalletWithDrawalDto;
 using Ecosystem.WalletService.Domain.Models;
+using Ecosystem.WalletService.Domain.Requests.PagaditoRequest;
 
 namespace Ecosystem.WalletService.Application.Mappings;
 
@@ -59,5 +62,14 @@ public class WalletMappingProfile : Profile
             .ForMember(d => d.CreatedAt, map => map.Ignore())
             .ForMember(d => d.UpdatedAt, map => map.Ignore())
             .ForMember(d => d.DeletedAt, map => map.Ignore());
+
+        CreateMap<CreatePagaditoTransactionCommand, CreatePagaditoTransactionRequest>();
+        CreateMap<PagaditoTransactionDetailRequest, PagaditoTransactionDetail>()
+            .ForMember(d => d.Description, map => map.MapFrom(src => src.Description ?? string.Empty))
+            .ForMember(d => d.Price, map => map.MapFrom(src => src.Price ?? 0m))
+            .ForMember(d => d.UrlProduct, map => map.MapFrom(src => src.UrlProduct ?? string.Empty));
+        CreateMap<CreatePagaditoTransactionRequest, CreatePagaditoTransaction>()
+            .ForMember(d => d.Token, map => map.Ignore())
+            .ForMember(d => d.Ern, map => map.Ignore());
     }
 }
