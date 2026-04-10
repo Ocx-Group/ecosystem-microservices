@@ -1,4 +1,6 @@
 using Asp.Versioning;
+using Ecosystem.WalletService.Application.Commands.MatrixEarnings;
+using Ecosystem.WalletService.Domain.Requests.MatrixEarningRequest;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,9 +14,19 @@ public class MatrixEarningsController : BaseController
     private readonly IMediator _mediator;
     public MatrixEarningsController(IMediator mediator) => _mediator = mediator;
 
-    // TODO: Implement when Application layer commands/queries are created
-
     [HttpPost]
-    public Task<IActionResult> CreateAsync([FromBody] object request)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> CreateAsync([FromBody] MatrixEarningRequest request)
+    {
+        var command = new CreateMatrixEarningCommand
+        {
+            UserId = request.UserId,
+            MatrixType = request.MatrixType,
+            Amount = request.Amount,
+            SourceUserId = request.SourceUserId,
+            EarningType = request.EarningType
+        };
+
+        var result = await _mediator.Send(command);
+        return Ok(Success(result));
+    }
 }

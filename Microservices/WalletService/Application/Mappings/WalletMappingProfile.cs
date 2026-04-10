@@ -1,8 +1,10 @@
 using AutoMapper;
+using Ecosystem.WalletService.Application.Commands.MatrixEarnings;
 using Ecosystem.WalletService.Application.Commands.WalletHistory;
 using Ecosystem.WalletService.Application.Commands.WalletWait;
 using Ecosystem.WalletService.Application.Commands.WalletWithdrawal;
 using Ecosystem.WalletService.Domain.DTOs.InvoiceDetailDto;
+using Ecosystem.WalletService.Domain.DTOs.MatrixEarningDto;
 using Ecosystem.WalletService.Domain.DTOs.ResultEcoPoolLevelsDto;
 using Ecosystem.WalletService.Domain.DTOs.ResultsEcoPoolDto;
 using Ecosystem.WalletService.Domain.DTOs.WalletHistoryDto;
@@ -24,6 +26,7 @@ public class WalletMappingProfile : Profile
         CreateMap<WalletsRetentionsConfig, WalletRetentionConfigDto>();
         CreateMap<WalletsPeriod, WalletPeriodDto>();
         CreateMap<WalletsHistory, WalletHistoryDto>();
+        CreateMap<MatrixEarning, MatrixEarningDto>();
         CreateMap<InvoicesDetail, InvoiceDetailDto>()
             .ForMember(dest => dest.Invoice, opt => opt.Ignore());
         CreateMap<ResultsModel2, ResultsEcoPoolDto>()
@@ -45,6 +48,12 @@ public class WalletMappingProfile : Profile
 
         CreateMap<CreateWalletHistoryCommand, WalletsHistory>()
             .ForMember(d => d.Id, map => map.Ignore())
+            .ForMember(d => d.CreatedAt, map => map.Ignore())
+            .ForMember(d => d.UpdatedAt, map => map.Ignore())
+            .ForMember(d => d.DeletedAt, map => map.Ignore());
+
+        CreateMap<CreateMatrixEarningCommand, MatrixEarning>()
+            .ForMember(d => d.EarningId, map => map.Ignore())
             .ForMember(d => d.CreatedAt, map => map.Ignore())
             .ForMember(d => d.UpdatedAt, map => map.Ignore())
             .ForMember(d => d.DeletedAt, map => map.Ignore());
