@@ -1,4 +1,3 @@
-using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Commands.CoinPay;
 using Ecosystem.WalletService.Domain.Interfaces;
 using Ecosystem.Domain.Core.MultiTenancy;
@@ -10,7 +9,6 @@ namespace Ecosystem.WalletService.Application.Handlers.CoinPay;
 public class ProcessCoinPayWebhookHandler : IRequestHandler<ProcessCoinPayWebhookCommand, bool>
 {
     private readonly ITransactionRepository _transactionRepository;
-    private readonly ITenantContext _tenantContext;
     private readonly ILogger<ProcessCoinPayWebhookHandler> _logger;
 
     public ProcessCoinPayWebhookHandler(
@@ -19,7 +17,6 @@ public class ProcessCoinPayWebhookHandler : IRequestHandler<ProcessCoinPayWebhoo
         ILogger<ProcessCoinPayWebhookHandler> logger)
     {
         _transactionRepository = transactionRepository;
-        _tenantContext = tenantContext;
         _logger = logger;
     }
 
@@ -38,7 +35,7 @@ public class ProcessCoinPayWebhookHandler : IRequestHandler<ProcessCoinPayWebhoo
         if (transaction.Acredited)
             return true;
 
-        transaction.Status = (int)notification.TransactionStatus.Id;
+        transaction.Status = notification.TransactionStatus.Id;
         transaction.AmountReceived = notification.Amount;
         transaction.UpdatedAt = DateTime.UtcNow;
 

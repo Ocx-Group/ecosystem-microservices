@@ -9,14 +9,12 @@ namespace Ecosystem.WalletService.Application.Handlers.CoinPay;
 public class GetCoinPayTransactionByReferenceHandler : IRequestHandler<GetCoinPayTransactionByReferenceQuery, GetTransactionByIdResponse?>
 {
     private readonly ICoinPayAdapter _coinPayAdapter;
-    private readonly ILogger<GetCoinPayTransactionByReferenceHandler> _logger;
 
     public GetCoinPayTransactionByReferenceHandler(
         ICoinPayAdapter coinPayAdapter,
         ILogger<GetCoinPayTransactionByReferenceHandler> logger)
     {
         _coinPayAdapter = coinPayAdapter;
-        _logger = logger;
     }
 
     public async Task<GetTransactionByIdResponse?> Handle(GetCoinPayTransactionByReferenceQuery request, CancellationToken cancellationToken)

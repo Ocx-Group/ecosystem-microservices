@@ -1,4 +1,5 @@
 using AutoMapper;
+using Ecosystem.WalletService.Application.Commands.CoinPay;
 using Ecosystem.WalletService.Application.Commands.MatrixEarnings;
 using Ecosystem.WalletService.Application.Commands.PaymentTransaction;
 using Ecosystem.WalletService.Application.Commands.Pagadito;
@@ -19,6 +20,7 @@ using Ecosystem.WalletService.Domain.DTOs.WalletWaitDto;
 using Ecosystem.WalletService.Domain.DTOs.WalletWithDrawalDto;
 using Ecosystem.WalletService.Domain.Models;
 using Ecosystem.WalletService.Domain.Requests.PagaditoRequest;
+using Ecosystem.WalletService.Domain.Requests.CoinPayRequest;
 
 namespace Ecosystem.WalletService.Application.Mappings;
 
@@ -80,5 +82,10 @@ public class WalletMappingProfile : Profile
         CreateMap<CreatePagaditoTransactionRequest, CreatePagaditoTransaction>()
             .ForMember(d => d.Token, map => map.Ignore())
             .ForMember(d => d.Ern, map => map.Ignore());
+
+        CreateMap<CreateCoinPayTransactionCommand, CreateTransactionRequest>();
+        CreateMap<CreateCoinPayChannelCommand, CreateChannelRequest>();
+        CreateMap<CreateCoinPayAddressCommand, CreateAddresRequest>();
+        CreateMap<SendCoinPayFundsCommand, SendFundRequest>();
     }
 }

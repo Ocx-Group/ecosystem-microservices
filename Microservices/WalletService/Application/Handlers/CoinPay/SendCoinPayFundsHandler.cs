@@ -12,7 +12,6 @@ public class SendCoinPayFundsHandler : IRequestHandler<SendCoinPayFundsCommand, 
 {
     private readonly ICoinPayAdapter _coinPayAdapter;
     private readonly IMapper _mapper;
-    private readonly ILogger<SendCoinPayFundsHandler> _logger;
 
     public SendCoinPayFundsHandler(
         ICoinPayAdapter coinPayAdapter,
@@ -21,7 +20,6 @@ public class SendCoinPayFundsHandler : IRequestHandler<SendCoinPayFundsCommand, 
     {
         _coinPayAdapter = coinPayAdapter;
         _mapper = mapper;
-        _logger = logger;
     }
 
     public async Task<SendFundsResponse?> Handle(SendCoinPayFundsCommand request, CancellationToken cancellationToken)

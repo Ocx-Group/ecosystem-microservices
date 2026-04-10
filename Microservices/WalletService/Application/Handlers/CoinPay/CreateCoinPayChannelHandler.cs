@@ -12,7 +12,6 @@ public class CreateCoinPayChannelHandler : IRequestHandler<CreateCoinPayChannelC
 {
     private readonly ICoinPayAdapter _coinPayAdapter;
     private readonly IMapper _mapper;
-    private readonly ILogger<CreateCoinPayChannelHandler> _logger;
 
     public CreateCoinPayChannelHandler(
         ICoinPayAdapter coinPayAdapter,
@@ -21,7 +20,6 @@ public class CreateCoinPayChannelHandler : IRequestHandler<CreateCoinPayChannelC
     {
         _coinPayAdapter = coinPayAdapter;
         _mapper = mapper;
-        _logger = logger;
     }
 
     public async Task<CreateChannelResponse?> Handle(CreateCoinPayChannelCommand request, CancellationToken cancellationToken)
