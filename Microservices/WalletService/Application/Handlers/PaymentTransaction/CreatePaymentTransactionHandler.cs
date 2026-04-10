@@ -16,7 +16,6 @@ public class CreatePaymentTransactionHandler : IRequestHandler<CreatePaymentTran
     private readonly IAccountServiceAdapter _accountServiceAdapter;
     private readonly ITenantContext _tenantContext;
     private readonly IMapper _mapper;
-    private readonly ILogger<CreatePaymentTransactionHandler> _logger;
 
     public CreatePaymentTransactionHandler(
         ITransactionRepository transactionRepository,
@@ -29,7 +28,6 @@ public class CreatePaymentTransactionHandler : IRequestHandler<CreatePaymentTran
         _accountServiceAdapter = accountServiceAdapter;
         _tenantContext = tenantContext;
         _mapper = mapper;
-        _logger = logger;
     }
 
     public async Task<PaymentTransactionDto?> Handle(CreatePaymentTransactionCommand request, CancellationToken cancellationToken)

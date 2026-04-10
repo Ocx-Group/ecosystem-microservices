@@ -1,4 +1,3 @@
-using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Commands.PaymentTransaction;
 using Ecosystem.WalletService.Domain.Interfaces;
 using Ecosystem.Domain.Core.MultiTenancy;
@@ -11,7 +10,6 @@ public class ConfirmPaymentHandler : IRequestHandler<ConfirmPaymentCommand, bool
 {
     private readonly ITransactionRepository _transactionRepository;
     private readonly ITenantContext _tenantContext;
-    private readonly ILogger<ConfirmPaymentHandler> _logger;
 
     public ConfirmPaymentHandler(
         ITransactionRepository transactionRepository,
@@ -20,7 +18,6 @@ public class ConfirmPaymentHandler : IRequestHandler<ConfirmPaymentCommand, bool
     {
         _transactionRepository = transactionRepository;
         _tenantContext = tenantContext;
-        _logger = logger;
     }
 
     public async Task<bool> Handle(ConfirmPaymentCommand request, CancellationToken cancellationToken)

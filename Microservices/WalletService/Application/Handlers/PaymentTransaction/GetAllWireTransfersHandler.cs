@@ -13,7 +13,6 @@ public class GetAllWireTransfersHandler : IRequestHandler<GetAllWireTransfersQue
     private readonly ITransactionRepository _transactionRepository;
     private readonly IAccountServiceAdapter _accountServiceAdapter;
     private readonly ITenantContext _tenantContext;
-    private readonly ILogger<GetAllWireTransfersHandler> _logger;
 
     public GetAllWireTransfersHandler(
         ITransactionRepository transactionRepository,
@@ -24,7 +23,6 @@ public class GetAllWireTransfersHandler : IRequestHandler<GetAllWireTransfersQue
         _transactionRepository = transactionRepository;
         _accountServiceAdapter = accountServiceAdapter;
         _tenantContext = tenantContext;
-        _logger = logger;
     }
 
     public async Task<IEnumerable<PaymentTransactionDto>> Handle(GetAllWireTransfersQuery request, CancellationToken cancellationToken)

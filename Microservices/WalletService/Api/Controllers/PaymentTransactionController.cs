@@ -1,4 +1,7 @@
 using Asp.Versioning;
+using Ecosystem.WalletService.Application.Commands.PaymentTransaction;
+using Ecosystem.WalletService.Application.Queries.PaymentTransaction;
+using Ecosystem.WalletService.Domain.Requests.PaymentTransaction;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,17 +15,39 @@ public class PaymentTransactionController : BaseController
     private readonly IMediator _mediator;
     public PaymentTransactionController(IMediator mediator) => _mediator = mediator;
 
-    // TODO: Implement when Application layer commands/queries are created
-
     [HttpPost]
-    public Task<IActionResult> CreatePaymentTransactionAsync([FromBody] object request)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> CreatePaymentTransactionAsync([FromBody] PaymentTransactionRequest request)
+    {
+        var command = new CreatePaymentTransactionCommand
+        {
+            IdTransaction = request.IdTransaction,
+            AffiliateId = request.AffiliateId,
+            Amount = request.Amount,
+            Products = request.Products,
+            CreatedAt = request.CreatedAt
+        };
+
+        var result = await _mediator.Send(command);
+        return result is null ? Ok(Fail("The transaction wasn't created")) : Ok(Success(result));
+    }
 
     [HttpGet("getAllWireTransfer")]
-    public Task<IActionResult> GetAllWireTransfer()
-        => throw new NotImplementedException();
+    public async Task<IActionResult> GetAllWireTransfer()
+    {
+        var result = await _mediator.Send(new GetAllWireTransfersQuery());
+        return Ok(Success(result));
+    }
 
     [HttpPost("confirmPayment")]
-    public Task<IActionResult> ConfirmPayment([FromBody] object request)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> ConfirmPayment([FromBody] ConfirmPaymentTransactionRequest request)
+    {
+        var command = new ConfirmPaymentCommand
+        {
+            Id = request.Id,
+            UserName = request.UserName
+        };
+
+        var result = await _mediator.Send(command);
+        return result ? Ok(Success("The transaction was confirmed")) : Ok(Fail("The transaction wasn't confirmed"));
+    }
 }
