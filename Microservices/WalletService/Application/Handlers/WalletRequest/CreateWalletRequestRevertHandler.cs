@@ -8,7 +8,6 @@ using Ecosystem.WalletService.Domain.Extensions;
 using Ecosystem.WalletService.Domain.Interfaces;
 using Ecosystem.WalletService.Domain.Models;
 using Ecosystem.WalletService.Domain.Requests.WalletRequest;
-using WalletRequestModel = Ecosystem.WalletService.Domain.Requests.WalletRequest.WalletRequest;
 using Ecosystem.WalletService.Domain.Responses;
 using Ecosystem.Domain.Core.MultiTenancy;
 using MediatR;
@@ -26,7 +25,6 @@ public class CreateWalletRequestRevertHandler : IRequestHandler<CreateWalletRequ
     private readonly IAccountServiceAdapter _accountServiceAdapter;
     private readonly IMapper _mapper;
     private readonly ITenantContext _tenantContext;
-    private readonly ILogger<CreateWalletRequestRevertHandler> _logger;
 
     public CreateWalletRequestRevertHandler(
         IWalletRequestRepository walletRequestRepository,
@@ -47,7 +45,6 @@ public class CreateWalletRequestRevertHandler : IRequestHandler<CreateWalletRequ
         _accountServiceAdapter = accountServiceAdapter;
         _mapper = mapper;
         _tenantContext = tenantContext;
-        _logger = logger;
     }
 
     public async Task<WalletRequestDto?> Handle(CreateWalletRequestRevertCommand command, CancellationToken cancellationToken)
@@ -129,7 +126,7 @@ public class CreateWalletRequestRevertHandler : IRequestHandler<CreateWalletRequ
         }
     }
 
-    private async Task<bool> CreateCustomEcoPool(UserInfoResponse user, decimal? leftOverBalance, long brandId)
+    private async Task<bool> CreateCustomEcoPool(UserInfoResponse? user, decimal? leftOverBalance, long brandId)
     {
         if (user is null)
             return false;

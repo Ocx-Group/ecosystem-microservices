@@ -27,20 +27,20 @@ public class WalletModel1BController : BaseController
     public async Task<IActionResult> PayWithMyBalance([FromBody] WalletRequestModel request)
     {
         var response = await _mediator.Send(new PayWithBalance1BCommand(request));
-        return response is false ? Ok(Fail("The payment could not be processed")) : Ok(Success(response));
+        return !response ? Ok(Fail("The payment could not be processed")) : Ok(Success(response));
     }
 
     [HttpPost("payWithMyServiceBalance")]
     public async Task<IActionResult> PayWithMyServiceBalance([FromBody] WalletRequestModel request)
     {
         var response = await _mediator.Send(new PayWithServiceBalance1BCommand(request));
-        return response is false ? Ok(Fail("The payment could not be processed")) : Ok(Success(response));
+        return !response ? Ok(Fail("The payment could not be processed")) : Ok(Success(response));
     }
 
     [HttpPost("CreateServiceBalanceAdmin")]
     public async Task<IActionResult> CreateServiceBalanceAdmin([FromBody] CreditTransactionAdminRequest request)
     {
         var response = await _mediator.Send(new CreateServiceBalanceAdmin1BCommand(request));
-        return response is false ? Ok(Fail("The payment could not be processed")) : Ok(Success(response));
+        return !response ? Ok(Fail("The payment could not be processed")) : Ok(Success(response));
     }
 }

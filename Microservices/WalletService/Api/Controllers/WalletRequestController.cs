@@ -55,16 +55,7 @@ public class WalletRequestController : BaseController
             ? Ok(Success(result))
             : BadRequest(Fail("Error creating wallet request revert"));
     }
-
-    [HttpPut("createWalletRequestRevert")]
-    public async Task<IActionResult> CreateWalletRequestRevertMobile([FromBody] WalletRequestRevertTransaction request)
-    {
-        var result = await _mediator.Send(new CreateWalletRequestRevertCommand(request));
-        return result is not null
-            ? Ok(Success(result))
-            : BadRequest(Fail("Error creating wallet request revert"));
-    }
-
+    
     [HttpGet("getAllWalletRequestRevertTransaction")]
     public async Task<IActionResult> GetAllWalletRequestRevertTransaction()
     {
