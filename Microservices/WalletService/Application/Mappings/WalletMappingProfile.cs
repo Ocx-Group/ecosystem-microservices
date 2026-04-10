@@ -5,6 +5,7 @@ using Ecosystem.WalletService.Application.Commands.WalletWait;
 using Ecosystem.WalletService.Application.Commands.WalletWithdrawal;
 using Ecosystem.WalletService.Domain.DTOs.InvoiceDetailDto;
 using Ecosystem.WalletService.Domain.DTOs.MatrixEarningDto;
+using Ecosystem.WalletService.Domain.DTOs.MatrixQualificationDto;
 using Ecosystem.WalletService.Domain.DTOs.ResultEcoPoolLevelsDto;
 using Ecosystem.WalletService.Domain.DTOs.ResultsEcoPoolDto;
 using Ecosystem.WalletService.Domain.DTOs.WalletHistoryDto;
@@ -27,6 +28,7 @@ public class WalletMappingProfile : Profile
         CreateMap<WalletsPeriod, WalletPeriodDto>();
         CreateMap<WalletsHistory, WalletHistoryDto>();
         CreateMap<MatrixEarning, MatrixEarningDto>();
+        CreateMap<MatrixQualification, MatrixQualificationDto>();
         CreateMap<InvoicesDetail, InvoiceDetailDto>()
             .ForMember(dest => dest.Invoice, opt => opt.Ignore());
         CreateMap<ResultsModel2, ResultsEcoPoolDto>()

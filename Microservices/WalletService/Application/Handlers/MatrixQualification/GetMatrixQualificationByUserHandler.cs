@@ -27,7 +27,11 @@ public class GetMatrixQualificationByUserHandler : IRequestHandler<GetMatrixQual
     {
         var qualification = await _repository.GetByUserAndMatrixTypeAsync(request.UserId, request.MatrixType);
         if (qualification is null)
-            throw new ApplicationException($"Qualification for user {request.UserId} and matrix type {request.MatrixType} not found.");
+        {
+            _logger.LogWarning("Qualification for user {UserId} and matrix type {MatrixType} not found.",
+                request.UserId, request.MatrixType);
+            return null;
+        }
 
         return _mapper.Map<MatrixQualificationDto>(qualification);
     }

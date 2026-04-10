@@ -27,7 +27,10 @@ public class UpdateMatrixQualificationHandler : IRequestHandler<UpdateMatrixQual
     {
         var qualification = await _repository.GetQualificationById(request.QualificationId);
         if (qualification is null)
-            throw new ApplicationException($"Qualification with ID {request.QualificationId} not found.");
+        {
+            _logger.LogWarning("Qualification with ID {QualificationId} not found.", request.QualificationId);
+            return null;
+        }
 
         qualification.UserId = request.UserId;
         qualification.MatrixType = request.MatrixType;
