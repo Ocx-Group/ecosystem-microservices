@@ -30,7 +30,7 @@ public class PayWithBalanceHandler : IRequestHandler<PayWithBalanceCommand, bool
             return false;
 
         request.BrandId = _tenantContext.TenantId;
-        var response = await _balancePaymentStrategy.ExecuteEcoPoolPayment(request);
+        var response = await _balancePaymentStrategy.ExecuteProductPayment(request);
 
         return response;
     }

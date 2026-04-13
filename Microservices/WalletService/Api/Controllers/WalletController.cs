@@ -96,10 +96,6 @@ public class WalletController : BaseController
     public Task<IActionResult> PayWithMyBalanceAdmin([FromBody] object request)
         => throw new NotImplementedException();
 
-    [HttpPut("payWithMyBalance")]
-    public Task<IActionResult> PayWithMyBalanceMobile([FromBody] object request)
-        => throw new NotImplementedException();
-
     [HttpPost("transferBalanceForNewAffiliates")]
     public async Task<IActionResult> TransferBalanceForNewAffiliates([FromBody] TransferBalanceRequest request)
     {

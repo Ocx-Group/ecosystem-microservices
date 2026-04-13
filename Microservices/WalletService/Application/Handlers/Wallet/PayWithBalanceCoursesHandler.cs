@@ -26,6 +26,6 @@ public class PayWithBalanceCoursesHandler : IRequestHandler<PayWithBalanceCourse
     {
         var request = command.Request;
         request.BrandId = _tenantContext.TenantId;
-        return await _balancePaymentStrategy.ExecutePaymentCourses(request);
+        return await _balancePaymentStrategy.ExecuteProductPayment(request);
     }
 }

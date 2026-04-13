@@ -151,6 +151,6 @@ public class CreateWalletRequestRevertHandler : IRequestHandler<CreateWalletRequ
             },
         };
 
-        return await _balancePaymentStrategy.ExecuteCustomPayment(walletRequest);
+        return await _balancePaymentStrategy.ExecuteAdminPayment(walletRequest, leftOverBalance);
     }
 }

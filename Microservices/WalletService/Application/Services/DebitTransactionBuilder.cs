@@ -22,6 +22,9 @@ public class DebitTransactionBuilder : IDebitTransactionBuilder
     private string? _bank;
     private string? _receiptNumber;
     private bool _type;
+    private string? _secretKey;
+    private string? _reason;
+    private string? _adminUserNameOverride;
     private bool? _includeInCommissionCalculation;
 
     public DebitTransactionBuilder(IBrandConfigurationProvider brandConfigProvider)
@@ -72,6 +75,24 @@ public class DebitTransactionBuilder : IDebitTransactionBuilder
         return this;
     }
 
+    public IDebitTransactionBuilder WithSecretKey(string? secretKey)
+    {
+        _secretKey = secretKey;
+        return this;
+    }
+
+    public IDebitTransactionBuilder WithReason(string? reason)
+    {
+        _reason = reason;
+        return this;
+    }
+
+    public IDebitTransactionBuilder WithAdminUserName(string adminUserName)
+    {
+        _adminUserNameOverride = adminUserName;
+        return this;
+    }
+
     public IDebitTransactionBuilder WithCommissionCalculation(bool? includeInCommissionCalculation)
     {
         _includeInCommissionCalculation = includeInCommissionCalculation;
@@ -80,8 +101,12 @@ public class DebitTransactionBuilder : IDebitTransactionBuilder
 
     public async Task<DebitTransactionRequest> BuildAsync(long brandId)
     {
-        var brandConfig = await _brandConfigProvider.GetByBrandIdAsync(brandId);
-        var adminUserName = brandConfig?.AdminUserName ?? string.Empty;
+        var adminUserName = _adminUserNameOverride;
+        if (string.IsNullOrEmpty(adminUserName))
+        {
+            var brandConfig = await _brandConfigProvider.GetByBrandIdAsync(brandId);
+            adminUserName = brandConfig?.AdminUserName ?? string.Empty;
+        }
 
         var request = new DebitTransactionRequest
         {
@@ -100,6 +125,8 @@ public class DebitTransactionBuilder : IDebitTransactionBuilder
             Bank = _bank,
             ReceiptNumber = _receiptNumber,
             Type = _type,
+            SecretKey = _secretKey,
+            Reason = _reason,
             IncludeInCommissionCalculation = _includeInCommissionCalculation,
             invoices = _invoiceDetails
         };
@@ -123,6 +150,9 @@ public class DebitTransactionBuilder : IDebitTransactionBuilder
         _bank = null;
         _receiptNumber = null;
         _type = false;
+        _secretKey = null;
+        _reason = null;
+        _adminUserNameOverride = null;
         _includeInCommissionCalculation = null;
         return this;
     }

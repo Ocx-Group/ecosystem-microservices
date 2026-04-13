@@ -11,6 +11,9 @@ public interface IDebitTransactionBuilder
     IDebitTransactionBuilder WithPaymentMethod(string paymentMethod);
     IDebitTransactionBuilder WithInvoiceDetails(List<InvoiceDetailsTransactionRequest> invoiceDetails);
     IDebitTransactionBuilder WithReceiptInfo(string? bank, string? receiptNumber, bool type);
+    IDebitTransactionBuilder WithSecretKey(string? secretKey);
+    IDebitTransactionBuilder WithReason(string? reason);
+    IDebitTransactionBuilder WithAdminUserName(string adminUserName);
     IDebitTransactionBuilder WithCommissionCalculation(bool? includeInCommissionCalculation);
     Task<DebitTransactionRequest> BuildAsync(long brandId);
     IDebitTransactionBuilder Reset();

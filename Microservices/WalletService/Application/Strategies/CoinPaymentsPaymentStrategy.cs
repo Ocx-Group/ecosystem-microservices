@@ -1,47 +1,52 @@
+using Ecosystem.Domain.Core.BrandConfiguration;
 using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Domain.Constants;
 using Ecosystem.WalletService.Domain.Enums;
 using Ecosystem.WalletService.Domain.Interfaces;
+using Ecosystem.WalletService.Domain.Requests.WalletRequest;
 using Ecosystem.WalletService.Domain.Services;
 using WalletRequestModel = Ecosystem.WalletService.Domain.Requests.WalletRequest.WalletRequest;
 
 namespace Ecosystem.WalletService.Application.Strategies;
 
-public class BalancePaymentStrategy : IBalancePaymentStrategy
+public class CoinPaymentsPaymentStrategy : ICoinPaymentsPaymentStrategy
 {
     private readonly IProductValidationService _productValidator;
     private readonly IPaymentCalculator _calculator;
     private readonly IInvoiceDetailFactory _invoiceFactory;
     private readonly IDebitTransactionBuilder _debitBuilder;
-    private readonly IBalanceValidationService _balanceValidator;
     private readonly IPaymentNotificationService _notifications;
+    private readonly IInvoiceRepository _invoiceRepository;
     private readonly IWalletRepository _walletRepository;
     private readonly IAccountServiceAdapter _accountAdapter;
     private readonly IMembershipBonusService _membershipBonus;
+    private readonly IBrandConfigurationProvider _brandConfigProvider;
 
-    public BalancePaymentStrategy(
+    public CoinPaymentsPaymentStrategy(
         IProductValidationService productValidator,
         IPaymentCalculator calculator,
         IInvoiceDetailFactory invoiceFactory,
         IDebitTransactionBuilder debitBuilder,
-        IBalanceValidationService balanceValidator,
         IPaymentNotificationService notifications,
+        IInvoiceRepository invoiceRepository,
         IWalletRepository walletRepository,
         IAccountServiceAdapter accountAdapter,
-        IMembershipBonusService membershipBonus)
+        IMembershipBonusService membershipBonus,
+        IBrandConfigurationProvider brandConfigProvider)
     {
         _productValidator = productValidator;
         _calculator = calculator;
         _invoiceFactory = invoiceFactory;
         _debitBuilder = debitBuilder;
-        _balanceValidator = balanceValidator;
         _notifications = notifications;
+        _invoiceRepository = invoiceRepository;
         _walletRepository = walletRepository;
         _accountAdapter = accountAdapter;
         _membershipBonus = membershipBonus;
+        _brandConfigProvider = brandConfigProvider;
     }
 
-    public async Task<bool> ExecuteProductPayment(WalletRequestModel request)
+    public async Task<bool> ExecuteProductPayment(WalletRequestModel request, CoinPaymentType paymentType)
     {
         var validation = await _productValidator.ValidateAndGetProducts(request.ProductsList, request.BrandId);
         if (!validation.IsSuccess) return false;
@@ -49,65 +54,25 @@ public class BalancePaymentStrategy : IBalancePaymentStrategy
         var calc = _calculator.Calculate(validation.Products!, request.ProductsList);
         if (calc.Debit == Constants.EmptyValue) return false;
 
-        var balance = await _balanceValidator.ValidateBalance(request.AffiliateId, request.BrandId, calc.Debit);
-        if (!balance.IsSuccess) return false;
-
         var invoiceDetails = _invoiceFactory.CreateDetails(validation.Products!, request.ProductsList, request.BrandId);
+
+        var reason = ResolveReason(request, paymentType);
 
         var debitRequest = await _debitBuilder.Reset()
             .ForAffiliate(request.AffiliateId, request.AffiliateUserName)
             .WithConcept(Constants.EcoPoolProductCategory, nameof(WalletConceptType.purchasing_pool))
             .WithAmounts(calc)
-            .WithPaymentMethod(Constants.WalletBalance)
+            .WithPaymentMethod(Constants.CoinPayments)
             .WithInvoiceDetails(invoiceDetails)
-            .WithCommissionCalculation(request.IncludeInCommissionCalculation)
+            .WithReceiptInfo(Constants.CoinPayments, request.ReceiptNumber, true)
+            .WithSecretKey(request.SecretKey)
+            .WithReason(reason)
             .BuildAsync(request.BrandId);
 
-        var result = await _walletRepository.DebitEcoPoolTransactionSp(debitRequest);
+        var result = await _invoiceRepository.HandleDebitTransaction(debitRequest);
         if (result == null) return false;
 
-        var userInfo = await _accountAdapter.GetUserInfo(request.AffiliateId, request.BrandId);
-        if (userInfo != null)
-            await _notifications.SendPaymentConfirmation(userInfo, result, request, invoiceDetails);
-
-        return true;
-    }
-
-    public async Task<bool> ExecuteAdminPayment(WalletRequestModel request, decimal? customPrice = null)
-    {
-        var validation = await _productValidator.ValidateAndGetProducts(request.ProductsList, request.BrandId);
-        if (!validation.IsSuccess) return false;
-
-        if (customPrice.HasValue)
-        {
-            if (customPrice.Value == Constants.EmptyValue) return false;
-            ApplyCustomPricing(validation.Products!, customPrice.Value);
-        }
-
-        var calc = _calculator.Calculate(validation.Products!, request.ProductsList);
-        if (calc.Debit == Constants.EmptyValue) return false;
-
-        var invoiceDetails = _invoiceFactory.CreateDetails(validation.Products!, request.ProductsList, request.BrandId);
-
-        var debitRequest = await _debitBuilder.Reset()
-            .ForAffiliate(request.AffiliateId, request.AffiliateUserName)
-            .WithConcept(Constants.EcoPoolProductCategoryForAdmin, nameof(WalletConceptType.purchasing_pool))
-            .WithAmounts(calc)
-            .WithPaymentMethod(Constants.AdminPayment)
-            .WithInvoiceDetails(invoiceDetails)
-            .WithReceiptInfo(null, null, true)
-            .WithCommissionCalculation(request.IncludeInCommissionCalculation)
-            .BuildAsync(request.BrandId);
-
-        var result = await _walletRepository.AdminDebitTransaction(debitRequest);
-        if (result == null) return false;
-
-        if (customPrice.HasValue)
-        {
-            var userInfo = await _accountAdapter.GetUserInfo(request.AffiliateId, request.BrandId);
-            if (userInfo != null)
-                await _notifications.SendPaymentConfirmation(userInfo, result, request, invoiceDetails);
-        }
+        await ExecutePostPaymentActions(request, debitRequest, result, invoiceDetails, paymentType);
 
         return true;
     }
@@ -123,23 +88,22 @@ public class BalancePaymentStrategy : IBalancePaymentStrategy
         var calc = _calculator.Calculate(validation.Products!, request.ProductsList);
         if (calc.Debit == Constants.EmptyValue) return false;
 
-        var balance = await _balanceValidator.ValidateBalance(request.AffiliateId, request.BrandId, calc.Debit);
-        if (!balance.IsSuccess) return false;
-
         var invoiceDetails = _invoiceFactory.CreateDetails(validation.Products!, request.ProductsList, request.BrandId);
 
         var debitRequest = await _debitBuilder.Reset()
             .ForAffiliate(request.AffiliateId, request.AffiliateUserName)
             .WithConcept(Constants.Membership, nameof(WalletConceptType.purchasing_pool))
             .WithAmounts(calc)
-            .WithPaymentMethod(Constants.WalletBalance)
+            .WithPaymentMethod(Constants.CoinPayments)
             .WithInvoiceDetails(invoiceDetails)
-            .WithReceiptInfo(null, null, true)
+            .WithReceiptInfo(Constants.CoinPayments, request.ReceiptNumber, true)
+            .WithSecretKey(request.SecretKey)
             .BuildAsync(request.BrandId);
 
-        var result = await _walletRepository.MembershipDebitTransaction(debitRequest);
+        var result = await _walletRepository.HandleMembershipTransaction(debitRequest);
         if (result == null) return false;
 
+        // TODO: Add UpdateActivationDate when IAccountServiceAdapter supports it
         await _membershipBonus.CreditBonusToParentAsync(userInfo, request);
         await _notifications.SendMembershipConfirmation(userInfo, result, request);
 
@@ -153,13 +117,39 @@ public class BalancePaymentStrategy : IBalancePaymentStrategy
         return true;
     }
 
-    private static void ApplyCustomPricing(List<Domain.DTOs.ProductWalletDto.ProductWalletDto> products, decimal customPrice)
+    private async Task ExecutePostPaymentActions(
+        WalletRequestModel request,
+        DebitTransactionRequest debitRequest,
+        Domain.CustomModels.InvoicesSpResponse result,
+        List<InvoiceDetailsTransactionRequest> invoiceDetails,
+        CoinPaymentType paymentType)
     {
-        foreach (var product in products)
+        var userInfo = await _accountAdapter.GetUserInfo(request.AffiliateId, request.BrandId);
+
+        if (paymentType == CoinPaymentType.HouseCoin)
         {
-            product.SalePrice = customPrice;
-            product.BaseAmount = customPrice;
-            product.Name = "CustomEcoPool";
+            var brandConfig = await _brandConfigProvider.GetByBrandIdAsync(request.BrandId);
+
+            if (brandConfig is { CommissionEnabled: true, CommissionLevels.Length: > 0 })
+            {
+                await _walletRepository.DistributeCommissionsPerPurchaseAsync(new DistributeCommissionsRequest
+                {
+                    AffiliateId = request.AffiliateId,
+                    InvoiceAmount = debitRequest.Debit,
+                    BrandId = request.BrandId,
+                    AdminUserName = brandConfig.AdminUserName,
+                    LevelPercentages = brandConfig.CommissionLevels,
+                });
+            }
         }
+
+        if (userInfo != null)
+            await _notifications.SendPaymentConfirmation(userInfo, result, request, invoiceDetails);
     }
+
+    private static string? ResolveReason(WalletRequestModel request, CoinPaymentType paymentType) => paymentType switch
+    {
+        CoinPaymentType.RecyCoin or CoinPaymentType.HouseCoin => request.Bank,
+        _ => string.Empty
+    };
 }

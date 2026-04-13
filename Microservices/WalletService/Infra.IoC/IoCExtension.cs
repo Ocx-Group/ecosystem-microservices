@@ -39,9 +39,11 @@ public static class IoCExtension
         services.AddScoped<IDebitTransactionBuilder, DebitTransactionBuilder>();
         services.AddScoped<IBalanceValidationService, BalanceValidationService>();
         services.AddScoped<IPaymentNotificationService, PaymentNotificationService>();
+        services.AddScoped<IMembershipBonusService, MembershipBonusService>();
 
         // Payment strategy
         services.AddScoped<IBalancePaymentStrategy, BalancePaymentStrategy>();
+        services.AddScoped<ICoinPaymentsPaymentStrategy, CoinPaymentsPaymentStrategy>();
 
         // PDF generation (browser singleton for Chromium reuse)
         services.AddSingleton<IBrowserProvider, BrowserProvider>();
