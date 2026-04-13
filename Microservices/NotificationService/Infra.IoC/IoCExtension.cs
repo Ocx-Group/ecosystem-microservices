@@ -48,6 +48,9 @@ public static class IoCExtension
         services.AddMassTransit(x =>
         {
             x.AddConsumer<SendEmailConsumer>();
+            x.AddConsumer<PaymentConfirmationConsumer>();
+            x.AddConsumer<MembershipConfirmationConsumer>();
+            x.AddConsumer<BonusNotificationConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -75,6 +78,12 @@ public static class IoCExtension
             new BrevoEmailService(
                 configuration,
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<BrevoEmailService>>()));
+
+        // PDF generation
+        services.AddHttpClient();
+        services.AddSingleton<IBrowserProvider, Application.Services.Pdf.BrowserProvider>();
+        services.AddScoped<IPdfTemplateProvider, Application.Adapters.ConfigurationServicePdfAdapter>();
+        services.AddScoped<IPdfService, Application.Services.Pdf.PdfService>();
     }
 
     private static void InjectMediatR(this IServiceCollection services)

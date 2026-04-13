@@ -1,6 +1,6 @@
-using Ecosystem.Domain.Core.BrandConfiguration;
+using Ecosystem.Domain.Core.Bus;
 using Ecosystem.Domain.Core.Caching;
-using Ecosystem.WalletService.Application.Adapters;
+using Ecosystem.Domain.Core.Events;
 using Ecosystem.WalletService.Domain.CustomModels;
 using Ecosystem.WalletService.Domain.Requests.WalletRequest;
 using Ecosystem.WalletService.Domain.Responses;
@@ -12,22 +12,16 @@ namespace Ecosystem.WalletService.Application.Services;
 
 public class PaymentNotificationService : IPaymentNotificationService
 {
-    private readonly IPdfService _pdfService;
-    private readonly IBrandConfigurationProvider _brandConfigProvider;
-    private readonly IEmailServiceAdapter _emailAdapter;
+    private readonly IEventBus _eventBus;
     private readonly ICacheService _cacheService;
     private readonly ILogger<PaymentNotificationService> _logger;
 
     public PaymentNotificationService(
-        IPdfService pdfService,
-        IBrandConfigurationProvider brandConfigProvider,
-        IEmailServiceAdapter emailAdapter,
+        IEventBus eventBus,
         ICacheService cacheService,
         ILogger<PaymentNotificationService> logger)
     {
-        _pdfService = pdfService;
-        _brandConfigProvider = brandConfigProvider;
-        _emailAdapter = emailAdapter;
+        _eventBus = eventBus;
         _cacheService = cacheService;
         _logger = logger;
     }
@@ -42,22 +36,34 @@ public class PaymentNotificationService : IPaymentNotificationService
 
         try
         {
-            var invoiceData = BuildInvoiceData(transactionResponse, invoiceDetails);
+            var items = invoiceDetails.Select(d => new InvoiceItemEventData(
+                d.ProductName,
+                d.ProductQuantity,
+                d.ProductPrice,
+                d.ProductDiscount,
+                (d.ProductPrice * d.ProductQuantity) - d.ProductDiscount
+            )).ToList();
+
+            var invoiceData = new InvoiceEventData(
+                ReceiptNumber: transactionResponse.InvoiceNumber.ToString(),
+                Date: transactionResponse.Date ?? DateTime.UtcNow,
+                Total: transactionResponse.TotalInvoice ?? 0m,
+                Subtotal: items.Sum(i => i.Price * i.Quantity),
+                TaxTotal: (transactionResponse.TotalInvoice ?? 0m) - items.Sum(i => i.Total));
+
             var customerData = BuildCustomerData(userInfo);
-            var templateData = new { invoice = invoiceData, customer = customerData };
 
-            var pdfBytes = await _pdfService.GenerateFromTemplate("invoice", request.BrandId, templateData);
-
-            var attachments = new Dictionary<string, byte[]>();
-            if (pdfBytes.Length > 0)
-                attachments["Factura.pdf"] = pdfBytes;
-
-            if (attachments.Count > 0)
-                await _emailAdapter.SendEmailPurchaseConfirm(userInfo, attachments, transactionResponse, request.BrandId);
+            await _eventBus.Publish(new SendPaymentConfirmationEvent(
+                request.BrandId,
+                userInfo.Email ?? string.Empty,
+                userInfo.Name ?? string.Empty,
+                invoiceData,
+                customerData,
+                items));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error sending payment confirmation for affiliate {AffiliateId}", request.AffiliateId);
+            _logger.LogError(ex, "Error publishing payment confirmation for affiliate {AffiliateId}", request.AffiliateId);
         }
     }
 
@@ -70,27 +76,25 @@ public class PaymentNotificationService : IPaymentNotificationService
 
         try
         {
-            var invoiceData = new
-            {
-                ReceiptNumber = transactionResponse.InvoiceNumber.ToString(),
-                Date = transactionResponse.Date ?? DateTime.UtcNow,
-                Total = transactionResponse.TotalInvoice ?? 0m,
-                Subtotal = transactionResponse.TotalInvoice ?? 0m,
-                TaxTotal = 0m
-            };
+            var invoiceData = new InvoiceEventData(
+                ReceiptNumber: transactionResponse.InvoiceNumber.ToString(),
+                Date: transactionResponse.Date ?? DateTime.UtcNow,
+                Total: transactionResponse.TotalInvoice ?? 0m,
+                Subtotal: transactionResponse.TotalInvoice ?? 0m,
+                TaxTotal: 0m);
+
             var customerData = BuildCustomerData(userInfo);
-            var templateData = new { invoice = invoiceData, customer = customerData };
 
-            var pdfBytes = await _pdfService.GenerateFromTemplate("membership", request.BrandId, templateData);
-
-            await _emailAdapter.SendEmailWelcome(userInfo, transactionResponse, request.BrandId);
-
-            if (pdfBytes.Length > 0)
-                await _emailAdapter.SendEmailMembershipConfirm(userInfo, pdfBytes, transactionResponse, request.BrandId);
+            await _eventBus.Publish(new SendMembershipConfirmationEvent(
+                request.BrandId,
+                userInfo.Email ?? string.Empty,
+                userInfo.Name ?? string.Empty,
+                invoiceData,
+                customerData));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error sending membership confirmation for affiliate {AffiliateId}", request.AffiliateId);
+            _logger.LogError(ex, "Error publishing membership confirmation for affiliate {AffiliateId}", request.AffiliateId);
         }
     }
 
@@ -102,11 +106,16 @@ public class PaymentNotificationService : IPaymentNotificationService
         try
         {
             await InvalidateBalanceCache(bonusWinner.Id);
-            await _emailAdapter.SendBonusConfirmation(bonusWinner, affiliateUserName, brandId);
+
+            await _eventBus.Publish(new SendBonusNotificationEvent(
+                brandId,
+                bonusWinner.Email ?? string.Empty,
+                bonusWinner.Name ?? string.Empty,
+                affiliateUserName));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error sending bonus notification for affiliate {AffiliateId}", bonusWinner.Id);
+            _logger.LogError(ex, "Error publishing bonus notification for affiliate {AffiliateId}", bonusWinner.Id);
         }
     }
 
@@ -116,41 +125,12 @@ public class PaymentNotificationService : IPaymentNotificationService
         await _cacheService.Delete(key);
     }
 
-    private static object BuildInvoiceData(
-        InvoicesSpResponse transaction,
-        List<InvoiceDetailsTransactionRequest> details)
-    {
-        var items = details.Select(d => new
-        {
-            d.ProductName,
-            Quantity = d.ProductQuantity,
-            Price = d.ProductPrice,
-            Discount = d.ProductDiscount,
-            Total = (d.ProductPrice * d.ProductQuantity) - d.ProductDiscount
-        }).ToList();
-
-        return new
-        {
-            ReceiptNumber = transaction.InvoiceNumber.ToString(),
-            Date = transaction.Date ?? DateTime.UtcNow,
-            Total = transaction.TotalInvoice ?? 0m,
-            Subtotal = items.Sum(i => i.Price * i.Quantity),
-            TaxTotal = (transaction.TotalInvoice ?? 0m) - items.Sum(i => i.Total),
-            Items = items
-        };
-    }
-
-    private static object BuildCustomerData(UserInfoResponse user)
-    {
-        return new
-        {
-            Name = user.Name ?? string.Empty,
-            LastName = user.LastName ?? string.Empty,
-            UserName = user.UserName ?? string.Empty,
-            Email = user.Email ?? string.Empty,
-            Phone = user.Phone ?? string.Empty,
-            Country = user.Country?.Name ?? string.Empty,
-            City = user.City ?? string.Empty
-        };
-    }
+    private static CustomerEventData BuildCustomerData(UserInfoResponse user) => new(
+        Name: user.Name ?? string.Empty,
+        LastName: user.LastName ?? string.Empty,
+        UserName: user.UserName ?? string.Empty,
+        Email: user.Email ?? string.Empty,
+        Phone: user.Phone ?? string.Empty,
+        Country: user.Country?.Name ?? string.Empty,
+        City: user.City ?? string.Empty);
 }
