@@ -1,3 +1,5 @@
+using Ecosystem.Domain.Core.Bus;
+using Ecosystem.Domain.Core.Events;
 using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Domain.Constants;
 using Ecosystem.WalletService.Domain.Enums;
@@ -18,6 +20,7 @@ public class BalancePaymentStrategy : IBalancePaymentStrategy
     private readonly IWalletRepository _walletRepository;
     private readonly IAccountServiceAdapter _accountAdapter;
     private readonly IMembershipBonusService _membershipBonus;
+    private readonly IEventBus _eventBus;
 
     public BalancePaymentStrategy(
         IProductValidationService productValidator,
@@ -28,7 +31,8 @@ public class BalancePaymentStrategy : IBalancePaymentStrategy
         IPaymentNotificationService notifications,
         IWalletRepository walletRepository,
         IAccountServiceAdapter accountAdapter,
-        IMembershipBonusService membershipBonus)
+        IMembershipBonusService membershipBonus,
+        IEventBus eventBus)
     {
         _productValidator = productValidator;
         _calculator = calculator;
@@ -39,6 +43,7 @@ public class BalancePaymentStrategy : IBalancePaymentStrategy
         _walletRepository = walletRepository;
         _accountAdapter = accountAdapter;
         _membershipBonus = membershipBonus;
+        _eventBus = eventBus;
     }
 
     public async Task<bool> ExecuteProductPayment(WalletRequestModel request)
@@ -140,6 +145,7 @@ public class BalancePaymentStrategy : IBalancePaymentStrategy
         var result = await _walletRepository.MembershipDebitTransaction(debitRequest);
         if (result == null) return false;
 
+        await _eventBus.Publish(new UpdateActivationDateEvent(request.AffiliateId, request.BrandId));
         await _membershipBonus.CreditBonusToParentAsync(userInfo, request);
         await _notifications.SendMembershipConfirmation(userInfo, result, request);
 

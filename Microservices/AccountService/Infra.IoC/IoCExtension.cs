@@ -1,10 +1,13 @@
-﻿using Ecosystem.AccountService.Application.Mappings;
+﻿using Ecosystem.AccountService.Application.Consumers;
+using Ecosystem.AccountService.Application.Mappings;
 using Ecosystem.AccountService.Application.Validators.Auth;
 using Ecosystem.AccountService.Data.Context;
 using Ecosystem.AccountService.Data.Repositories;
 using Ecosystem.AccountService.Domain.Interfaces;
+using Ecosystem.Domain.Core.Bus;
 using Ecosystem.Infra.IoC.MultiTenancy;
 using FluentValidation;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,15 +16,45 @@ namespace Ecosystem.AccountService.Infra.IoC;
 
 public static class IoCExtension
 {
-    public static void AddAccountServiceDependencies(this IServiceCollection services, IConfiguration configuration)
+    public static void AddAccountServiceDependencies(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        string rabbitMqHost,
+        string rabbitMqUsername,
+        string rabbitMqPassword)
     {
         services.AddAccountServiceDbContext(configuration);
         services.AddMultiTenancy<BrandTenantStore, ApiClientTokenValidator>();
+        services.AddMassTransitWithConsumers(rabbitMqHost, rabbitMqUsername, rabbitMqPassword);
         services.InjectAutoMapper();
         services.InjectMediatR();
         services.InjectValidators();
         services.InjectRepositories();
         services.InjectServices(configuration);
+    }
+
+    private static void AddMassTransitWithConsumers(
+        this IServiceCollection services,
+        string rabbitMqHost,
+        string username,
+        string password)
+    {
+        services.AddMassTransit(x =>
+        {
+            x.AddConsumer<UpdateActivationDateConsumer>();
+
+            x.UsingRabbitMq((context, cfg) =>
+            {
+                cfg.Host(rabbitMqHost, h =>
+                {
+                    h.Username(username);
+                    h.Password(password);
+                });
+                cfg.ConfigureEndpoints(context);
+            });
+        });
+
+        services.AddScoped<IEventBus, Ecosystem.Infra.Bus.MassTransitBus>();
     }
 
     private static void InjectRepositories(this IServiceCollection services)

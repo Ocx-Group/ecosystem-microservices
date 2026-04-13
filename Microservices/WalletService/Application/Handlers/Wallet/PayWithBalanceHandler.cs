@@ -10,7 +10,6 @@ public class PayWithBalanceHandler : IRequestHandler<PayWithBalanceCommand, bool
 {
     private readonly IBalancePaymentStrategy _balancePaymentStrategy;
     private readonly ITenantContext _tenantContext;
-    private readonly ILogger<PayWithBalanceHandler> _logger;
 
     public PayWithBalanceHandler(
         IBalancePaymentStrategy balancePaymentStrategy,
@@ -19,7 +18,6 @@ public class PayWithBalanceHandler : IRequestHandler<PayWithBalanceCommand, bool
     {
         _balancePaymentStrategy = balancePaymentStrategy;
         _tenantContext = tenantContext;
-        _logger = logger;
     }
 
     public async Task<bool> Handle(PayWithBalanceCommand command, CancellationToken cancellationToken)

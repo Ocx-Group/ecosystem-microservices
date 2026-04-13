@@ -5,6 +5,7 @@ using Ecosystem.WalletService.Domain.Requests.TransferBalanceRequest;
 using Ecosystem.WalletService.Domain.Requests.WalletRequest;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using WalletRequestModel = Ecosystem.WalletService.Domain.Requests.WalletRequest.WalletRequest;
 
 namespace Ecosystem.WalletService.Api.Controllers;
 
@@ -77,25 +78,40 @@ public class WalletController : BaseController
     }
 
     [HttpPost("payWithMyBalance")]
-    public Task<IActionResult> PayWithMyBalance([FromBody] object request)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> PayWithMyBalance([FromBody] WalletRequestModel request)
+    {
+        var response = await _mediator.Send(new PayWithBalanceCommand(request));
+        return !response ? Ok(Fail("The payment could not be processed")) : Ok(Success(response));
+    }
 
     [HttpPost("payWithMyBalanceForOthers")]
-    public Task<IActionResult> PayWithMyBalanceForOthers([FromBody] object request)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> PayWithMyBalanceForOthers([FromBody] WalletRequestModel request)
+    {
+        var response = await _mediator.Send(new PayWithBalanceForOthersCommand(request));
+        return !response ? Ok(Fail("The payment could not be processed")) : Ok(Success(response));
+    }
 
     [HttpPost("payWithMyBalanceModel2")]
-    public Task<IActionResult> PayWithMyBalanceModel2([FromBody] object request)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> PayWithMyBalanceModel2([FromBody] WalletRequestModel request)
+    {
+        var response = await _mediator.Send(new PayWithBalanceModel2Command(request));
+        return !response ? Ok(Fail("The payment could not be processed")) : Ok(Success(response));
+    }
 
     [HttpPost("payMembershipWithMyBalance")]
-    public Task<IActionResult> PayMembershipWithMyBalance([FromBody] object request)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> PayMembershipWithMyBalance([FromBody] WalletRequestModel request)
+    {
+        var response = await _mediator.Send(new PayMembershipWithBalanceCommand(request));
+        return !response ? Ok(Fail("The payment could not be processed")) : Ok(Success(response));
+    }
 
     [HttpPost("payWithMyBalanceAdmin")]
-    public Task<IActionResult> PayWithMyBalanceAdmin([FromBody] object request)
-        => throw new NotImplementedException();
-
+    public async Task<IActionResult> PayWithMyBalanceAdmin([FromBody] WalletRequestModel request)
+    {
+        var response = await _mediator.Send(new AdminPaymentCommand(request));
+        return !response ? Ok(Fail("The payment could not be processed")) : Ok(Success(response));
+    }
+    
     [HttpPost("transferBalanceForNewAffiliates")]
     public async Task<IActionResult> TransferBalanceForNewAffiliates([FromBody] TransferBalanceRequest request)
     {
@@ -111,8 +127,11 @@ public class WalletController : BaseController
     }
 
     [HttpPost("rejectOrCancelRevertDebitTransaction")]
-    public Task<IActionResult> RejectOrCancelRevertDebitTransaction([FromQuery] int option, [FromBody] int id)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> RejectOrCancelRevertDebitTransaction([FromQuery] int option, [FromBody] int id)
+    {
+        var response = await _mediator.Send(new HandleRevertTransactionCommand(option, id));
+        return !response ? Ok(Fail("The revert transaction could not be processed")) : Ok(Success(response));
+    }
 
     [HttpGet("getPurchasesMadeInMyNetwork/{id:int}")]
     public async Task<IActionResult> GetPurchasesMadeInMyNetwork([FromRoute] int id)
@@ -146,8 +165,11 @@ public class WalletController : BaseController
     }
 
     [HttpPost("payWithMyBalanceCourses")]
-    public Task<IActionResult> PayWithMyBalanceCourses([FromBody] object request)
-        => throw new NotImplementedException();
+    public async Task<IActionResult> PayWithMyBalanceCourses([FromBody] WalletRequestModel request)
+    {
+        var response = await _mediator.Send(new PayWithBalanceCoursesCommand(request));
+        return !response ? Ok(Fail("The payment could not be processed")) : Ok(Success(response));
+    }
 
     [HttpPost("RemoveKeys")]
     public async Task<IActionResult> RemoveKeys([FromBody] DeleteKeysRequest request)

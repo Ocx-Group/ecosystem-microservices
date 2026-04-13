@@ -1,4 +1,6 @@
 using Ecosystem.Domain.Core.BrandConfiguration;
+using Ecosystem.Domain.Core.Bus;
+using Ecosystem.Domain.Core.Events;
 using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Domain.Constants;
 using Ecosystem.WalletService.Domain.Enums;
@@ -21,6 +23,7 @@ public class CoinPaymentsPaymentStrategy : ICoinPaymentsPaymentStrategy
     private readonly IAccountServiceAdapter _accountAdapter;
     private readonly IMembershipBonusService _membershipBonus;
     private readonly IBrandConfigurationProvider _brandConfigProvider;
+    private readonly IEventBus _eventBus;
 
     public CoinPaymentsPaymentStrategy(
         IProductValidationService productValidator,
@@ -32,7 +35,8 @@ public class CoinPaymentsPaymentStrategy : ICoinPaymentsPaymentStrategy
         IWalletRepository walletRepository,
         IAccountServiceAdapter accountAdapter,
         IMembershipBonusService membershipBonus,
-        IBrandConfigurationProvider brandConfigProvider)
+        IBrandConfigurationProvider brandConfigProvider,
+        IEventBus eventBus)
     {
         _productValidator = productValidator;
         _calculator = calculator;
@@ -44,6 +48,7 @@ public class CoinPaymentsPaymentStrategy : ICoinPaymentsPaymentStrategy
         _accountAdapter = accountAdapter;
         _membershipBonus = membershipBonus;
         _brandConfigProvider = brandConfigProvider;
+        _eventBus = eventBus;
     }
 
     public async Task<bool> ExecuteProductPayment(WalletRequestModel request, CoinPaymentType paymentType)
@@ -103,7 +108,7 @@ public class CoinPaymentsPaymentStrategy : ICoinPaymentsPaymentStrategy
         var result = await _walletRepository.HandleMembershipTransaction(debitRequest);
         if (result == null) return false;
 
-        // TODO: Add UpdateActivationDate when IAccountServiceAdapter supports it
+        await _eventBus.Publish(new UpdateActivationDateEvent(request.AffiliateId, request.BrandId));
         await _membershipBonus.CreditBonusToParentAsync(userInfo, request);
         await _notifications.SendMembershipConfirmation(userInfo, result, request);
 

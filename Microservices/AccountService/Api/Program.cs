@@ -1,7 +1,6 @@
 using Ecosystem.AccountService.Api.Hubs;
 using Ecosystem.AccountService.Api.Middlewares;
 using Ecosystem.AccountService.Infra.IoC;
-using Ecosystem.Infra.IoC;
 using Ecosystem.Infra.IoC.MultiTenancy;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,10 +16,9 @@ builder.Services.AddSignalR();
 var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq://localhost";
 var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
 var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
-builder.Services.AddInfrastructure(rabbitHost, rabbitUser, rabbitPass);
 
-// AccountService dependencies (MediatR, Repositories, Multi-tenancy)
-builder.Services.AddAccountServiceDependencies(builder.Configuration);
+// AccountService dependencies (MediatR, Repositories, Multi-tenancy, Consumers)
+builder.Services.AddAccountServiceDependencies(builder.Configuration, rabbitHost, rabbitUser, rabbitPass);
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 

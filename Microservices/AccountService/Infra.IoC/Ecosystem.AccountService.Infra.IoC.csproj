@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1"/>
+        <PackageReference Include="MassTransit.RabbitMQ" Version="8.1.3"/>
         <PackageReference Include="MediatR" Version="12.2.0"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11"/>
     </ItemGroup>
@@ -17,6 +18,7 @@
         <ProjectReference Include="..\Application\Ecosystem.AccountService.Application.csproj" />
         <ProjectReference Include="..\Data\Ecosystem.AccountService.Data.csproj" />
         <ProjectReference Include="..\Domain\Ecosystem.AccountService.Domain.csproj" />
+        <ProjectReference Include="..\..\..\Infra.Bus\Ecosystem.Infra.Bus.csproj" />
         <ProjectReference Include="..\..\..\Infra.IoC\Ecosystem.Infra.IoC.csproj" />
     </ItemGroup>
 
