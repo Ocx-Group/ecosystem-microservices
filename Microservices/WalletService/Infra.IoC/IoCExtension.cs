@@ -7,6 +7,7 @@ using Ecosystem.WalletService.Data.Repositories;
 using Ecosystem.WalletService.Data.UnitOfWork;
 using Ecosystem.WalletService.Domain.Interfaces;
 using Ecosystem.WalletService.Domain.Services;
+using Ecosystem.Grpc.Inventory;
 using Ecosystem.Infra.IoC.MultiTenancy;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,7 @@ public static class IoCExtension
         services.InjectValidators();
         services.InjectRepositories();
         services.InjectDomainServices();
+        services.InjectGrpcClients(configuration);
     }
 
     private static void InjectDomainServices(this IServiceCollection services)
@@ -97,5 +99,17 @@ public static class IoCExtension
         var connectionString = configuration.GetConnectionString("PostgreSqlConnection");
         services.AddDbContext<WalletServiceDbContext>(options =>
             options.UseNpgsql(connectionString));
+    }
+
+    private static void InjectGrpcClients(this IServiceCollection services, IConfiguration configuration)
+    {
+        var inventoryServiceUrl = configuration["GrpcServices:InventoryService"] ?? "https://localhost:5101";
+
+        services.AddGrpcClient<InventoryGrpc.InventoryGrpcClient>(o =>
+        {
+            o.Address = new Uri(inventoryServiceUrl);
+        });
+
+        services.AddScoped<IInventoryServiceAdapter, GrpcInventoryServiceAdapter>();
     }
 }

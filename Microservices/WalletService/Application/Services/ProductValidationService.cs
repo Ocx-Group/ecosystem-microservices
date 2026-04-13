@@ -1,10 +1,7 @@
 using Ecosystem.WalletService.Application.Adapters;
-using Ecosystem.WalletService.Domain.DTOs.ProductWalletDto;
 using Ecosystem.WalletService.Domain.Requests.WalletRequest;
-using Ecosystem.WalletService.Domain.Responses;
 using Ecosystem.WalletService.Domain.Services;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace Ecosystem.WalletService.Application.Services;
 
@@ -29,30 +26,22 @@ public class ProductValidationService : IProductValidationService
             return ProductValidationResult.Fail("La lista de productos está vacía");
 
         var productIds = requestedProducts.Select(p => p.IdProduct).ToArray();
-        var response = await _inventoryAdapter.GetProductsIds(productIds, brandId);
+        var products = await _inventoryAdapter.GetProductsByIdsAsync(productIds, brandId);
 
-        if (!response.IsSuccessful)
+        if (products is null || products.Count == 0)
         {
-            _logger.LogWarning("Inventory service returned unsuccessful response for brand {BrandId}", brandId);
-            return ProductValidationResult.Fail("Error al consultar productos en inventario");
+            _logger.LogWarning("Inventory service returned no products for brand {BrandId}", brandId);
+            return ProductValidationResult.Fail("No se encontraron productos");
         }
 
-        if (string.IsNullOrEmpty(response.Content))
-            return ProductValidationResult.Fail("Respuesta vacía del servicio de inventario");
-
-        var result = JsonConvert.DeserializeObject<ProductsResponse>(response.Content);
-
-        if (result?.Data is null || result.Data.Count == 0)
-            return ProductValidationResult.Fail("No se encontraron productos");
-
-        if (result.Data.Count != requestedProducts.Count)
+        if (products.Count != requestedProducts.Count)
         {
             _logger.LogWarning(
                 "Product count mismatch: requested {Requested}, found {Found}",
-                requestedProducts.Count, result.Data.Count);
+                requestedProducts.Count, products.Count);
             return ProductValidationResult.Fail("Algunos productos no fueron encontrados");
         }
 
-        return ProductValidationResult.Success(result.Data);
+        return ProductValidationResult.Success(products);
     }
 }

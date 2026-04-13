@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AutoMapper;
 using Ecosystem.ConfigurationService.Application.DTOs;
 using Ecosystem.ConfigurationService.Application.Commands.Concept;
@@ -6,6 +7,7 @@ using Ecosystem.ConfigurationService.Application.Commands.Grading;
 using Ecosystem.ConfigurationService.Application.Commands.Incentive;
 using Ecosystem.ConfigurationService.Application.Commands.PaymentGroup;
 using Ecosystem.ConfigurationService.Domain.Models;
+using Ecosystem.Domain.Core.BrandConfiguration;
 
 namespace Ecosystem.ConfigurationService.Application.Mappings;
 
@@ -14,6 +16,10 @@ public class ConfigurationMappingProfile : Profile
     public ConfigurationMappingProfile()
     {
         // Entity -> DTO
+        CreateMap<BrandConfiguration, BrandConfigurationDto>()
+            .ForMember(d => d.Name,             opt => opt.MapFrom(src => src.Brand.Name))
+            .ForMember(d => d.CommissionLevels, opt => opt.MapFrom(src => DeserializeCommissionLevels(src.CommissionLevelsJson)));
+
         CreateMap<ConceptConfigurations, ConceptConfigurationDto>();
         CreateMap<Concepts, ConceptDto>();
         CreateMap<Configurations, ConfigurationDto>();
@@ -42,4 +48,7 @@ public class ConfigurationMappingProfile : Profile
 
         CreateMap<CreateIncentiveCommand, Incentives>();
     }
+
+    private static decimal[] DeserializeCommissionLevels(string json)
+        => string.IsNullOrEmpty(json) ? [] : JsonSerializer.Deserialize<decimal[]>(json) ?? [];
 }

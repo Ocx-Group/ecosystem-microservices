@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option csharp_namespace = "Ecosystem.Grpc.Configuration";
+
+package configuration;
+
+service ConfigurationGrpc {
+  rpc GetPdfTemplate (GetPdfTemplateRequest) returns (GetPdfTemplateResponse);
+}
+
+message GetPdfTemplateRequest {
+  int64 brand_id = 1;
+  string template_key = 2;
+}
+
+message GetPdfTemplateResponse {
+  bool success = 1;
+  string html_content = 2;
+  string css_content = 3;
+  int32 version = 4;
+  string message = 5;
+}

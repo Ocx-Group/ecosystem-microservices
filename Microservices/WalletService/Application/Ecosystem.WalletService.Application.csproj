@@ -9,10 +9,16 @@
         <PackageReference Include="AutoMapper" Version="13.0.1" />
         <PackageReference Include="ClosedXML" Version="0.104.2" />
         <PackageReference Include="Fluid.Core" Version="2.11.1" />
+        <PackageReference Include="Google.Protobuf" Version="3.26.1" />
+        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.62.0" />
+        <PackageReference Include="Grpc.Tools" Version="2.62.0" PrivateAssets="All" />
         <PackageReference Include="MediatR" Version="12.2.0" />
         <PackageReference Include="FluentValidation" Version="12.1.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
         <PackageReference Include="PuppeteerSharp" Version="20.0.4" />
+    </ItemGroup>
+    <ItemGroup>
+        <Protobuf Include="..\..\..\Protos\inventory.proto" GrpcServices="Client" Link="Protos\inventory.proto" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Domain\Ecosystem.WalletService.Domain.csproj" />

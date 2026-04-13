@@ -1,4 +1,5 @@
 using AutoMapper;
+using Ecosystem.Grpc.Inventory;
 using Ecosystem.WalletService.Application.Commands.CoinPay;
 using Ecosystem.WalletService.Application.Commands.CoinPayments;
 using Ecosystem.WalletService.Application.Commands.MatrixEarnings;
@@ -12,6 +13,7 @@ using Ecosystem.WalletService.Domain.DTOs.InvoiceDetailDto;
 using Ecosystem.WalletService.Domain.DTOs.MatrixEarningDto;
 using Ecosystem.WalletService.Domain.DTOs.MatrixQualificationDto;
 using Ecosystem.WalletService.Domain.DTOs.PaymentTransactionDto;
+using Ecosystem.WalletService.Domain.DTOs.ProductWalletDto;
 using Ecosystem.WalletService.Domain.DTOs.ResultEcoPoolLevelsDto;
 using Ecosystem.WalletService.Domain.DTOs.ResultsEcoPoolDto;
 using Ecosystem.WalletService.Domain.DTOs.WalletHistoryDto;
@@ -37,7 +39,7 @@ public class WalletMappingProfile : Profile
         CreateMap<WalletsRetentionsConfig, WalletRetentionConfigDto>();
         CreateMap<WalletsPeriod, WalletPeriodDto>();
         CreateMap<WalletsHistory, WalletHistoryDto>();
-        CreateMap<Domain.Models.Wallet, WalletDto>()
+        CreateMap<Wallet, WalletDto>()
             .ForMember(d => d.Id, map => map.MapFrom(src => (int)src.Id))
             .ForMember(d => d.AffiliateId, map => map.MapFrom(src => (int)src.AffiliateId))
             .ForMember(d => d.UserId, map => map.MapFrom(src => src.UserId ?? 0))
@@ -99,5 +101,22 @@ public class WalletMappingProfile : Profile
         CreateMap<CreateCoinPayAddressCommand, CreateAddresRequest>();
         CreateMap<SendCoinPayFundsCommand, SendFundRequest>();
         CreateMap<CreateCoinPaymentCommand, ConPaymentRequest>();
+
+        // gRPC → DTO  (string decimal fields require explicit parsing)
+        CreateMap<ProductMessage, ProductWalletDto>()
+            .ForMember(d => d.SalePrice,           opt => opt.MapFrom(src => ParseDecimal(src.SalePrice)))
+            .ForMember(d => d.CommissionableValue, opt => opt.MapFrom(src => ParseDecimal(src.CommissionableValue)))
+            .ForMember(d => d.BinaryPoints,        opt => opt.MapFrom(src => ParseDecimal(src.BinaryPoints)))
+            .ForMember(d => d.Tax,                 opt => opt.MapFrom(src => ParseDecimal(src.Tax)))
+            .ForMember(d => d.BaseAmount,          opt => opt.MapFrom(src => ParseDecimal(src.BaseAmount)))
+            .ForMember(d => d.DailyPercentage,     opt => opt.MapFrom(src => ParseDecimal(src.DailyPercentage)))
+            .ForMember(d => d.ProductDiscount,     opt => opt.MapFrom(src => ParseDecimal(src.ProductDiscount)))
+            .ForMember(d => d.ModelTwoPercentage,  opt => opt.MapFrom(src => ParseNullableDecimal(src.ModelTwoPercentage)));
     }
+
+    private static decimal ParseDecimal(string value)
+        => decimal.TryParse(value, out var result) ? result : 0m;
+
+    private static decimal? ParseNullableDecimal(string value)
+        => decimal.TryParse(value, out var result) ? result : null;
 }

@@ -1,3 +1,4 @@
+using Ecosystem.ConfigurationService.Api.GrpcServices;
 using Ecosystem.ConfigurationService.Infra.IoC;
 using Ecosystem.Infra.Cache;
 using Ecosystem.Infra.IoC;
@@ -6,6 +7,7 @@ using Ecosystem.Infra.IoC.MultiTenancy;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddGrpc();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
@@ -35,6 +37,7 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.UseTenantResolution();
 app.MapHealthChecks("/health");
+app.MapGrpcService<ConfigurationGrpcService>();
 app.MapControllers();
 
 await app.RunAsync();

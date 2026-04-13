@@ -1,5 +1,6 @@
 using Ecosystem.Domain.Core.Bus;
 using MassTransitBus = Ecosystem.Infra.Bus.MassTransitBus;
+using Ecosystem.Grpc.Configuration;
 using Ecosystem.NotificationService.Application.Consumers;
 using Ecosystem.NotificationService.Application.Mappings;
 using Ecosystem.NotificationService.Application.Services;
@@ -80,10 +81,16 @@ public static class IoCExtension
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<BrevoEmailService>>()));
 
         // PDF generation
-        services.AddHttpClient();
         services.AddSingleton<IBrowserProvider, Application.Services.Pdf.BrowserProvider>();
-        services.AddScoped<IPdfTemplateProvider, Application.Adapters.ConfigurationServicePdfAdapter>();
         services.AddScoped<IPdfService, Application.Services.Pdf.PdfService>();
+
+        // gRPC client → ConfigurationService for PDF templates
+        var configServiceUrl = configuration["GrpcServices:ConfigurationService"] ?? "https://localhost:5103";
+        services.AddGrpcClient<ConfigurationGrpc.ConfigurationGrpcClient>(o =>
+        {
+            o.Address = new Uri(configServiceUrl);
+        });
+        services.AddScoped<IPdfTemplateProvider, Application.Adapters.GrpcConfigurationServiceAdapter>();
     }
 
     private static void InjectMediatR(this IServiceCollection services)

@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+option csharp_namespace = "Ecosystem.Grpc.Inventory";
+
+package inventory;
+
+service InventoryGrpc {
+  rpc GetProductsByIds (GetProductsByIdsRequest) returns (GetProductsByIdsResponse);
+  rpc GetProductById (GetProductByIdRequest) returns (GetProductByIdResponse);
+  rpc UpdateStock (UpdateStockRequest) returns (UpdateStockResponse);
+}
+
+// --- Requests ---
+
+message GetProductsByIdsRequest {
+  repeated int32 product_ids = 1;
+  int64 brand_id = 2;
+}
+
+message GetProductByIdRequest {
+  int32 product_id = 1;
+  int64 brand_id = 2;
+}
+
+message UpdateStockRequest {
+  int32 product_id = 1;
+  int32 quantity = 2;
+  int64 brand_id = 3;
+}
+
+// --- Responses ---
+
+message GetProductsByIdsResponse {
+  bool success = 1;
+  repeated ProductMessage products = 2;
+  string message = 3;
+}
+
+message GetProductByIdResponse {
+  bool success = 1;
+  ProductMessage product = 2;
+  string message = 3;
+}
+
+message UpdateStockResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// --- Shared ---
+
+message ProductMessage {
+  int32 id = 1;
+  int32 category_id = 2;
+  string sale_price = 3;
+  string commissionable_value = 4;
+  string binary_points = 5;
+  int32 value_points = 6;
+  string tax = 7;
+  int32 payment_group = 8;
+  bool acum_comp_min = 9;
+  bool product_type = 10;
+  bool product_packs = 11;
+  string base_amount = 12;
+  string daily_percentage = 13;
+  int32 days_wait = 14;
+  string name = 15;
+  string product_discount = 16;
+  string model_two_percentage = 17;
+}
