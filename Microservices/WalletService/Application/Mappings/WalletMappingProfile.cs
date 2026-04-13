@@ -17,6 +17,7 @@ using Ecosystem.WalletService.Domain.DTOs.ResultsEcoPoolDto;
 using Ecosystem.WalletService.Domain.DTOs.WalletHistoryDto;
 using Ecosystem.WalletService.Domain.DTOs.WalletPeriodDto;
 using Ecosystem.WalletService.Domain.DTOs.WalletRetentionConfigDto;
+using Ecosystem.WalletService.Domain.DTOs.WalletDto;
 using Ecosystem.WalletService.Domain.DTOs.WalletWaitDto;
 using Ecosystem.WalletService.Domain.DTOs.WalletWithDrawalDto;
 using Ecosystem.WalletService.Domain.Models;
@@ -36,6 +37,14 @@ public class WalletMappingProfile : Profile
         CreateMap<WalletsRetentionsConfig, WalletRetentionConfigDto>();
         CreateMap<WalletsPeriod, WalletPeriodDto>();
         CreateMap<WalletsHistory, WalletHistoryDto>();
+        CreateMap<Domain.Models.Wallet, WalletDto>()
+            .ForMember(d => d.Id, map => map.MapFrom(src => (int)src.Id))
+            .ForMember(d => d.AffiliateId, map => map.MapFrom(src => (int)src.AffiliateId))
+            .ForMember(d => d.UserId, map => map.MapFrom(src => src.UserId ?? 0))
+            .ForMember(d => d.Credit, map => map.MapFrom(src => (double)(src.Credit ?? 0m)))
+            .ForMember(d => d.Debit, map => map.MapFrom(src => (double)(src.Debit ?? 0m)))
+            .ForMember(d => d.Deferred, map => map.MapFrom(src => src.Deferred.HasValue ? (double?)src.Deferred.Value : null))
+            .ForMember(d => d.Status, map => map.MapFrom(src => src.Status ?? false));
         CreateMap<MatrixEarning, MatrixEarningDto>();
         CreateMap<MatrixQualification, MatrixQualificationDto>();
         CreateMap<Transaction, PaymentTransactionDto>();
