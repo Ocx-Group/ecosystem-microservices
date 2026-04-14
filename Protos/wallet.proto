@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option csharp_namespace = "Ecosystem.Grpc.Wallet";
+
+package wallet;
+
+service WalletGrpc {
+  rpc IsWithdrawalDateAllowed (IsWithdrawalDateAllowedRequest) returns (IsWithdrawalDateAllowedResponse);
+}
+
+message IsWithdrawalDateAllowedRequest {
+  int64 brand_id = 1;
+}
+
+message IsWithdrawalDateAllowedResponse {
+  bool allowed = 1;
+}

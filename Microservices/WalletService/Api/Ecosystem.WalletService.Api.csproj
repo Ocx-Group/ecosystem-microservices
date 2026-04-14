@@ -7,7 +7,11 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0" />
+        <PackageReference Include="Grpc.AspNetCore" Version="2.62.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    </ItemGroup>
+    <ItemGroup>
+        <Protobuf Include="..\..\..\Protos\wallet.proto" GrpcServices="Server" Link="Protos\wallet.proto" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Application\Ecosystem.WalletService.Application.csproj" />

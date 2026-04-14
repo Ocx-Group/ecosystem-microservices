@@ -19,6 +19,17 @@
         <PackageReference Include="Otp.NET" Version="1.4.0"/>
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1"/>
         <PackageReference Include="Nethereum.Web3" Version="4.21.4"/>
+        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.62.0"/>
+        <PackageReference Include="Grpc.Tools" Version="2.62.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Google.Protobuf" Version="3.26.1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Protobuf Include="..\..\..\Protos\wallet.proto" GrpcServices="Client" Link="Protos\wallet.proto" />
+        <Protobuf Include="..\..\..\Protos\configuration.proto" GrpcServices="Client" Link="Protos\configuration.proto" />
     </ItemGroup>
 
     <ItemGroup>

@@ -8,6 +8,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
+builder.Services.AddGrpc();
 
 var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq://localhost";
 var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
@@ -32,5 +33,6 @@ app.UseAuthorization();
 app.UseTenantResolution();
 app.MapHealthChecks("/health");
 app.MapControllers();
+app.MapGrpcService<Ecosystem.WalletService.Api.GrpcServices.WalletGrpcService>();
 
 await app.RunAsync();

@@ -117,7 +117,22 @@ public static class IoCExtension
 
         services.Configure<Application.Settings.AccountServiceSettings>(
             configuration.GetSection(Application.Settings.AccountServiceSettings.SectionName));
-        services.AddScoped<Application.Adapters.IWalletServiceAdapter, Application.Adapters.WalletServiceAdapter>();
-        services.AddScoped<Application.Adapters.IConfigurationServiceAdapter, Application.Adapters.ConfigurationServiceAdapter>();
+
+        services.InjectGrpcClients(configuration);
+    }
+
+    private static void InjectGrpcClients(this IServiceCollection services, IConfiguration configuration)
+    {
+        var walletServiceUrl = configuration["GrpcServices:WalletService"] ?? "https://localhost:5003";
+        var configurationServiceUrl = configuration["GrpcServices:ConfigurationService"] ?? "https://localhost:5004";
+
+        services.AddGrpcClient<Ecosystem.Grpc.Wallet.WalletGrpc.WalletGrpcClient>(o =>
+            o.Address = new Uri(walletServiceUrl));
+
+        services.AddGrpcClient<Ecosystem.Grpc.Configuration.ConfigurationGrpc.ConfigurationGrpcClient>(o =>
+            o.Address = new Uri(configurationServiceUrl));
+
+        services.AddScoped<Application.Adapters.IWalletServiceAdapter, Application.Adapters.GrpcWalletServiceAdapter>();
+        services.AddScoped<Application.Adapters.IConfigurationServiceAdapter, Application.Adapters.GrpcConfigurationServiceAdapter>();
     }
 }
