@@ -18,7 +18,6 @@ public class SendCourseInvitationsHandler : IRequestHandler<SendCourseInvitation
     private readonly IAccountServiceAdapter _accountServiceAdapter;
     private readonly IEventBus _eventBus;
     private readonly ITenantContext _tenantContext;
-    private readonly ILogger<SendCourseInvitationsHandler> _logger;
 
     public SendCourseInvitationsHandler(
         IInvoiceRepository invoiceRepository,
@@ -31,7 +30,6 @@ public class SendCourseInvitationsHandler : IRequestHandler<SendCourseInvitation
         _accountServiceAdapter = accountServiceAdapter;
         _eventBus = eventBus;
         _tenantContext = tenantContext;
-        _logger = logger;
     }
 
     public async Task<IEnumerable<UserAffiliateResponse>> Handle(SendCourseInvitationsCommand command, CancellationToken cancellationToken)
@@ -44,7 +42,7 @@ public class SendCourseInvitationsHandler : IRequestHandler<SendCourseInvitation
             return new List<UserAffiliateResponse>();
 
         var tasks = allInvoices.Where(invoice =>
-                invoice.ProductId == Constants.ForMonth || invoice.ProductId == Constants.ForWeek)
+                invoice.ProductId is Constants.ForMonth or Constants.ForWeek)
             .Select(async invoice =>
             {
                 var endDate = invoice.ProductId == Constants.ForMonth
@@ -55,28 +53,23 @@ public class SendCourseInvitationsHandler : IRequestHandler<SendCourseInvitation
                     return null;
 
                 var userResponse = await _accountServiceAdapter.GetAffiliateByUserName(invoice.UserName, brandId);
-                if (userResponse.Content is null)
-                    return null;
-
-                var user = userResponse.Content.ToJsonObject<UserAffiliateResponse>();
-
-                if (user?.Data is null)
+                if (userResponse is null)
                     return null;
 
                 await _eventBus.Publish(new SendEmailEvent(
                     templateKey: Constants.SubjectInvitationForAcademy,
                     brandId: brandId,
-                    toEmail: user.Data.Email ?? string.Empty,
-                    toName: user.Data.Name ?? string.Empty,
+                    toEmail: userResponse.Email ?? string.Empty,
+                    toName: userResponse.Name ?? string.Empty,
                     placeholders: new Dictionary<string, string>
                     {
                         { "link", command.Link },
                         { "code", command.Code },
-                        { "name", user.Data.Name ?? string.Empty }
+                        { "name", userResponse.Name ?? string.Empty }
                     }
                 ));
 
-                return user;
+                return new UserAffiliateResponse { Success = true, Data = userResponse };
             });
 
         var results = await Task.WhenAll(tasks);

@@ -17,6 +17,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Protobuf Include="..\..\..\Protos\account.proto" GrpcServices="Server" Link="Protos\account.proto" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\Application\Ecosystem.AccountService.Application.csproj" />
         <ProjectReference Include="..\Infra.IoC\Ecosystem.AccountService.Infra.IoC.csproj" />
         <ProjectReference Include="..\..\..\Infra.IoC\Ecosystem.Infra.IoC.csproj" />

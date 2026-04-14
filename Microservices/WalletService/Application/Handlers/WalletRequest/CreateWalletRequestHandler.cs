@@ -13,7 +13,7 @@ using Ecosystem.WalletService.Domain.Responses;
 using Ecosystem.Domain.Core.MultiTenancy;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+
 
 namespace Ecosystem.WalletService.Application.Handlers.WalletRequest;
 
@@ -66,14 +66,8 @@ public class CreateWalletRequestHandler : IRequestHandler<CreateWalletRequestCom
         if (!await HasWalletAddress(request.AffiliateId, brandId))
             return ResultResponse<WalletRequestDto>.Fail("No se encontró dirección de wallet válida");
 
-        var response = await _accountServiceAdapter.VerificationCode(request.VerificationCode, request.UserPassword, request.AffiliateId, brandId);
-        if (!response.IsSuccessful)
-            return ResultResponse<WalletRequestDto>.Fail("Error en la verificación del código");
-        if (string.IsNullOrEmpty(response.Content))
-            return ResultResponse<WalletRequestDto>.Fail("Respuesta de verificación vacía");
-
-        var resultValid = JsonConvert.DeserializeObject<ServicesValidCodeAccountResponse>(response.Content);
-        if (resultValid is { Success: false })
+        var isValid = await _accountServiceAdapter.VerificationCode(request.VerificationCode, request.UserPassword, request.AffiliateId, brandId);
+        if (!isValid)
             return ResultResponse<WalletRequestDto>.Fail("Código de verificación inválido");
 
         var available = await _walletRepository.GetAvailableBalanceByAffiliateId(request.AffiliateId, brandId);
@@ -143,20 +137,8 @@ public class CreateWalletRequestHandler : IRequestHandler<CreateWalletRequestCom
 
     private async Task<bool> HasWalletAddress(int affiliateId, long brandId)
     {
-        var response = await _accountServiceAdapter.GetAffiliateBtcByAffiliateId(affiliateId, brandId);
-
-        if (response.Content is null)
-            return false;
-
-        var userInfo = JsonConvert.DeserializeObject<AffiliateBtcResponse>(response.Content);
-
-        if (userInfo?.Data is null)
-            return false;
-
-        if (userInfo.Data.Length == 0)
-            return false;
-
-        return true;
+        var btcAddresses = await _accountServiceAdapter.GetAffiliateBtcByAffiliateId(affiliateId, brandId);
+        return btcAddresses is not null && btcAddresses.Any();
     }
 
     private async Task<bool> CheckFor10PercentPurchaseEarnings(int affiliateId, long brandId)
@@ -173,19 +155,8 @@ public class CreateWalletRequestHandler : IRequestHandler<CreateWalletRequestCom
     {
         var users = new[] { affiliateId };
 
-        var response = await _accountServiceAdapter.GetHave2Children(users, brandId);
-        if (!response.IsSuccessful)
-            throw new InvalidOperationException($"Error retrieving direct users: {response.StatusCode}");
-
-        List<int> directUsers;
-        try
-        {
-            directUsers = JsonConvert.DeserializeObject<List<int>>(response.Content!) ?? new List<int>();
-        }
-        catch (JsonException ex)
-        {
-            throw new FormatException("Could not parse the list of directs.", ex);
-        }
+        var directUsersArray = await _accountServiceAdapter.GetHave2Children(users, brandId);
+        var directUsers = directUsersArray?.ToList() ?? new List<int>();
 
         if (directUsers.Contains(affiliateId))
             return int.MaxValue;

@@ -1,7 +1,6 @@
 using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Queries.Wallet;
 using Ecosystem.WalletService.Domain.DTOs.WalletDto;
-using Ecosystem.WalletService.Domain.Extensions;
 using Ecosystem.WalletService.Domain.Interfaces;
 using Ecosystem.WalletService.Domain.Responses;
 using Ecosystem.Domain.Core.MultiTenancy;
@@ -34,17 +33,12 @@ public class GetPurchasesMadeInMyNetworkHandler : IRequestHandler<GetPurchasesMa
         var affiliateId = request.AffiliateId;
         var brandId = _tenantContext.TenantId;
 
-        var networkResult = await _accountServiceAdapter.GetPersonalNetwork(affiliateId, brandId);
+        var networkMembers = await _accountServiceAdapter.GetPersonalNetwork(affiliateId, brandId);
 
-        if (networkResult.Content == null || !networkResult.Content.Any())
+        if (networkMembers is null || !networkMembers.Any())
             return null;
 
-        var result = networkResult.Content!.ToJsonObject<UserPersonalNetworkResponse>();
-
-        if (result?.Data == null || !result.Data.Any())
-            return null;
-
-        var idsInMyNetwork = new HashSet<int>(result.Data.Select(affiliate => affiliate.id));
+        var idsInMyNetwork = new HashSet<int>(networkMembers.Select(affiliate => affiliate.id));
         idsInMyNetwork.Add(affiliateId);
 
         var purchasesSummary = await _networkPurchaseRepository.GetPurchasesMadeInMyNetwork(idsInMyNetwork);

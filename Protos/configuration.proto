@@ -6,6 +6,8 @@ package configuration;
 
 service ConfigurationGrpc {
   rpc GetPdfTemplate (GetPdfTemplateRequest) returns (GetPdfTemplateResponse);
+  rpc GetMatrixConfiguration (GetMatrixConfigurationRequest) returns (GetMatrixConfigurationResponse);
+  rpc GetAllMatrixConfigurations (GetAllMatrixConfigurationsRequest) returns (GetAllMatrixConfigurationsResponse);
 }
 
 message GetPdfTemplateRequest {
@@ -19,4 +21,40 @@ message GetPdfTemplateResponse {
   string css_content = 3;
   int32 version = 4;
   string message = 5;
+}
+
+// MatrixConfiguration messages
+
+message MatrixConfigMessage {
+  int32 matrix_type = 1;
+  string threshold = 2;
+  string fee_amount = 3;
+  string min_withdraw = 4;
+  string max_withdraw = 5;
+  int32 child_count = 6;
+  string range_min = 7;
+  string range_max = 8;
+  int32 levels = 9;
+  string matrix_name = 10;
+}
+
+message GetMatrixConfigurationRequest {
+  int64 brand_id = 1;
+  int32 matrix_type = 2;
+}
+
+message GetMatrixConfigurationResponse {
+  bool success = 1;
+  MatrixConfigMessage configuration = 2;
+  string message = 3;
+}
+
+message GetAllMatrixConfigurationsRequest {
+  int64 brand_id = 1;
+}
+
+message GetAllMatrixConfigurationsResponse {
+  bool success = 1;
+  repeated MatrixConfigMessage configurations = 2;
+  string message = 3;
 }

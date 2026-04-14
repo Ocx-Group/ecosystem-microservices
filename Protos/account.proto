@@ -1,0 +1,201 @@
+syntax = "proto3";
+
+option csharp_namespace = "Ecosystem.Grpc.Account";
+
+package account;
+
+service AccountGrpc {
+  rpc GetUserInfo (GetUserInfoRequest) returns (GetUserInfoResponse);
+  rpc GetAffiliateByUserName (GetAffiliateByUserNameRequest) returns (GetAffiliateByUserNameResponse);
+  rpc PlaceUserInMatrix (PlaceUserInMatrixRequest) returns (PlaceUserInMatrixResponse);
+  rpc IsActiveInMatrix (IsActiveInMatrixRequest) returns (IsActiveInMatrixResponse);
+  rpc GetUplinePositions (GetUplinePositionsRequest) returns (GetUplinePositionsResponse);
+  rpc VerificationCode (VerificationCodeRequest) returns (VerificationCodeResponse);
+  rpc GetAffiliateBtcByAffiliateId (GetAffiliateBtcByAffiliateIdRequest) returns (GetAffiliateBtcByAffiliateIdResponse);
+  rpc GetPersonalNetwork (GetPersonalNetworkRequest) returns (GetPersonalNetworkResponse);
+  rpc GetTotalActiveMembers (GetTotalActiveMembersRequest) returns (GetTotalActiveMembersResponse);
+  rpc GetHave2Children (GetHave2ChildrenRequest) returns (GetHave2ChildrenResponse);
+}
+
+// Shared messages
+
+message UserInfoMessage {
+  int32 id = 1;
+  string name = 2;
+  string user_name = 3;
+  string last_name = 4;
+  string email = 5;
+  string phone = 6;
+  string address = 7;
+  string city = 8;
+  string affiliate_type = 9;
+  int32 status = 10;
+  string activation_date = 11;
+  int32 father = 12;
+  string verification_code = 13;
+  bool card_id_authorization = 14;
+  string country_name = 15;
+}
+
+message MatrixPositionMessage {
+  int32 position_id = 1;
+  int32 user_id = 2;
+  string user_name = 3;
+  string matrix_name = 4;
+  int32 level = 5;
+  int32 matrix_type = 6;
+  int32 parent_position_id = 7;
+}
+
+message AffiliateBtcMessage {
+  int32 id = 1;
+  int32 affiliate_id = 2;
+  string address = 3;
+  int32 network_id = 4;
+}
+
+message PersonalNetworkMessage {
+  int32 id = 1;
+  string full_name = 2;
+  string email = 3;
+  string user_name = 4;
+  int32 external_grading_id = 5;
+  int32 status = 6;
+  string latitude = 7;
+  string longitude = 8;
+  string country_name = 9;
+}
+
+// 1. GetUserInfo
+
+message GetUserInfoRequest {
+  int32 user_id = 1;
+  int64 brand_id = 2;
+}
+
+message GetUserInfoResponse {
+  UserInfoMessage user = 1;
+}
+
+// 2. GetAffiliateByUserName
+
+message GetAffiliateByUserNameRequest {
+  string user_name = 1;
+  int64 brand_id = 2;
+}
+
+message GetAffiliateByUserNameResponse {
+  bool success = 1;
+  UserInfoMessage user = 2;
+  string message = 3;
+}
+
+// 3. PlaceUserInMatrix
+
+message PlaceUserInMatrixRequest {
+  int32 user_id = 1;
+  int32 matrix_type = 2;
+  int32 recipient_id = 3;
+  int32 cycle = 4;
+  int64 brand_id = 5;
+}
+
+message PlaceUserInMatrixResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 4. IsActiveInMatrix
+
+message IsActiveInMatrixRequest {
+  int32 user_id = 1;
+  int32 matrix_type = 2;
+  int32 cycle = 3;
+  int64 brand_id = 4;
+}
+
+message IsActiveInMatrixResponse {
+  bool success = 1;
+  bool is_active = 2;
+  string message = 3;
+}
+
+// 5. GetUplinePositions
+
+message GetUplinePositionsRequest {
+  int32 user_id = 1;
+  int32 matrix_type = 2;
+  int32 cycle = 3;
+  int64 brand_id = 4;
+}
+
+message GetUplinePositionsResponse {
+  bool success = 1;
+  repeated MatrixPositionMessage positions = 2;
+  string message = 3;
+}
+
+// 6. VerificationCode
+
+message VerificationCodeRequest {
+  string code = 1;
+  string password = 2;
+  int32 affiliate_id = 3;
+  int64 brand_id = 4;
+}
+
+message VerificationCodeResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 7. GetAffiliateBtcByAffiliateId
+
+message GetAffiliateBtcByAffiliateIdRequest {
+  int32 affiliate_id = 1;
+  int64 brand_id = 2;
+}
+
+message GetAffiliateBtcByAffiliateIdResponse {
+  bool success = 1;
+  repeated AffiliateBtcMessage addresses = 2;
+  string message = 3;
+}
+
+// 8. GetPersonalNetwork
+
+message GetPersonalNetworkRequest {
+  int32 affiliate_id = 1;
+  int64 brand_id = 2;
+}
+
+message GetPersonalNetworkResponse {
+  bool success = 1;
+  repeated PersonalNetworkMessage members = 2;
+  string message = 3;
+}
+
+// 9. GetTotalActiveMembers
+
+message GetTotalActiveMembersRequest {
+  int64 brand_id = 1;
+}
+
+message GetTotalActiveMembersResponse {
+  bool success = 1;
+  int32 total = 2;
+  string message = 3;
+}
+
+// 10. GetHave2Children
+
+message GetHave2ChildrenRequest {
+  repeated int32 affiliate_ids = 1;
+  int64 brand_id = 2;
+}
+
+message GetHave2ChildrenResponse {
+  bool success = 1;
+  repeated int32 affiliate_ids_with_children = 2;
+  string message = 3;
+}

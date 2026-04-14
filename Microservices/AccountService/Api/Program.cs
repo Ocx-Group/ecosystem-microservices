@@ -1,3 +1,4 @@
+using Ecosystem.AccountService.Api.GrpcServices;
 using Ecosystem.AccountService.Api.Hubs;
 using Ecosystem.AccountService.Api.Middlewares;
 using Ecosystem.AccountService.Infra.IoC;
@@ -11,14 +12,17 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 builder.Services.AddSignalR();
+builder.Services.AddGrpc();
 
 // Shared infrastructure (RabbitMQ + MassTransit)
 var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq://localhost";
 var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
 var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
 
-// AccountService dependencies (MediatR, Repositories, Multi-tenancy, Consumers)
-builder.Services.AddAccountServiceDependencies(builder.Configuration, rabbitHost, rabbitUser, rabbitPass);
+// AccountService dependencies (MediatR, Repositories, Multi-tenancy, Consumers, AutoMapper)
+builder.Services.AddAccountServiceDependencies(
+    builder.Configuration, rabbitHost, rabbitUser, rabbitPass,
+    typeof(Ecosystem.AccountService.Api.Mappings.GrpcMappingProfile).Assembly);
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
@@ -41,5 +45,6 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.MapHealthChecks("/health");
 app.MapControllers();
 app.MapHub<TicketHubService>("/hubs/tickets");
+app.MapGrpcService<AccountGrpcService>();
 
 await app.RunAsync();

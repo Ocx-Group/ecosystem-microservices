@@ -1,4 +1,3 @@
-using System.Net;
 using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Queries.MatrixQualification;
 using Ecosystem.WalletService.Domain.Interfaces;
@@ -6,8 +5,6 @@ using Ecosystem.WalletService.Domain.Responses;
 using Ecosystem.Domain.Core.MultiTenancy;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Ecosystem.WalletService.Application.Handlers.MatrixQualification;
 
@@ -42,17 +39,14 @@ public class HasReachedWithdrawalLimitHandler : IRequestHandler<HasReachedWithdr
         {
             var totalCommissions = await _walletRepository.GetQualificationBalanceAsync(userId, brandId) ?? 0m;
 
-            var resp = await _configurationAdapter.GetAllMatrixConfigurations(brandId);
-            var allMatrices = JObject.Parse(resp.Content!)["data"]!.ToObject<List<MatrixConfiguration>>()!
-                .OrderBy(m => m.MatrixType).ToList();
+            var allMatrices = await _configurationAdapter.GetAllMatrixConfigurations(brandId);
+            if (allMatrices is null || allMatrices.Count == 0) return false;
+            allMatrices = allMatrices.OrderBy(m => m.MatrixType).ToList();
 
             var nextMatrixType = await GetNextUnqualifiedMatrixTypeAsync(userId, allMatrices);
 
-            var cfgResp = await _configurationAdapter.GetMatrixConfiguration(brandId, nextMatrixType);
-            if (cfgResp.Content == null || cfgResp.StatusCode != HttpStatusCode.OK) return false;
-
-            var cfg = JsonConvert.DeserializeObject<MatrixConfigurationResponse>(cfgResp.Content!)?.Data;
-            if (cfg == null) return false;
+            var cfg = await _configurationAdapter.GetMatrixConfiguration(brandId, nextMatrixType);
+            if (cfg is null) return false;
 
             var qualification = await _matrixQualificationRepository.GetByUserAndMatrixTypeAsync(userId, nextMatrixType);
             var cycle = qualification?.QualificationCount ?? 0;

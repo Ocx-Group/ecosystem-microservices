@@ -1,4 +1,5 @@
-﻿using Ecosystem.AccountService.Application.Consumers;
+﻿using System.Reflection;
+using Ecosystem.AccountService.Application.Consumers;
 using Ecosystem.AccountService.Application.Mappings;
 using Ecosystem.AccountService.Application.Validators.Auth;
 using Ecosystem.AccountService.Data.Context;
@@ -21,12 +22,13 @@ public static class IoCExtension
         IConfiguration configuration,
         string rabbitMqHost,
         string rabbitMqUsername,
-        string rabbitMqPassword)
+        string rabbitMqPassword,
+        params Assembly[] additionalMapperAssemblies)
     {
         services.AddAccountServiceDbContext(configuration);
         services.AddMultiTenancy<BrandTenantStore, ApiClientTokenValidator>();
         services.AddMassTransitWithConsumers(rabbitMqHost, rabbitMqUsername, rabbitMqPassword);
-        services.InjectAutoMapper();
+        services.InjectAutoMapper(additionalMapperAssemblies);
         services.InjectMediatR();
         services.InjectValidators();
         services.InjectRepositories();
@@ -92,9 +94,12 @@ public static class IoCExtension
         services.AddValidatorsFromAssembly(typeof(UserAuthenticationValidator).Assembly);
     }
 
-    private static void InjectAutoMapper(this IServiceCollection services)
+    private static void InjectAutoMapper(this IServiceCollection services, Assembly[] additionalAssemblies)
     {
-        services.AddAutoMapper(typeof(AuthMappingProfile).Assembly);
+        var assemblies = new[] { typeof(AuthMappingProfile).Assembly }
+            .Concat(additionalAssemblies)
+            .ToArray();
+        services.AddAutoMapper(assemblies);
     }
 
     private static void AddAccountServiceDbContext(this IServiceCollection services, IConfiguration configuration)

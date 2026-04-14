@@ -3,8 +3,8 @@ using Ecosystem.Domain.Core.Caching;
 using Ecosystem.WalletService.Application.Extensions;
 using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Commands.Wallet;
+using Ecosystem.WalletService.Application.Queries.Wallet;
 using Ecosystem.WalletService.Domain.Constants;
-using Ecosystem.WalletService.Domain.DTOs.BalanceInformationDto;
 using Ecosystem.WalletService.Domain.Enums;
 using Ecosystem.WalletService.Domain.Extensions;
 using Ecosystem.WalletService.Domain.Interfaces;
@@ -14,39 +14,33 @@ using Ecosystem.WalletService.Domain.Responses;
 using Ecosystem.Domain.Core.MultiTenancy;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace Ecosystem.WalletService.Application.Handlers.Wallet;
 
 public class TransferBalanceHandler : IRequestHandler<TransferBalanceCommand, ServicesResponse>
 {
     private readonly IWalletRepository _walletRepository;
-    private readonly IWalletRequestRepository _walletRequestRepository;
-    private readonly IBonusRepository _bonusRepository;
     private readonly IAccountServiceAdapter _accountServiceAdapter;
+    private readonly IMediator _mediator;
     private readonly ICacheService _cacheService;
     private readonly ITenantContext _tenantContext;
     private readonly IMapper _mapper;
-    private readonly ILogger<TransferBalanceHandler> _logger;
 
     public TransferBalanceHandler(
         IWalletRepository walletRepository,
-        IWalletRequestRepository walletRequestRepository,
-        IBonusRepository bonusRepository,
         IAccountServiceAdapter accountServiceAdapter,
+        IMediator mediator,
         ICacheService cacheService,
         ITenantContext tenantContext,
         IMapper mapper,
         ILogger<TransferBalanceHandler> logger)
     {
         _walletRepository = walletRepository;
-        _walletRequestRepository = walletRequestRepository;
-        _bonusRepository = bonusRepository;
         _accountServiceAdapter = accountServiceAdapter;
+        _mediator = mediator;
         _cacheService = cacheService;
         _tenantContext = tenantContext;
         _mapper = mapper;
-        _logger = logger;
     }
 
     public async Task<ServicesResponse> Handle(TransferBalanceCommand command, CancellationToken cancellationToken)
@@ -63,17 +57,15 @@ public class TransferBalanceHandler : IRequestHandler<TransferBalanceCommand, Se
         if (!isActivePool && brandId == 1)
             return new ServicesResponse { Success = false, Message = "No tiene un Pool activo", Code = 400 };
 
-        if (!userInfo.IsSuccessful)
+        if (userInfo is null)
             return new ServicesResponse { Success = false, Message = "Error", Code = 400 };
 
-        if (string.IsNullOrEmpty(userInfo.Content))
+        if (currentUser is null)
             return new ServicesResponse { Success = false, Message = "Error", Code = 400 };
 
-        var currentUserResult = JsonConvert.DeserializeObject<UserAffiliateResponse>(currentUser.Content!);
-        var result = JsonConvert.DeserializeObject<UserAffiliateResponse>(userInfo.Content!);
-        var userBalance = await GetBalanceInformation(data.FromAffiliateId, brandId);
+        var userBalance = await _mediator.Send(new GetBalanceInformationQuery(data.FromAffiliateId), cancellationToken);
 
-        if (currentUserResult?.Data?.VerificationCode != data.SecurityCode)
+        if (currentUser.VerificationCode != data.SecurityCode)
             return new ServicesResponse
                 { Success = false, Message = "El código de seguridad no coincidec.", Code = 400 };
 
@@ -81,7 +73,7 @@ public class TransferBalanceHandler : IRequestHandler<TransferBalanceCommand, Se
             return new ServicesResponse
                 { Success = false, Message = "El monto es mayor al saldo disponible.", Code = 400 };
 
-        if (result?.Data?.Status != 1)
+        if (userInfo.Status != 1)
             return new ServicesResponse
                 { Success = false, Message = "El estatus del afiliado a transferir es inactivo.", Code = 400 };
 
@@ -118,7 +110,7 @@ public class TransferBalanceHandler : IRequestHandler<TransferBalanceCommand, Se
             Debit = 0,
             Deferred = 0,
             Detail = null,
-            AffiliateId = result!.Data!.Id,
+            AffiliateId = userInfo.Id,
             AdminUserName = adminUserName,
             Status = true,
             UserId = 1,
@@ -127,7 +119,7 @@ public class TransferBalanceHandler : IRequestHandler<TransferBalanceCommand, Se
             Support = null!,
             Date = today,
             Compression = false,
-            AffiliateUserName = result.Data.UserName,
+            AffiliateUserName = userInfo.UserName,
             ConceptType = WalletConceptType.balance_transfer,
             BrandId = brandId,
         };
@@ -143,43 +135,5 @@ public class TransferBalanceHandler : IRequestHandler<TransferBalanceCommand, Se
         await _cacheService.InvalidateBalanceAsync(debitTransaction.AffiliateId, creditTransaction.AffiliateId);
         return new ServicesResponse
             { Success = true, Message = "La transferencia se ha creado correctamente.", Code = 200 };
-    }
-
-    private async Task<BalanceInformationDto> GetBalanceInformation(int affiliateId, long brandId)
-    {
-        var key = string.Format(CacheKeys.BalanceInformationModel2, affiliateId);
-        var existsKey = await _cacheService.KeyExists(key);
-
-        if (!existsKey)
-        {
-            var amountRequests = await _walletRequestRepository.GetTotalWalletRequestAmountByAffiliateId(affiliateId, brandId);
-            var availableBalance = await _walletRepository.GetAvailableBalanceByAffiliateId(affiliateId, brandId);
-            var reverseBalance = await _walletRepository.GetReverseBalanceByAffiliateId(affiliateId, brandId);
-            var totalAcquisitions = await _walletRepository.GetTotalAcquisitionsByAffiliateId(affiliateId, brandId);
-            var totalCommissionsPaid = await _walletRepository.GetTotalCommissionsPaid(affiliateId, brandId);
-            var totalServiceBalance = await _walletRepository.GetTotalServiceBalance(affiliateId, brandId);
-            var bonusAmount = await _bonusRepository.GetBonusAmountByAffiliateId(affiliateId);
-
-            var response = new BalanceInformationDto
-            {
-                AvailableBalance = availableBalance,
-                ReverseBalance = reverseBalance ?? 0,
-                TotalAcquisitions = Math.Round(totalAcquisitions ?? 0, 2),
-                TotalCommissionsPaid = totalCommissionsPaid ?? 0,
-                ServiceBalance = totalServiceBalance ?? 0,
-                BonusAmount = bonusAmount,
-            };
-
-            if (amountRequests != 0m || response.ReverseBalance != 0m)
-            {
-                response.AvailableBalance -= amountRequests;
-                response.AvailableBalance -= response.ReverseBalance;
-            }
-
-            await _cacheService.Set(key, response, TimeSpan.FromHours(1));
-            return response;
-        }
-
-        return await _cacheService.Get<BalanceInformationDto>(key) ?? new BalanceInformationDto();
     }
 }

@@ -1,9 +1,7 @@
 using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Queries.Wallet;
 using Ecosystem.WalletService.Domain.DTOs.WalletDto;
-using Ecosystem.WalletService.Domain.Extensions;
 using Ecosystem.WalletService.Domain.Interfaces;
-using Ecosystem.WalletService.Domain.Responses;
 using Ecosystem.Domain.Core.MultiTenancy;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -39,8 +37,7 @@ public class GetBalanceInformationAdminHandler : IRequestHandler<GetBalanceInfor
     {
         var brandId = _tenantContext.TenantId;
 
-        var responseAffiliates = await _accountServiceAdapter.GetTotalActiveMembers(brandId);
-        var response = responseAffiliates.Content!.ToJsonObject<GetTotalActiveMembersResponse>();
+        var totalActiveMembers = await _accountServiceAdapter.GetTotalActiveMembers(brandId);
 
         var paymentGroupId = brandId switch
         {
@@ -51,7 +48,7 @@ public class GetBalanceInformationAdminHandler : IRequestHandler<GetBalanceInfor
             _ => 2
         };
 
-        var enabledAffiliates = response!.Data;
+        var enabledAffiliates = totalActiveMembers;
         var walletProfit = await _walletRepository.GetAvailableBalanceAdmin(brandId);
         var amountRequests = await _walletRequestRepository.GetTotalWalletRequestAmount(brandId);
         var reverseBalance = await _walletRepository.GetTotalReverseBalance(brandId);

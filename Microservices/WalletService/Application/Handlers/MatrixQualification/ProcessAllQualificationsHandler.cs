@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Net;
 using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Commands.MatrixQualification;
 using Ecosystem.WalletService.Application.Queries.MatrixQualification;
@@ -8,7 +7,6 @@ using Ecosystem.WalletService.Domain.Responses;
 using Ecosystem.Domain.Core.MultiTenancy;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 
 namespace Ecosystem.WalletService.Application.Handlers.MatrixQualification;
 

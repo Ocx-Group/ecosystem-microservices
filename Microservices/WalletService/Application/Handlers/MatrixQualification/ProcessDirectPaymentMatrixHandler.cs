@@ -1,16 +1,12 @@
-using System.Net;
 using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Commands.MatrixQualification;
 using Ecosystem.WalletService.Domain.Constants;
 using Ecosystem.WalletService.Domain.Enums;
 using Ecosystem.WalletService.Domain.Interfaces;
-using Ecosystem.WalletService.Domain.Models;
 using Ecosystem.WalletService.Domain.Requests.MatrixRequest;
-using Ecosystem.WalletService.Domain.Responses;
 using Ecosystem.Domain.Core.MultiTenancy;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace Ecosystem.WalletService.Application.Handlers.MatrixQualification;
 
@@ -52,12 +48,9 @@ public class ProcessDirectPaymentMatrixHandler : IRequestHandler<ProcessDirectPa
             var brandId = _tenantContext.TenantId;
             var targetUserId = request.RecipientId ?? request.UserId;
 
-            var matrixConfigResponse = await _configurationAdapter.GetMatrixConfiguration(brandId, request.MatrixType);
-            if (matrixConfigResponse.Content == null || matrixConfigResponse.StatusCode != HttpStatusCode.OK)
-                throw new InvalidDataException($"Error retrieving matrix configuration: {matrixConfigResponse.StatusCode}");
-
-            var matrixConfig = JsonConvert.DeserializeObject<MatrixConfigurationResponse>(matrixConfigResponse.Content!)?.Data;
-            if (matrixConfig == null) throw new InvalidOperationException("Matrix configuration is invalid");
+            var matrixConfig = await _configurationAdapter.GetMatrixConfiguration(brandId, request.MatrixType);
+            if (matrixConfig is null)
+                throw new InvalidDataException("Error retrieving matrix configuration");
 
             var availableBalance = await _walletRepository.GetAvailableBalanceByAffiliateId(request.UserId, brandId);
             var pendingAmount = await _walletRequestRepository.GetTotalWalletRequestAmountByAffiliateId(request.UserId, brandId);
@@ -66,10 +59,9 @@ public class ProcessDirectPaymentMatrixHandler : IRequestHandler<ProcessDirectPa
 
             var adminBase = Math.Round(matrixConfig.FeeAmount * 0.30m, 2);
 
-            var positionResponse = await _accountServiceAdapter.IsActiveInMatrix(
+            var isActive = await _accountServiceAdapter.IsActiveInMatrix(
                 new MatrixRequest { UserId = targetUserId, MatrixType = request.MatrixType }, brandId);
-            var existing = JsonConvert.DeserializeObject<MatrixPositionResponse>(positionResponse.Content!)?.Data;
-            if (positionResponse.IsSuccessful && existing == true) return false;
+            if (isActive) return false;
 
             var payerInfo = await _accountServiceAdapter.GetUserInfo(request.UserId, brandId);
             var payerName = payerInfo?.UserName ?? "Usuario";
@@ -130,11 +122,11 @@ public class ProcessDirectPaymentMatrixHandler : IRequestHandler<ProcessDirectPa
                 await _accountServiceAdapter.PlaceUserInMatrix(
                     new MatrixRequest { UserId = targetUserId, MatrixType = request.MatrixType }, brandId);
 
-                await transaction.CommitAsync();
+                await transaction.CommitAsync(cancellationToken);
             }
             catch
             {
-                await transaction.RollbackAsync();
+                await transaction.RollbackAsync(cancellationToken);
                 throw;
             }
 

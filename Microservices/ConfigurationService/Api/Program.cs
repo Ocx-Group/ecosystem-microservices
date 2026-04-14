@@ -1,4 +1,5 @@
 using Ecosystem.ConfigurationService.Api.GrpcServices;
+using Ecosystem.ConfigurationService.Api.Mappings;
 using Ecosystem.ConfigurationService.Infra.IoC;
 using Ecosystem.Infra.Cache;
 using Ecosystem.Infra.IoC;
@@ -20,7 +21,7 @@ builder.Services.AddInfrastructure(rabbitHost, rabbitUser, rabbitPass);
 var redisConnection = builder.Configuration.GetConnectionString("RedisConnection") ?? "localhost:6379";
 builder.Services.AddSharedCache(redisConnection);
 
-builder.Services.AddConfigurationServiceDependencies(builder.Configuration);
+builder.Services.AddConfigurationServiceDependencies(builder.Configuration, typeof(GrpcMappingProfile));
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 

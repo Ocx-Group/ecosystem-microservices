@@ -1,4 +1,3 @@
-using System.Net;
 using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Commands.MatrixQualification;
 using Ecosystem.WalletService.Domain.Interfaces;
@@ -6,7 +5,6 @@ using Ecosystem.WalletService.Domain.Responses;
 using Ecosystem.Domain.Core.MultiTenancy;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace Ecosystem.WalletService.Application.Handlers.MatrixQualification;
 
@@ -42,11 +40,9 @@ public class CheckQualificationHandler : IRequestHandler<CheckQualificationComma
     {
         var brandId = _tenantContext.TenantId == 0 ? 2 : _tenantContext.TenantId;
 
-        var cfgResp = await _configurationAdapter.GetMatrixConfiguration(brandId, request.MatrixType);
-        if (cfgResp.Content == null || cfgResp.StatusCode != HttpStatusCode.OK)
-            throw new InvalidDataException($"Error retrieving matrix configuration: {cfgResp.StatusCode}");
-
-        var cfg = JsonConvert.DeserializeObject<MatrixConfigurationResponse>(cfgResp.Content!)?.Data;
+        var cfg = await _configurationAdapter.GetMatrixConfiguration(brandId, request.MatrixType);
+        if (cfg is null)
+            throw new InvalidDataException("Error retrieving matrix configuration");
 
         var qual = await _matrixQualificationRepository.GetByUserAndMatrixTypeAsync(request.UserId, request.MatrixType);
         if (qual == null)

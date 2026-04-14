@@ -16,11 +16,11 @@ namespace Ecosystem.ConfigurationService.Infra.IoC;
 
 public static class IoCExtension
 {
-    public static void AddConfigurationServiceDependencies(this IServiceCollection services, IConfiguration configuration)
+    public static void AddConfigurationServiceDependencies(this IServiceCollection services, IConfiguration configuration, params Type[] additionalProfileMarkers)
     {
         services.AddConfigurationServiceDbContext(configuration);
         services.AddMultiTenancy<BrandTenantStore, ApiClientTokenValidator>();
-        services.InjectAutoMapper();
+        services.InjectAutoMapper(additionalProfileMarkers);
         services.InjectMediatR();
         services.InjectValidators();
         services.InjectRepositories();
@@ -53,9 +53,14 @@ public static class IoCExtension
         services.AddValidatorsFromAssembly(typeof(ConfigurationMappingProfile).Assembly);
     }
 
-    private static void InjectAutoMapper(this IServiceCollection services)
+    private static void InjectAutoMapper(this IServiceCollection services, Type[] additionalProfileMarkers)
     {
-        services.AddAutoMapper(typeof(ConfigurationMappingProfile).Assembly);
+        var assemblies = new[] { typeof(ConfigurationMappingProfile).Assembly }
+            .Concat(additionalProfileMarkers.Select(t => t.Assembly))
+            .Distinct()
+            .ToArray();
+
+        services.AddAutoMapper(assemblies);
     }
 
     private static void AddConfigurationServiceDbContext(this IServiceCollection services, IConfiguration configuration)

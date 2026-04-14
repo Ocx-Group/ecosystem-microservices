@@ -1,4 +1,3 @@
-using System.Net;
 using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Queries.MatrixQualification;
 using Ecosystem.WalletService.Domain.Constants;
@@ -10,8 +9,6 @@ using Ecosystem.WalletService.Domain.Responses;
 using Ecosystem.Domain.Core.MultiTenancy;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Ecosystem.WalletService.Application.Handlers.MatrixQualification;
 
@@ -52,12 +49,11 @@ public class ProcessQualificationHandler : IRequestHandler<ProcessQualificationQ
         var brandId = _tenantContext.TenantId == 0 ? 2 : _tenantContext.TenantId;
         var userId = (int)request.UserId;
 
-        var resp = await _configurationAdapter.GetAllMatrixConfigurations(brandId);
-        var allMatrices = JObject.Parse(resp.Content!)["data"]!.ToObject<List<MatrixConfiguration>>()!
-            .OrderBy(m => m.MatrixType).ToList();
-
-        if (allMatrices.Count == 0)
+        var allMatrices = await _configurationAdapter.GetAllMatrixConfigurations(brandId);
+        if (allMatrices is null || allMatrices.Count == 0)
             return (false, new List<int>());
+
+        allMatrices = allMatrices.OrderBy(m => m.MatrixType).ToList();
 
         var (commissions, totalWithdrawn, availableBalance) = await GetFinancialsAsync(userId, brandId);
         var qualifications = await EnsureQualificationsAsync(userId, allMatrices, commissions, totalWithdrawn, availableBalance, brandId);
@@ -155,11 +151,8 @@ public class ProcessQualificationHandler : IRequestHandler<ProcessQualificationQ
 
     private async Task<bool> CheckQualificationInternalAsync(int userId, int matrixType, long brandId)
     {
-        var cfgResp = await _configurationAdapter.GetMatrixConfiguration(brandId, matrixType);
-        if (cfgResp.Content == null || cfgResp.StatusCode != HttpStatusCode.OK) return false;
-
-        var cfg = JsonConvert.DeserializeObject<MatrixConfigurationResponse>(cfgResp.Content!)?.Data;
-        if (cfg == null) return false;
+        var cfg = await _configurationAdapter.GetMatrixConfiguration(brandId, matrixType);
+        if (cfg is null) return false;
 
         var qual = await _matrixQualificationRepository.GetByUserAndMatrixTypeAsync(userId, matrixType);
         if (qual == null) return false;
@@ -243,26 +236,19 @@ public class ProcessQualificationHandler : IRequestHandler<ProcessQualificationQ
 
         try
         {
-            var matrixConfigResponse = await _configurationAdapter.GetMatrixConfiguration(brandId, matrixType);
-            if (matrixConfigResponse.Content == null || matrixConfigResponse.StatusCode != HttpStatusCode.OK)
-                throw new InvalidOperationException($"Error retrieving matrix config: {matrixConfigResponse.StatusCode}");
-
-            var matrixConfig = JsonConvert.DeserializeObject<MatrixConfigurationResponse>(matrixConfigResponse.Content!)?.Data;
+            var matrixConfig = await _configurationAdapter.GetMatrixConfiguration(brandId, matrixType);
             if (matrixConfig is null)
-                throw new InvalidDataException("Matrix configuration data is invalid");
+                throw new InvalidOperationException("Error retrieving matrix config");
 
-            var positionResponse = await _accountServiceAdapter.IsActiveInMatrix(
+            var isActive = await _accountServiceAdapter.IsActiveInMatrix(
                 new MatrixRequest { UserId = userId, MatrixType = matrixType }, brandId);
-            var matrixPositionResponse = JsonConvert.DeserializeObject<MatrixPositionResponse>(positionResponse.Content!);
-            if (positionResponse.StatusCode != HttpStatusCode.OK || matrixPositionResponse?.Data == false)
+            if (!isActive)
                 throw new UnauthorizedAccessException($"User {userId} does not have valid position in matrix {matrixType}");
 
             var commissionAmount = matrixConfig.FeeAmount * 0.1m;
 
-            var uplineResponse = await _accountServiceAdapter.GetUplinePositionsAsync(
+            var allUplinePositions = await _accountServiceAdapter.GetUplinePositionsAsync(
                 new MatrixRequest { UserId = userId, MatrixType = matrixType, Cycle = qualificationCount }, brandId);
-            var jObject = JObject.Parse(uplineResponse.Content!);
-            var allUplinePositions = jObject["data"]?.ToObject<IEnumerable<MatrixPositionDto>>();
 
             if (allUplinePositions != null)
             {

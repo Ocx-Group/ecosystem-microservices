@@ -7,6 +7,8 @@ using Ecosystem.WalletService.Data.Repositories;
 using Ecosystem.WalletService.Data.UnitOfWork;
 using Ecosystem.WalletService.Domain.Interfaces;
 using Ecosystem.WalletService.Domain.Services;
+using Ecosystem.Grpc.Account;
+using Ecosystem.Grpc.Configuration;
 using Ecosystem.Grpc.Inventory;
 using Ecosystem.Infra.IoC.MultiTenancy;
 using FluentValidation;
@@ -111,5 +113,19 @@ public static class IoCExtension
         });
 
         services.AddScoped<IInventoryServiceAdapter, GrpcInventoryServiceAdapter>();
+
+        var accountServiceUrl = configuration["GrpcServices:AccountService"] ?? "https://localhost:5201";
+        services.AddGrpcClient<AccountGrpc.AccountGrpcClient>(o =>
+        {
+            o.Address = new Uri(accountServiceUrl);
+        });
+        services.AddScoped<IAccountServiceAdapter, GrpcAccountServiceAdapter>();
+
+        var configurationServiceUrl = configuration["GrpcServices:ConfigurationService"] ?? "https://localhost:5301";
+        services.AddGrpcClient<ConfigurationGrpc.ConfigurationGrpcClient>(o =>
+        {
+            o.Address = new Uri(configurationServiceUrl);
+        });
+        services.AddScoped<IConfigurationAdapter, GrpcConfigurationAdapter>();
     }
 }

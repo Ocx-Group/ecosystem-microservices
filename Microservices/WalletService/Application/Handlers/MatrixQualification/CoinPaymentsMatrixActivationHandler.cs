@@ -1,15 +1,12 @@
-using System.Net;
 using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Commands.MatrixQualification;
 using Ecosystem.WalletService.Domain.Extensions;
 using Ecosystem.WalletService.Domain.Interfaces;
-using Ecosystem.WalletService.Domain.Models;
 using Ecosystem.WalletService.Domain.Requests.MatrixRequest;
 using Ecosystem.WalletService.Domain.Responses;
 using Ecosystem.Domain.Core.MultiTenancy;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace Ecosystem.WalletService.Application.Handlers.MatrixQualification;
 
@@ -100,16 +97,12 @@ public class CoinPaymentsMatrixActivationHandler : IRequestHandler<CoinPaymentsM
 
     private async Task<bool> ProcessCoinPaymentsMatrixActivationAsync(int userId, int matrixType, long brandId)
     {
-        var matrixConfigResponse = await _configurationAdapter.GetMatrixConfiguration(brandId, matrixType);
-        if (matrixConfigResponse.Content == null || matrixConfigResponse.StatusCode != HttpStatusCode.OK) return false;
+        var matrixConfig = await _configurationAdapter.GetMatrixConfiguration(brandId, matrixType);
+        if (matrixConfig is null) return false;
 
-        var matrixConfig = JsonConvert.DeserializeObject<MatrixConfigurationResponse>(matrixConfigResponse.Content!)?.Data;
-        if (matrixConfig == null) return false;
-
-        var positionResponse = await _accountServiceAdapter.IsActiveInMatrix(
+        var isActive = await _accountServiceAdapter.IsActiveInMatrix(
             new MatrixRequest { UserId = userId, MatrixType = matrixType }, brandId);
-        var existing = JsonConvert.DeserializeObject<MatrixPositionResponse>(positionResponse.Content!)?.Data;
-        if (positionResponse.IsSuccessful && existing == true) return false;
+        if (isActive) return false;
 
         var qualification = await _matrixQualificationRepository.GetByUserAndMatrixTypeAsync(userId, matrixType);
         if (qualification?.IsQualified == true) return false;

@@ -1,9 +1,9 @@
-using Ecosystem.WalletService.Domain.Responses.BaseResponses;
+using Ecosystem.WalletService.Domain.Responses;
 
 namespace Ecosystem.WalletService.Application.Adapters;
 
 public interface IConfigurationAdapter
 {
-    Task<IRestResponse> GetMatrixConfiguration(long brandId, int matrixType);
-    Task<IRestResponse> GetAllMatrixConfigurations(long brandId);
+    Task<MatrixConfiguration?> GetMatrixConfiguration(long brandId, int matrixType);
+    Task<List<MatrixConfiguration>?> GetAllMatrixConfigurations(long brandId);
 }
