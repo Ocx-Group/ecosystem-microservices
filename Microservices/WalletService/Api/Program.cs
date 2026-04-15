@@ -1,5 +1,7 @@
+using Ecosystem.WalletService.Data.Context;
 using Ecosystem.WalletService.Infra.IoC;
 using Ecosystem.Infra.IoC;
+using Ecosystem.Infra.IoC.Extensions;
 using Ecosystem.Infra.IoC.MultiTenancy;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,4 +37,5 @@ app.MapHealthChecks("/health");
 app.MapControllers();
 app.MapGrpcService<Ecosystem.WalletService.Api.GrpcServices.WalletGrpcService>();
 
+await app.ApplyMigrationsAsync<WalletServiceDbContext>();
 await app.RunAsync();

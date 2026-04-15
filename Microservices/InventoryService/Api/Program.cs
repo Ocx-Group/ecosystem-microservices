@@ -1,6 +1,8 @@
 using Ecosystem.InventoryService.Api.GrpcServices;
+using Ecosystem.InventoryService.Data.Context;
 using Ecosystem.InventoryService.Infra.IoC;
 using Ecosystem.Infra.IoC;
+using Ecosystem.Infra.IoC.Extensions;
 using Ecosystem.Infra.IoC.MultiTenancy;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -40,4 +42,5 @@ app.MapHealthChecks("/health");
 app.MapGrpcService<InventoryGrpcService>();
 app.MapControllers();
 
+await app.ApplyMigrationsAsync<InventoryServiceDbContext>();
 await app.RunAsync();

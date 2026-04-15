@@ -1,7 +1,9 @@
 using Ecosystem.AccountService.Api.GrpcServices;
 using Ecosystem.AccountService.Api.Hubs;
 using Ecosystem.AccountService.Api.Middlewares;
+using Ecosystem.AccountService.Data.Context;
 using Ecosystem.AccountService.Infra.IoC;
+using Ecosystem.Infra.IoC.Extensions;
 using Ecosystem.Infra.IoC.MultiTenancy;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,4 +49,5 @@ app.MapControllers();
 app.MapHub<TicketHubService>("/hubs/tickets");
 app.MapGrpcService<AccountGrpcService>();
 
+await app.ApplyMigrationsAsync<AccountServiceDbContext>();
 await app.RunAsync();

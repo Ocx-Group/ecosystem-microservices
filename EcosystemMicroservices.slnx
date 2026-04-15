@@ -94,5 +94,7 @@
   <Folder Name="/Microservices/WalletService/Infra.IoC/">
     <Project Path="Microservices/WalletService/Infra.IoC/Ecosystem.WalletService.Infra.IoC.csproj" />
   </Folder>
-  <Folder Name="/Tools/" />
+  <Folder Name="/Tools/">
+    <Project Path="Tools/Ecosystem.Migrator/Ecosystem.Migrator.csproj" />
+  </Folder>
 </Solution>
