@@ -46,6 +46,9 @@
     <Project Path="Microservices/ConfigurationService/Infra.IoC/Ecosystem.ConfigurationService.Infra.IoC.csproj" />
   </Folder>
   <Folder Name="/Microservices/GatewayService/" />
+  <Folder Name="/Microservices/GatewayService/Api/">
+    <Project Path="Microservices/GatewayService/Api/Ecosystem.GatewayService.Api.csproj" />
+  </Folder>
   <Folder Name="/Microservices/InventoryService/" />
   <Folder Name="/Microservices/InventoryService/Api/">
     <Project Path="Microservices/InventoryService/Api/Ecosystem.InventoryService.Api.csproj" />
