@@ -26,10 +26,9 @@ resource "digitalocean_database_cluster" "main" {
   }
 }
 
-# Bases de datos para cada microservicio
-resource "digitalocean_database_db" "databases" {
-  for_each = toset(var.databases)
-
+# La base de datos principal - los schemas de cada microservicio
+# se gestionan via EF Core Migrations, no desde Terraform
+resource "digitalocean_database_db" "main" {
   cluster_id = digitalocean_database_cluster.main.id
-  name       = each.value
+  name       = var.database_name
 }

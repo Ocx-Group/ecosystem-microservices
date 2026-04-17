@@ -13,9 +13,13 @@
   </Folder>
   <Folder Name="/Infrastructure/" />
   <Folder Name="/Infrastructure/k8s/" />
-  <Folder Name="/Infrastructure/terraform/" />
+  <Folder Name="/Infrastructure/terraform/">
+    <File Path="Infrastructure/terraform/main.tf" />
+    <File Path="Infrastructure/terraform/variables.tf" />
+    <File Path="Infrastructure/terraform/outputs.tf" />
+  </Folder>
   <Folder Name="/Infrastructure/terraform/environments/">
-    <File Path="Infrastructure/terraform/environments/prod.tf" />
+    <File Path="Infrastructure/terraform/environments/prod.tfvars" />
   </Folder>
   <Folder Name="/Infrastructure/terraform/modules/" />
   <Folder Name="/Infrastructure/terraform/modules/database/">

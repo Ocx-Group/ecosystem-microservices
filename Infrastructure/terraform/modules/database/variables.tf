@@ -35,12 +35,10 @@ variable "vpc_uuid" {
   type        = string
 }
 
-variable "databases" {
-  description = "Lista de bases de datos a crear"
-  type        = list(string)
-  default = [
-
-  ]
+variable "database_name" {
+  description = "Nombre de la base de datos principal"
+  type        = string
+  default     = "ocx_group"
 }
 
 variable "create_app_user" {
