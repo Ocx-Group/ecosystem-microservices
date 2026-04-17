@@ -26,7 +26,9 @@ terraform {
 }
 
 provider "digitalocean" {
-  token = var.do_token
+  token             = var.do_token
+  spaces_access_id  = var.spaces_access_key
+  spaces_secret_key = var.spaces_secret_key
 }
 
 # =============================================================================
@@ -54,4 +56,31 @@ module "database" {
   database_name = "ocx_group"
 
   tags = var.tags
+}
+
+# =============================================================================
+# Spaces (Object Storage) Module
+# =============================================================================
+
+module "spaces" {
+  source = "./modules/spaces"
+
+  name          = var.spaces_bucket_name
+  region        = var.region
+  acl           = var.spaces_acl
+  force_destroy = var.spaces_force_destroy
+
+  cors_allowed_origins = var.spaces_cors_origins
+}
+
+# =============================================================================
+# Container Registry Module
+# =============================================================================
+
+module "registry" {
+  source = "./modules/registry"
+
+  name              = var.registry_name
+  subscription_tier = var.registry_subscription_tier
+  region            = var.registry_region
 }

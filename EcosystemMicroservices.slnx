@@ -28,6 +28,18 @@
     <File Path="Infrastructure/terraform/modules/database/variables.tf" />
     <File Path="Infrastructure/terraform/modules/database/versions.tf" />
   </Folder>
+  <Folder Name="/Infrastructure/terraform/modules/spaces/">
+    <File Path="Infrastructure/terraform/modules/spaces/main.tf" />
+    <File Path="Infrastructure/terraform/modules/spaces/outputs.tf" />
+    <File Path="Infrastructure/terraform/modules/spaces/variables.tf" />
+    <File Path="Infrastructure/terraform/modules/spaces/versions.tf" />
+  </Folder>
+  <Folder Name="/Infrastructure/terraform/modules/registry/">
+    <File Path="Infrastructure/terraform/modules/registry/main.tf" />
+    <File Path="Infrastructure/terraform/modules/registry/outputs.tf" />
+    <File Path="Infrastructure/terraform/modules/registry/variables.tf" />
+    <File Path="Infrastructure/terraform/modules/registry/versions.tf" />
+  </Folder>
   <Folder Name="/Infrastructure/terraform/templates/" />
   <Folder Name="/Microservices/" />
   <Folder Name="/Microservices/AccountService/" />

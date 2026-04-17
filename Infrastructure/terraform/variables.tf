@@ -8,6 +8,18 @@ variable "do_token" {
   sensitive   = true
 }
 
+variable "spaces_access_key" {
+  description = "Access Key para DigitalOcean Spaces"
+  type        = string
+  sensitive   = true
+}
+
+variable "spaces_secret_key" {
+  description = "Secret Key para DigitalOcean Spaces"
+  type        = string
+  sensitive   = true
+}
+
 variable "project_name" {
   description = "Nombre del proyecto"
   type        = string
@@ -89,29 +101,46 @@ variable "k8s_max_nodes" {
 }
 
 # Registry
+variable "registry_name" {
+  description = "Nombre del container registry"
+  type        = string
+  default     = "ocx-registry"
+}
+
 variable "registry_subscription_tier" {
   description = "Tier del registry de contenedores"
   type        = string
   default     = "professional"
 }
 
+variable "registry_region" {
+  description = "Región del registry"
+  type        = string
+  default     = "syd1"
+}
+
 # Spaces
 variable "spaces_bucket_name" {
   description = "Nombre del bucket de Spaces"
   type        = string
-  default     = ""
 }
 
 variable "spaces_acl" {
-  description = "ACL del bucket"
+  description = "ACL del bucket (private, public-read)"
   type        = string
-  default     = ""
+  default     = "private"
 }
 
 variable "spaces_force_destroy" {
   description = "Permitir destruir bucket con contenido"
   type        = bool
   default     = false
+}
+
+variable "spaces_cors_origins" {
+  description = "Orígenes permitidos para CORS en Spaces"
+  type        = list(string)
+  default     = []
 }
 
 # Domain

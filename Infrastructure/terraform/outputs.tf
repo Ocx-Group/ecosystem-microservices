@@ -23,3 +23,25 @@ output "db_database_name" {
   description = "Base de datos principal"
   value       = module.database.database_names
 }
+
+# Spaces
+output "spaces_bucket_name" {
+  description = "Nombre del bucket"
+  value       = module.spaces.bucket_name
+}
+
+output "spaces_endpoint" {
+  description = "Endpoint del bucket"
+  value       = module.spaces.endpoint
+}
+
+# Registry
+output "registry_endpoint" {
+  description = "Endpoint del registry"
+  value       = module.registry.endpoint
+}
+
+output "registry_server_url" {
+  description = "URL del servidor del registry"
+  value       = module.registry.server_url
+}
