@@ -17,7 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Protobuf Include="..\..\..\Protos\account.proto" GrpcServices="Server" Link="Protos\account.proto" />
+        <Protobuf Include="..\..\..\Domain\Protos\account.proto" GrpcServices="Server" Link="Protos\account.proto" />
     </ItemGroup>
 
     <ItemGroup>

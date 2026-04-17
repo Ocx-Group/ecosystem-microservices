@@ -12,7 +12,7 @@
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     </ItemGroup>
     <ItemGroup>
-        <Protobuf Include="..\..\..\Protos\inventory.proto" GrpcServices="Server" Link="Protos\inventory.proto" />
+        <Protobuf Include="..\..\..\Domain\Protos\inventory.proto" GrpcServices="Server" Link="Protos\inventory.proto" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Application\Ecosystem.InventoryService.Application.csproj" />

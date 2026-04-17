@@ -28,8 +28,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Protobuf Include="..\..\..\Protos\wallet.proto" GrpcServices="Client" Link="Protos\wallet.proto" />
-        <Protobuf Include="..\..\..\Protos\configuration.proto" GrpcServices="Client" Link="Protos\configuration.proto" />
+        <Protobuf Include="..\..\..\Domain\Protos\wallet.proto" GrpcServices="Client" Link="Protos\wallet.proto" />
+        <Protobuf Include="..\..\..\Domain\Protos\configuration.proto" GrpcServices="Client" Link="Protos\configuration.proto" />
     </ItemGroup>
 
     <ItemGroup>

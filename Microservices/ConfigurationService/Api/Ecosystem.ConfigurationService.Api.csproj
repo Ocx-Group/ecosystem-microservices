@@ -11,7 +11,7 @@
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     </ItemGroup>
     <ItemGroup>
-        <Protobuf Include="..\..\..\Protos\configuration.proto" GrpcServices="Server" Link="Protos\configuration.proto" />
+        <Protobuf Include="..\..\..\Domain\Protos\configuration.proto" GrpcServices="Server" Link="Protos\configuration.proto" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Application\Ecosystem.ConfigurationService.Application.csproj" />

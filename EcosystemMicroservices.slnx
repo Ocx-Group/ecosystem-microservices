@@ -12,6 +12,19 @@
     <Project Path="Infra.Cache/Ecosystem.Infra.Cache.csproj" />
   </Folder>
   <Folder Name="/Infrastructure/" />
+  <Folder Name="/Infrastructure/k8s/" />
+  <Folder Name="/Infrastructure/terraform/" />
+  <Folder Name="/Infrastructure/terraform/environments/">
+    <File Path="Infrastructure/terraform/environments/prod.tf" />
+  </Folder>
+  <Folder Name="/Infrastructure/terraform/modules/" />
+  <Folder Name="/Infrastructure/terraform/modules/database/">
+    <File Path="Infrastructure/terraform/modules/database/main.tf" />
+    <File Path="Infrastructure/terraform/modules/database/outputs.tf" />
+    <File Path="Infrastructure/terraform/modules/database/variables.tf" />
+    <File Path="Infrastructure/terraform/modules/database/versions.tf" />
+  </Folder>
+  <Folder Name="/Infrastructure/terraform/templates/" />
   <Folder Name="/Microservices/" />
   <Folder Name="/Microservices/AccountService/" />
   <Folder Name="/Microservices/AccountService/Api/">

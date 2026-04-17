@@ -18,9 +18,9 @@
         <PackageReference Include="PuppeteerSharp" Version="20.0.4" />
     </ItemGroup>
     <ItemGroup>
-        <Protobuf Include="..\..\..\Protos\inventory.proto" GrpcServices="Client" Link="Protos\inventory.proto" />
-        <Protobuf Include="..\..\..\Protos\account.proto" GrpcServices="Client" Link="Protos\account.proto" />
-        <Protobuf Include="..\..\..\Protos\configuration.proto" GrpcServices="Client" Link="Protos\configuration.proto" />
+        <Protobuf Include="..\..\..\Domain\Protos\inventory.proto" GrpcServices="Client" Link="Protos\inventory.proto" />
+        <Protobuf Include="..\..\..\Domain\Protos\account.proto" GrpcServices="Client" Link="Protos\account.proto" />
+        <Protobuf Include="..\..\..\Domain\Protos\configuration.proto" GrpcServices="Client" Link="Protos\configuration.proto" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Domain\Ecosystem.WalletService.Domain.csproj" />
