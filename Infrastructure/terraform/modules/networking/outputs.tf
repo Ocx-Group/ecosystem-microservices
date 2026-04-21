@@ -13,13 +13,13 @@ output "domain_name" {
 }
 
 output "root_record_fqdn" {
-  description = "FQDN del record raiz"
-  value       = digitalocean_record.root.fqdn
+  description = "FQDN del record raiz (deshabilitado hasta migrar el front)"
+  value       = null
 }
 
 output "www_fqdn" {
-  description = "FQDN del subdominio www"
-  value       = digitalocean_record.www.fqdn
+  description = "FQDN del subdominio www (deshabilitado hasta migrar el front)"
+  value       = null
 }
 
 output "api_fqdn" {

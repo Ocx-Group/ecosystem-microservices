@@ -8,22 +8,25 @@ resource "digitalocean_domain" "main" {
 }
 
 # Record A - raíz del dominio apuntando al LB de K8s
-resource "digitalocean_record" "root" {
-  domain = digitalocean_domain.main.id
-  type   = "A"
-  name   = "@"
-  value  = var.k8s_lb_ip
-  ttl    = var.ttl
-}
+# DESHABILITADO temporalmente: la IP actual sirve el front legacy.
+# Descomentar cuando el front se migre a K8s.
+# resource "digitalocean_record" "root" {
+#   domain = digitalocean_domain.main.id
+#   type   = "A"
+#   name   = "@"
+#   value  = var.k8s_lb_ip
+#   ttl    = var.ttl
+# }
 
 # Record A - www
-resource "digitalocean_record" "www" {
-  domain = digitalocean_domain.main.id
-  type   = "A"
-  name   = "www"
-  value  = var.k8s_lb_ip
-  ttl    = var.ttl
-}
+# DESHABILITADO temporalmente (mismo motivo que root).
+# resource "digitalocean_record" "www" {
+#   domain = digitalocean_domain.main.id
+#   type   = "A"
+#   name   = "www"
+#   value  = var.k8s_lb_ip
+#   ttl    = var.ttl
+# }
 
 # Record A - api (para los microservicios)
 resource "digitalocean_record" "api" {

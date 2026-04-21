@@ -194,15 +194,17 @@ variable "sealed_secrets_chart_version" {
 # Networking / Domain
 # Cloudflare
 variable "cloudflare_api_token" {
-  description = "API Token de Cloudflare (permisos: Zone DNS Edit, Zone Settings Edit)"
+  description = "API Token de Cloudflare (permisos: Zone DNS Edit, Zone Settings Edit). Opcional: solo se usa si el módulo cloudflare está habilitado."
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "cloudflare_zone_id" {
-  description = "Zone ID de ecosystemfx.net en Cloudflare"
+  description = "Zone ID de ecosystemfx.net en Cloudflare. Opcional: solo se usa si el módulo cloudflare está habilitado."
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "cors_allowed_origins" {
