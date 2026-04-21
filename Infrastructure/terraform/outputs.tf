@@ -45,3 +45,19 @@ output "registry_server_url" {
   description = "URL del servidor del registry"
   value       = module.registry.server_url
 }
+
+# Kubernetes
+output "k8s_cluster_name" {
+  description = "Nombre del cluster K8s"
+  value       = module.kubernetes.cluster_name
+}
+
+output "k8s_endpoint" {
+  description = "Endpoint del API server K8s"
+  value       = module.kubernetes.endpoint
+}
+
+output "k8s_ipv4_address" {
+  description = "IP publica del cluster"
+  value       = module.kubernetes.ipv4_address
+}

@@ -1,6 +1,12 @@
 <Solution>
   <Folder Name="/Domain/">
     <Project Path="Domain/Ecosystem.Domain.Core.csproj" />
+    <Folder Name="/Domain/Protos/">
+      <File Path="Domain/Protos/account.proto" />
+      <File Path="Domain/Protos/configuration.proto" />
+      <File Path="Domain/Protos/inventory.proto" />
+      <File Path="Domain/Protos/wallet.proto" />
+    </Folder>
   </Folder>
   <Folder Name="/Infra.Bus/">
     <Project Path="Infra.Bus/Ecosystem.Infra.Bus.csproj" />
@@ -39,6 +45,12 @@
     <File Path="Infrastructure/terraform/modules/registry/outputs.tf" />
     <File Path="Infrastructure/terraform/modules/registry/variables.tf" />
     <File Path="Infrastructure/terraform/modules/registry/versions.tf" />
+  </Folder>
+  <Folder Name="/Infrastructure/terraform/modules/kubernetes/">
+    <File Path="Infrastructure/terraform/modules/kubernetes/main.tf" />
+    <File Path="Infrastructure/terraform/modules/kubernetes/outputs.tf" />
+    <File Path="Infrastructure/terraform/modules/kubernetes/variables.tf" />
+    <File Path="Infrastructure/terraform/modules/kubernetes/versions.tf" />
   </Folder>
   <Folder Name="/Infrastructure/terraform/templates/" />
   <Folder Name="/Microservices/" />

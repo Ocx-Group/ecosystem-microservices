@@ -169,3 +169,23 @@ variable "tags" {
   type        = list(string)
   default     = ["ecosystem", "prod", "terraform-managed"]
 }
+
+# ArgoCD
+variable "argocd_chart_version" {
+  description = "Version del chart de ArgoCD"
+  type        = string
+  default     = "7.8.26"
+}
+
+variable "argocd_service_type" {
+  description = "Tipo de servicio para ArgoCD server"
+  type        = string
+  default     = "ClusterIP"
+}
+
+# Sealed Secrets
+variable "sealed_secrets_chart_version" {
+  description = "Version del chart de Sealed Secrets"
+  type        = string
+  default     = "2.17.1"
+}
