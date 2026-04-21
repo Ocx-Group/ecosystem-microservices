@@ -2,6 +2,12 @@
 # Database Module Outputs
 # =============================================================================
 
+locals {
+  db_user     = digitalocean_database_cluster.main.user != null && digitalocean_database_cluster.main.user != "" ? digitalocean_database_cluster.main.user : "doadmin"
+  db_password = digitalocean_database_cluster.main.password != null ? digitalocean_database_cluster.main.password : ""
+  db_port     = tostring(digitalocean_database_cluster.main.port)
+}
+
 output "cluster_id" {
   description = "ID del cluster de base de datos"
   value       = digitalocean_database_cluster.main.id
@@ -22,9 +28,9 @@ output "private_host" {
   value       = digitalocean_database_cluster.main.private_host
 }
 
-output "port"{
+output "port" {
   description = "Puerto de la base de datos"
-  value = digitalocean_database_cluster.main.port
+  value       = digitalocean_database_cluster.main.port
 }
 
 output "user" {
@@ -58,12 +64,6 @@ output "private_uri" {
 output "database_names" {
   description = "Nombre de la base de datos"
   value       = digitalocean_database_db.main.name
-}
-
-locals {
-  db_user     = digitalocean_database_cluster.main.user != null && digitalocean_database_cluster.main.user != "" ? digitalocean_database_cluster.main.user : "doadmin"
-  db_password = digitalocean_database_cluster.main.password != null ? digitalocean_database_cluster.main.password : ""
-  db_port     = tostring(digitalocean_database_cluster.main.port)
 }
 
 # Connection string para .NET

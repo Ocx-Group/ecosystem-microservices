@@ -35,10 +35,14 @@ terraform {
 
 provider "digitalocean" {
   token             = var.do_token
-  spaces_access_id  = var.spaces_access_key
+  spaces_access_id  = var.spaces_access_id
   spaces_secret_key = var.spaces_secret_key
 }
 
+# NOTA: Los providers kubernetes/helm requieren que el cluster exista primero.
+# Aplicar en dos pasos:
+#   1. terraform apply -target=module.kubernetes -var-file="environments/prod.tfvars"
+#   2. terraform apply -var-file="environments/prod.tfvars"
 provider "kubernetes" {
   host  = module.kubernetes.endpoint
   token = module.kubernetes.kube_token
@@ -106,9 +110,10 @@ module "spaces" {
 module "registry" {
   source = "./modules/registry"
 
-  name              = var.registry_name
-  subscription_tier = var.registry_subscription_tier
-  region            = var.registry_region
+  name                     = var.registry_name
+  subscription_tier        = var.registry_subscription_tier
+  region                   = var.registry_region
+  generate_k8s_credentials = true
 }
 
 # =============================================================================
