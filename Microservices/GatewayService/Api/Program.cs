@@ -87,7 +87,8 @@ builder.Services.AddCors(options =>
 });
 
 // =============================================================================
-// Health Checks — aggregate downstream service health endpoints
+// Health Checks — `/health` is a fast self-check for k8s probes.
+// `/health/downstream` aggregates downstream service status (tagged "downstream").
 // =============================================================================
 var healthChecks = builder.Services.AddHealthChecks();
 var downstreamServices = builder.Configuration.GetSection("DownstreamServices").GetChildren();
@@ -152,7 +153,11 @@ app.UseAuthorization();
 app.UseWebSockets();
 app.MapReverseProxy();
 
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = r => !r.Tags.Contains("downstream")
+});
+app.MapHealthChecks("/health/downstream");
 app.MapControllers();
 
 await app.RunAsync();
