@@ -189,6 +189,48 @@ resource "helm_release" "argocd" {
   timeout = 600
 }
 
+# -----------------------------------------------------------------------------
+# ArgoCD Image Updater
+# Detecta nuevas imágenes en DOCR y actualiza las Applications de ArgoCD
+# directamente vía API (write-back-method = argocd) — sin commits a git.
+# -----------------------------------------------------------------------------
+resource "helm_release" "argocd_image_updater" {
+  name       = "argocd-image-updater"
+  repository = "https://argoproj.github.io/argo-helm"
+  chart      = "argocd-image-updater"
+  version    = var.argocd_image_updater_chart_version
+  namespace  = kubernetes_namespace.argocd.metadata[0].name
+
+  set {
+    name  = "config.argocd.grpcWeb"
+    value = "true"
+  }
+
+  set {
+    name  = "config.argocd.serverAddress"
+    value = "argocd-server.argocd.svc.cluster.local"
+  }
+
+  set {
+    name  = "config.argocd.insecure"
+    value = "true"
+  }
+
+  set {
+    name  = "config.argocd.plaintext"
+    value = "true"
+  }
+
+  # Intervalo de polling al registry (default 2m)
+  set {
+    name  = "config.applicationsAPIKind"
+    value = "kubernetes"
+  }
+
+  timeout    = 300
+  depends_on = [helm_release.argocd]
+}
+
 resource "helm_release" "sealed_secrets" {
   name       = "sealed-secrets"
   repository = "https://bitnami-labs.github.io/sealed-secrets"

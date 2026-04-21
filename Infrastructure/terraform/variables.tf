@@ -170,6 +170,12 @@ variable "argocd_service_type" {
   default     = "ClusterIP"
 }
 
+variable "argocd_image_updater_chart_version" {
+  description = "Version del chart de ArgoCD Image Updater"
+  type        = string
+  default     = "0.12.3"
+}
+
 # NGINX Ingress
 variable "nginx_ingress_chart_version" {
   description = "Version del chart de NGINX Ingress Controller"

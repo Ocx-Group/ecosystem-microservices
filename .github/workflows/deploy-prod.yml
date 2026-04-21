@@ -1,3 +1,15 @@
+# =============================================================================
+# Deploy Production
+# Trigger: push a 'main' o tag vX.Y.Z (o manual via workflow_dispatch)
+#
+# Flujo GitOps con ArgoCD Image Updater (sin commits a git desde CI):
+#   1. Build & push de las 7 imagenes Docker con tag :sha-XXXXXXXX (o :vX.Y.Z) + :latest
+#   2. terraform apply -var-file=environments/prod.tfvars  (idempotente; no-op si no hay drift)
+#   3. ArgoCD Image Updater detecta el nuevo tag en DOCR (~2 min) y patchea
+#      las Applications via API (write-back-method=argocd) — NO commits a git.
+#   4. ArgoCD sincroniza automaticamente los deployments.
+# =============================================================================
+
 name: Deploy to Production
 
 on:
@@ -8,7 +20,7 @@ on:
 
 concurrency:
   group: prod-deploy
-  cancel-in-progress: false
+  cancel-in-progress: false # nunca cancelar un deploy de prod en curso
 
 env:
   REGISTRY: registry.digitalocean.com/ocx-registry
@@ -18,7 +30,7 @@ env:
 
 jobs:
   # ===========================================================================
-  # JOB 1 — Build & Push all Docker images
+  # JOB 1 — Build & push de todas las imagenes Docker
   # ===========================================================================
   build-and-push:
     name: Build & Push Docker Images
@@ -32,7 +44,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Extract version
+      - name: Compute image tag
         id: version
         run: |
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
@@ -41,14 +53,14 @@ jobs:
             VERSION="sha-$(echo $GITHUB_SHA | cut -c1-8)"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Building version: $VERSION"
+          echo "Building production with tag: $VERSION"
 
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DO_TOKEN }}
 
-      - name: Log in to DO Container Registry
+      - name: Log in to DOCR
         run: doctl registry login --expiry-seconds 3600
 
       - name: Set up Docker Buildx
@@ -139,14 +151,28 @@ jobs:
           cache-to: type=registry,ref=${{ env.REGISTRY }}/migrator:buildcache,mode=max
 
   # ===========================================================================
-  # JOB 2 — Terraform: provision / update infrastructure
+  # JOB 2 — Terraform apply (idempotente)
+  # En la primera ejecucion crea/importa todo. En las siguientes es no-op
+  # salvo que haya cambios a la infra (instalar image-updater, escalar nodos…)
+  # Recursos criticos (DB, registry, spaces) tienen prevent_destroy.
   # ===========================================================================
   terraform-deploy:
     name: Terraform Deploy
     runs-on: ubuntu-latest
     needs: build-and-push
-    outputs:
-      lb_ip: ${{ steps.lb-ip.outputs.lb_ip }}
+
+    defaults:
+      run:
+        working-directory: ${{ env.TF_DIR }}
+
+    env:
+      TF_VAR_do_token: ${{ secrets.DO_TOKEN }}
+      TF_VAR_spaces_access_id: ${{ secrets.DO_SPACES_ACCESS_KEY }}
+      TF_VAR_spaces_secret_key: ${{ secrets.DO_SPACES_SECRET_KEY }}
+      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_KEY }}
 
     steps:
       - name: Checkout
@@ -163,263 +189,41 @@ jobs:
         with:
           token: ${{ secrets.DO_TOKEN }}
 
-      # Remote backend uses Spaces credentials via AWS_ env vars
-      - name: Terraform Init
-        working-directory: ${{ env.TF_DIR }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_KEY }}
-        run: terraform init -reconfigure
+      - name: Configure kubectl (so kubernetes/helm providers can authenticate)
+        run: doctl kubernetes cluster kubeconfig save ${{ env.CLUSTER_NAME }}
 
-      # Import existing DO resources — safe to re-run (|| true ignores "already managed")
-      - name: Import existing resources
-        working-directory: ${{ env.TF_DIR }}
-        env:
-          TF_VAR_do_token: ${{ secrets.DO_TOKEN }}
-          TF_VAR_spaces_access_id: ${{ secrets.DO_SPACES_ACCESS_KEY }}
-          TF_VAR_spaces_secret_key: ${{ secrets.DO_SPACES_SECRET_KEY }}
-          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_KEY }}
-        run: |
-          terraform import module.database.digitalocean_database_cluster.main \
-            93ee7485-7c11-47dc-9a3b-a5187723d7ff 2>&1 || true
-          terraform import module.database.digitalocean_database_db.main \
-            "93ee7485-7c11-47dc-9a3b-a5187723d7ff,ocx_group" 2>&1 || true
-          terraform import module.registry.digitalocean_container_registry.main \
-            ocx-registry 2>&1 || true
-          terraform import module.spaces.digitalocean_spaces_bucket.main \
-            ecosystem-storage 2>&1 || true
+      - name: Terraform Init
+        run: terraform init -reconfigure -input=false
 
       - name: Terraform Validate
-        working-directory: ${{ env.TF_DIR }}
         run: terraform validate
 
-      # Phase 1: Create K8s cluster and base infra (no Helm/namespace providers yet)
-      - name: Terraform Apply — Phase 1 (K8s cluster + base infra)
-        working-directory: ${{ env.TF_DIR }}
-        env:
-          TF_VAR_do_token: ${{ secrets.DO_TOKEN }}
-          TF_VAR_spaces_access_id: ${{ secrets.DO_SPACES_ACCESS_KEY }}
-          TF_VAR_spaces_secret_key: ${{ secrets.DO_SPACES_SECRET_KEY }}
-          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_KEY }}
+      - name: Terraform Plan
+        id: plan
         run: |
           terraform plan \
             -var-file="environments/prod.tfvars" \
-            -target=module.database \
-            -target=module.spaces \
-            -target=module.registry \
-            -target=module.kubernetes \
-            -no-color -out=tfplan-phase1
-          
-          # Guard: no destructive changes to protected resources
-          PLAN=$(terraform show -no-color tfplan-phase1)
-          PROTECTED="digitalocean_kubernetes_cluster\|digitalocean_database_cluster\|digitalocean_spaces_bucket.main"
-          if echo "$PLAN" | grep -E "# .* will be (destroyed|replaced)" | grep -E "$PROTECTED"; then
-            echo "::error::Destructive change to a protected resource detected. Review manually."
+            -input=false -lock=true -no-color \
+            -out=tfplan-prod 2>&1 | tee plan-output.txt
+
+          # Guard: bloquear si el plan destruye/reemplaza recursos protegidos
+          PROTECTED='digitalocean_kubernetes_cluster|digitalocean_database_cluster|digitalocean_spaces_bucket\.main|digitalocean_container_registry'
+          if grep -E "# .* will be (destroyed|replaced)" plan-output.txt | grep -E "$PROTECTED"; then
+            echo "::error::Cambio destructivo detectado en recurso protegido. Revisar manualmente."
             exit 1
           fi
-          
-          terraform apply -auto-approve tfplan-phase1
 
-      # Configure kubectl so Phase 2 (Helm) and later jobs can use the cluster
-      - name: Configure kubectl
-        run: doctl kubernetes cluster kubeconfig save ${{ env.CLUSTER_NAME }}
-
-      # Phase 2: Install Helm charts (ArgoCD, Sealed Secrets, NGINX, cert-manager) + namespaces
-      - name: Terraform Apply — Phase 2 (Helm charts + namespaces)
-        working-directory: ${{ env.TF_DIR }}
-        env:
-          TF_VAR_do_token: ${{ secrets.DO_TOKEN }}
-          TF_VAR_spaces_access_id: ${{ secrets.DO_SPACES_ACCESS_KEY }}
-          TF_VAR_spaces_secret_key: ${{ secrets.DO_SPACES_SECRET_KEY }}
-          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_KEY }}
-        run: |
-          terraform plan \
-            -var-file="environments/prod.tfvars" \
-            -no-color -out=tfplan-phase2
-          terraform apply -auto-approve tfplan-phase2
-
-      # Create the DB credentials secret so migrations and services can use it
-      - name: Create DB credentials secret in K8s
-        working-directory: ${{ env.TF_DIR }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_KEY }}
-        run: |
-          DB_CONN=$(terraform output -raw db_connection_string)
-          echo "::add-mask::$DB_CONN"
-          kubectl create secret generic db-credentials \
-            --namespace=${{ env.K8S_NAMESPACE }} \
-            --from-literal=connection-string="$DB_CONN" \
-            --dry-run=client -o yaml | kubectl apply -f -
-
-      # Wait for NGINX to provision its DO Load Balancer
-      - name: Wait for Load Balancer IP
-        id: lb-ip
-        run: |
-          echo "Waiting for DO Load Balancer IP (up to 10 min)..."
-          for i in $(seq 1 20); do
-            LB_IP=$(kubectl get svc ingress-nginx-controller \
-              -n ingress-nginx \
-              -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
-            if [ -n "$LB_IP" ]; then
-              echo "✅ LB IP: $LB_IP"
-              echo "lb_ip=$LB_IP" >> $GITHUB_OUTPUT
-              break
-            fi
-            echo "Attempt $i/20 — not ready, retrying in 30s..."
-            sleep 30
-          done
-
-      # Phase 3 (conditional): Apply Cloudflare + DO DNS now that LB IP is known
-      - name: Terraform Apply — Phase 3 (Cloudflare + DNS)
-        if: steps.lb-ip.outputs.lb_ip != ''
-        working-directory: ${{ env.TF_DIR }}
-        env:
-          TF_VAR_do_token: ${{ secrets.DO_TOKEN }}
-          TF_VAR_spaces_access_id: ${{ secrets.DO_SPACES_ACCESS_KEY }}
-          TF_VAR_spaces_secret_key: ${{ secrets.DO_SPACES_SECRET_KEY }}
-          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-          TF_VAR_k8s_lb_ip: ${{ steps.lb-ip.outputs.lb_ip }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_KEY }}
-        run: |
-          terraform apply \
-            -var-file="environments/prod.tfvars" \
-            -var="k8s_lb_ip=${{ steps.lb-ip.outputs.lb_ip }}" \
-            -auto-approve
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -input=false tfplan-prod
 
   # ===========================================================================
-  # JOB 3 — Run EF Core database migrations  [DESHABILITADO]
-  # Las migrations se manejan manualmente fuera del CI/CD para evitar
-  # afectar la BD existente con data en producción. Para reactivar,
-  # quitar el `if: false` y asegurarse de que la imagen `migrator` exista
-  # y sea compatible con el schema actual.
-  # ===========================================================================
-  run-migrations:
-    name: Run Database Migrations
-    runs-on: ubuntu-latest
-    if: false
-    needs: [build-and-push, terraform-deploy]
-    env:
-      VERSION: ${{ needs.build-and-push.outputs.version }}
-
-    steps:
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DO_TOKEN }}
-
-      - name: Configure kubectl
-        run: doctl kubernetes cluster kubeconfig save ${{ env.CLUSTER_NAME }}
-
-      - name: Ensure registry secret in namespace
-        run: |
-          doctl kubernetes cluster registry add-namespace ${{ env.K8S_NAMESPACE }} || true
-
-      - name: Run migration Job
-        run: |
-          JOB_NAME="db-migration-$(echo $VERSION | tr '.' '-' | tr '+' '-')"
-          kubectl apply -f - <<EOF
-          apiVersion: batch/v1
-          kind: Job
-          metadata:
-            name: $JOB_NAME
-            namespace: ${{ env.K8S_NAMESPACE }}
-            labels:
-              app: migrator
-              version: "$VERSION"
-          spec:
-            backoffLimit: 2
-            ttlSecondsAfterFinished: 600
-            template:
-              spec:
-                restartPolicy: Never
-                imagePullSecrets:
-                  - name: ocx-registry
-                containers:
-                  - name: migrator
-                    image: ${{ env.REGISTRY }}/migrator:$VERSION
-                    env:
-                      - name: ConnectionStrings__DefaultConnection
-                        valueFrom:
-                          secretKeyRef:
-                            name: db-credentials
-                            key: connection-string
-          EOF
-          
-          echo "Waiting for migration job '$JOB_NAME' to complete (up to 5 min)..."
-          kubectl wait --for=condition=complete job/$JOB_NAME \
-            -n ${{ env.K8S_NAMESPACE }} --timeout=300s
-
-  # ===========================================================================
-  # JOB 4 — Update K8s manifests with new image tags (GitOps commit)
-  # ===========================================================================
-  update-k8s-images:
-    name: Update K8s Image Tags
-    runs-on: ubuntu-latest
-    needs: [build-and-push, terraform-deploy]
-    env:
-      VERSION: ${{ needs.build-and-push.outputs.version }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          # Use default GITHUB_TOKEN — pushes from this token do NOT re-trigger workflows
-          token: ${{ github.token }}
-
-      - name: Install yq
-        uses: mikefarah/yq@v4.43.1
-
-      - name: Update deployment image tags
-        run: |
-          SERVICES=(
-            "gateway-service"
-            "account-service"
-            "wallet-service"
-            "inventory-service"
-            "configuration-service"
-            "notification-service"
-          )
-          for SERVICE in "${SERVICES[@]}"; do
-            FILE="Infrastructure/k8s/services/${SERVICE}/deployment.yaml"
-            if [ -f "$FILE" ]; then
-              yq e \
-                ".spec.template.spec.containers[0].image = \"${{ env.REGISTRY }}/${SERVICE}:${VERSION}\"" \
-                -i "$FILE"
-              echo "✅ $SERVICE → $VERSION"
-            fi
-          done
-
-      - name: Commit and push manifest updates
-        run: |
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          git add Infrastructure/k8s/services/
-          if git diff --staged --quiet; then
-            echo "No image tag changes to commit."
-          else
-            git commit -m "chore(k8s): update service images to ${VERSION} [skip ci]"
-            git push
-          fi
-
-  # ===========================================================================
-  # JOB 5 — Verify all deployments are healthy (ArgoCD syncs the new tags)
+  # JOB 3 — Esperar a ArgoCD Image Updater y verificar rollout
+  # No hace kubectl set image ni git push: solo observa.
   # ===========================================================================
   verify-deployment:
-    name: Verify Deployment
+    name: Verify Deployment via ArgoCD Image Updater
     runs-on: ubuntu-latest
-    needs: [build-and-push, update-k8s-images]
+    needs: [build-and-push, terraform-deploy]
     env:
       VERSION: ${{ needs.build-and-push.outputs.version }}
 
@@ -432,83 +236,79 @@ jobs:
       - name: Configure kubectl
         run: doctl kubernetes cluster kubeconfig save ${{ env.CLUSTER_NAME }}
 
-      # Give ArgoCD time to detect the manifest changes and start rolling out
-      - name: Wait for ArgoCD to sync
+      - name: Wait for Image Updater to detect new tag
         run: |
-          echo "Waiting for ArgoCD to sync (2 min)..."
-          sleep 120
+          echo "Esperando a que ArgoCD Image Updater detecte el tag ${VERSION} en DOCR..."
+          echo "(polling cada 15s, hasta 5 min)"
 
-      - name: Verify all service rollouts
+          DEPLOY="account-service"  # canario: si este se actualiza, los demas siguen
+          for i in $(seq 1 20); do
+            IMAGE=$(kubectl get deployment $DEPLOY -n ${{ env.K8S_NAMESPACE }} \
+              -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo "none")
+            echo "  [$i/20] $DEPLOY image = $IMAGE"
+            if echo "$IMAGE" | grep -q ":${VERSION}$"; then
+              echo "Image Updater detecto el tag. Continuando."
+              break
+            fi
+            if [ "$i" = "20" ]; then
+              echo "::warning::Timeout esperando Image Updater. Revisar:"
+              echo "  kubectl logs -n argocd -l app.kubernetes.io/name=argocd-image-updater --tail=50"
+              exit 0
+            fi
+            sleep 15
+          done
+
+      - name: Verify rollouts
         run: |
-          SERVICES=(
-            "gateway-service"
-            "account-service"
-            "wallet-service"
-            "inventory-service"
-            "configuration-service"
-            "notification-service"
-          )
+          SERVICES=(gateway-service account-service wallet-service inventory-service configuration-service notification-service)
           FAILED=()
-          for SERVICE in "${SERVICES[@]}"; do
-            echo "Checking $SERVICE..."
-            if ! kubectl rollout status deployment/$SERVICE \
-              -n ${{ env.K8S_NAMESPACE }} --timeout=180s; then
-              FAILED+=("$SERVICE")
+          for S in "${SERVICES[@]}"; do
+            echo "==> $S"
+            if ! kubectl rollout status deployment/$S -n ${{ env.K8S_NAMESPACE }} --timeout=180s; then
+              FAILED+=("$S")
             fi
           done
           if [ ${#FAILED[@]} -gt 0 ]; then
-            echo "::error::Deployments failed: ${FAILED[*]}"
+            echo "::error::Rollouts fallidos: ${FAILED[*]}"
             exit 1
           fi
-          echo "✅ All deployments healthy."
-
-      - name: Print deployment summary
-        run: |
-          echo "## Deployment Summary — $VERSION" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          kubectl get deployments -n ${{ env.K8S_NAMESPACE }} \
-            -o custom-columns="NAME:.metadata.name,READY:.status.readyReplicas,DESIRED:.status.replicas,IMAGE:.spec.template.spec.containers[0].image" \
-            >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "Todos los servicios desplegaron con tag ${VERSION}."
 
   # ===========================================================================
-  # JOB 6 — Create GitHub Release (only on semver tag pushes)
+  # JOB 4 — Crear GitHub Release
   # ===========================================================================
-  create-release:
+  release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: verify-deployment
-    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build-and-push, verify-deployment]
+    if: success()
+    permissions:
+      contents: write
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Create GitHub Release
-        uses: ncipollo/release-action@v1
+      - name: Create release
+        uses: softprops/action-gh-release@v2
         with:
-          tag: ${{ github.ref_name }}
-          generateReleaseNotes: true
-          makeLatest: true
+          tag_name: ${{ needs.build-and-push.outputs.version }}
+          name: "Release ${{ needs.build-and-push.outputs.version }}"
           body: |
-            ## 🚀 Deployed to Production
+            ## Deploy Production — ${{ needs.build-and-push.outputs.version }}
 
-            **Version:** `${{ github.ref_name }}`
-            **Registry:** `${{ env.REGISTRY }}`
+            **Commit:** ${{ github.sha }}
+            **Deployed by:** ${{ github.actor }}
+            **Trigger:** ${{ github.event_name }}
 
-            ### Services Updated
+            ### Images pushed to DOCR
+            - `gateway-service:${{ needs.build-and-push.outputs.version }}`
+            - `account-service:${{ needs.build-and-push.outputs.version }}`
+            - `wallet-service:${{ needs.build-and-push.outputs.version }}`
+            - `inventory-service:${{ needs.build-and-push.outputs.version }}`
+            - `configuration-service:${{ needs.build-and-push.outputs.version }}`
+            - `notification-service:${{ needs.build-and-push.outputs.version }}`
+            - `migrator:${{ needs.build-and-push.outputs.version }}`
 
-            | Service | Image |
-            |---------|-------|
-            | gateway-service | `${{ env.REGISTRY }}/gateway-service:${{ github.ref_name }}` |
-            | account-service | `${{ env.REGISTRY }}/account-service:${{ github.ref_name }}` |
-            | wallet-service | `${{ env.REGISTRY }}/wallet-service:${{ github.ref_name }}` |
-            | inventory-service | `${{ env.REGISTRY }}/inventory-service:${{ github.ref_name }}` |
-            | configuration-service | `${{ env.REGISTRY }}/configuration-service:${{ github.ref_name }}` |
-            | notification-service | `${{ env.REGISTRY }}/notification-service:${{ github.ref_name }}` |
-
-            ### Verify
-            ```bash
-            kubectl get deployments -n ecosystem
-            ```
+            Deployments updated automatically by ArgoCD Image Updater.
+          generate_release_notes: true
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
