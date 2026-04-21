@@ -99,6 +99,8 @@ Migrations/*.Designer.cs
 *.tfstate.*
 *.tfvars
 *.tfvars.json
+# Excepción: prod.tfvars no contiene secretos (tokens via TF_VAR_*)
+!Infrastructure/terraform/environments/prod.tfvars
 override.tf
 override.tf.json
 *_override.tf

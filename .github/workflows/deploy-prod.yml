@@ -299,11 +299,16 @@ jobs:
             -auto-approve
 
   # ===========================================================================
-  # JOB 3 — Run EF Core database migrations
+  # JOB 3 — Run EF Core database migrations  [DESHABILITADO]
+  # Las migrations se manejan manualmente fuera del CI/CD para evitar
+  # afectar la BD existente con data en producción. Para reactivar,
+  # quitar el `if: false` y asegurarse de que la imagen `migrator` exista
+  # y sea compatible con el schema actual.
   # ===========================================================================
   run-migrations:
     name: Run Database Migrations
     runs-on: ubuntu-latest
+    if: false
     needs: [build-and-push, terraform-deploy]
     env:
       VERSION: ${{ needs.build-and-push.outputs.version }}
@@ -362,7 +367,7 @@ jobs:
   update-k8s-images:
     name: Update K8s Image Tags
     runs-on: ubuntu-latest
-    needs: [build-and-push, run-migrations]
+    needs: [build-and-push, terraform-deploy]
     env:
       VERSION: ${{ needs.build-and-push.outputs.version }}
 
@@ -414,7 +419,7 @@ jobs:
   verify-deployment:
     name: Verify Deployment
     runs-on: ubuntu-latest
-    needs: [build-and-push, run-migrations, update-k8s-images]
+    needs: [build-and-push, update-k8s-images]
     env:
       VERSION: ${{ needs.build-and-push.outputs.version }}
 
