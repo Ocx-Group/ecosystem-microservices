@@ -31,4 +31,9 @@ resource "digitalocean_database_cluster" "main" {
 resource "digitalocean_database_db" "main" {
   cluster_id = digitalocean_database_cluster.main.id
   name       = var.database_name
+
+  # Protección contra destrucción accidental — contiene datos productivos
+  lifecycle {
+    prevent_destroy = true
+  }
 }

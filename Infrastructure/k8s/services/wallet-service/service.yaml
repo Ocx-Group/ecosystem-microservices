@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wallet-service
+  namespace: ecosystem
+  labels:
+    app: wallet-service
+spec:
+  type: ClusterIP
+  selector:
+    app: wallet-service
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+    - name: grpc
+      protocol: TCP
+      port: 50051
+      targetPort: 50051

@@ -147,20 +147,7 @@ variable "spaces_cors_origins" {
 variable "domain" {
   description = "Dominio principal"
   type        = string
-  default     = "api.ecosystemfx.com"
-}
-
-# Cloudflare
-variable "enable_cloudflare_dns" {
-  description = "Usar Cloudflare para DNS"
-  type        = bool
-  default     = true
-}
-
-variable "cloudflare_proxied" {
-  description = "Proxy de Cloudflare habilitado"
-  type        = bool
-  default     = true
+  default     = "ecosystemfx.net"
 }
 
 # Tags
@@ -183,9 +170,62 @@ variable "argocd_service_type" {
   default     = "ClusterIP"
 }
 
+# NGINX Ingress
+variable "nginx_ingress_chart_version" {
+  description = "Version del chart de NGINX Ingress Controller"
+  type        = string
+  default     = "4.12.1"
+}
+
+# cert-manager
+variable "cert_manager_chart_version" {
+  description = "Version del chart de cert-manager"
+  type        = string
+  default     = "1.17.2"
+}
+
 # Sealed Secrets
 variable "sealed_secrets_chart_version" {
   description = "Version del chart de Sealed Secrets"
   type        = string
   default     = "2.17.1"
+}
+
+# Networking / Domain
+# Cloudflare
+variable "cloudflare_api_token" {
+  description = "API Token de Cloudflare (permisos: Zone DNS Edit, Zone Settings Edit)"
+  type        = string
+  sensitive   = true
+}
+
+variable "cloudflare_zone_id" {
+  description = "Zone ID de ecosystemfx.net en Cloudflare"
+  type        = string
+  sensitive   = true
+}
+
+variable "cors_allowed_origins" {
+  description = "Dominios permitidos para CORS en el Gateway"
+  type        = list(string)
+  default     = []
+}
+
+# Networking / Domain
+variable "k8s_lb_ip" {
+  description = "IP del Load Balancer de K8s (disponible tras crear el cluster)"
+  type        = string
+  default     = ""
+}
+
+variable "dns_ttl" {
+  description = "TTL de records DNS en segundos"
+  type        = number
+  default     = 300
+}
+
+variable "microservice_subdomains" {
+  description = "Subdominios adicionales para microservicios"
+  type        = list(string)
+  default     = []
 }

@@ -1,12 +1,12 @@
 <Solution>
   <Folder Name="/Domain/">
     <Project Path="Domain/Ecosystem.Domain.Core.csproj" />
-    <Folder Name="/Domain/Protos/">
-      <File Path="Domain/Protos/account.proto" />
-      <File Path="Domain/Protos/configuration.proto" />
-      <File Path="Domain/Protos/inventory.proto" />
-      <File Path="Domain/Protos/wallet.proto" />
-    </Folder>
+  </Folder>
+  <Folder Name="/Domain/Protos/">
+    <File Path="Domain/Protos/account.proto" />
+    <File Path="Domain/Protos/configuration.proto" />
+    <File Path="Domain/Protos/inventory.proto" />
+    <File Path="Domain/Protos/wallet.proto" />
   </Folder>
   <Folder Name="/Infra.Bus/">
     <Project Path="Infra.Bus/Ecosystem.Infra.Bus.csproj" />
@@ -18,7 +18,54 @@
     <Project Path="Infra.Cache/Ecosystem.Infra.Cache.csproj" />
   </Folder>
   <Folder Name="/Infrastructure/" />
-  <Folder Name="/Infrastructure/k8s/" />
+  <Folder Name="/Infrastructure/k8s/">
+    <File Path="Infrastructure/k8s/ingress/cluster-issuer.yaml" />
+    <File Path="Infrastructure/k8s/sealed-secrets/README.yaml" />
+  </Folder>
+  <Folder Name="/Infrastructure/k8s/argocd/">
+    <File Path="Infrastructure/k8s/argocd/project.yaml" />
+    <File Path="Infrastructure/k8s/argocd/app-of-apps.yaml" />
+  </Folder>
+  <Folder Name="/Infrastructure/k8s/argocd/apps/">
+    <File Path="Infrastructure/k8s/argocd/apps/account-service.yaml" />
+    <File Path="Infrastructure/k8s/argocd/apps/wallet-service.yaml" />
+    <File Path="Infrastructure/k8s/argocd/apps/inventory-service.yaml" />
+    <File Path="Infrastructure/k8s/argocd/apps/configuration-service.yaml" />
+    <File Path="Infrastructure/k8s/argocd/apps/notification-service.yaml" />
+    <File Path="Infrastructure/k8s/argocd/apps/gateway-service.yaml" />
+  </Folder>
+  <Folder Name="/Infrastructure/k8s/services/account-service/">
+    <File Path="Infrastructure/k8s/services/account-service/deployment.yaml" />
+    <File Path="Infrastructure/k8s/services/account-service/service.yaml" />
+    <File Path="Infrastructure/k8s/services/account-service/hpa.yaml" />
+  </Folder>
+  <Folder Name="/Infrastructure/k8s/services/wallet-service/">
+    <File Path="Infrastructure/k8s/services/wallet-service/deployment.yaml" />
+    <File Path="Infrastructure/k8s/services/wallet-service/service.yaml" />
+    <File Path="Infrastructure/k8s/services/wallet-service/hpa.yaml" />
+  </Folder>
+  <Folder Name="/Infrastructure/k8s/services/inventory-service/">
+    <File Path="Infrastructure/k8s/services/inventory-service/deployment.yaml" />
+    <File Path="Infrastructure/k8s/services/inventory-service/service.yaml" />
+    <File Path="Infrastructure/k8s/services/inventory-service/hpa.yaml" />
+  </Folder>
+  <Folder Name="/Infrastructure/k8s/services/configuration-service/">
+    <File Path="Infrastructure/k8s/services/configuration-service/deployment.yaml" />
+    <File Path="Infrastructure/k8s/services/configuration-service/service.yaml" />
+    <File Path="Infrastructure/k8s/services/configuration-service/hpa.yaml" />
+  </Folder>
+  <Folder Name="/Infrastructure/k8s/services/notification-service/">
+    <File Path="Infrastructure/k8s/services/notification-service/deployment.yaml" />
+    <File Path="Infrastructure/k8s/services/notification-service/service.yaml" />
+    <File Path="Infrastructure/k8s/services/notification-service/hpa.yaml" />
+  </Folder>
+  <Folder Name="/Infrastructure/k8s/services/gateway-service/">
+    <File Path="Infrastructure/k8s/services/gateway-service/configmap.yaml" />
+    <File Path="Infrastructure/k8s/services/gateway-service/deployment.yaml" />
+    <File Path="Infrastructure/k8s/services/gateway-service/service.yaml" />
+    <File Path="Infrastructure/k8s/services/gateway-service/hpa.yaml" />
+    <File Path="Infrastructure/k8s/services/gateway-service/ingress.yaml" />
+  </Folder>
   <Folder Name="/Infrastructure/terraform/">
     <File Path="Infrastructure/terraform/main.tf" />
     <File Path="Infrastructure/terraform/variables.tf" />
@@ -52,11 +99,24 @@
     <File Path="Infrastructure/terraform/modules/kubernetes/variables.tf" />
     <File Path="Infrastructure/terraform/modules/kubernetes/versions.tf" />
   </Folder>
+  <Folder Name="/Infrastructure/terraform/modules/cloudflare/">
+    <File Path="Infrastructure/terraform/modules/cloudflare/main.tf" />
+    <File Path="Infrastructure/terraform/modules/cloudflare/outputs.tf" />
+    <File Path="Infrastructure/terraform/modules/cloudflare/variables.tf" />
+    <File Path="Infrastructure/terraform/modules/cloudflare/versions.tf" />
+  </Folder>
+  <Folder Name="/Infrastructure/terraform/modules/networking/">
+    <File Path="Infrastructure/terraform/modules/networking/main.tf" />
+    <File Path="Infrastructure/terraform/modules/networking/outputs.tf" />
+    <File Path="Infrastructure/terraform/modules/networking/variables.tf" />
+    <File Path="Infrastructure/terraform/modules/networking/versions.tf" />
+  </Folder>
   <Folder Name="/Infrastructure/terraform/templates/" />
   <Folder Name="/Microservices/" />
   <Folder Name="/Microservices/AccountService/" />
   <Folder Name="/Microservices/AccountService/Api/">
     <Project Path="Microservices/AccountService/Api/Ecosystem.AccountService.Api.csproj" />
+    <File Path="Microservices/AccountService/Api/Dockerfile" />
   </Folder>
   <Folder Name="/Microservices/AccountService/Application/">
     <Project Path="Microservices/AccountService/Application/Ecosystem.AccountService.Application.csproj" />
@@ -82,6 +142,7 @@
   </Folder>
   <Folder Name="/Microservices/ConfigurationService/Api/">
     <Project Path="Microservices/ConfigurationService/Api/Ecosystem.ConfigurationService.Api.csproj" />
+    <File Path="Microservices/ConfigurationService/Api/Dockerfile" />
   </Folder>
   <Folder Name="/Microservices/ConfigurationService/Infra.IoC/">
     <Project Path="Microservices/ConfigurationService/Infra.IoC/Ecosystem.ConfigurationService.Infra.IoC.csproj" />
@@ -89,10 +150,12 @@
   <Folder Name="/Microservices/GatewayService/" />
   <Folder Name="/Microservices/GatewayService/Api/">
     <Project Path="Microservices/GatewayService/Api/Ecosystem.GatewayService.Api.csproj" />
+    <File Path="Microservices/GatewayService/Api/Dockerfile" />
   </Folder>
   <Folder Name="/Microservices/InventoryService/" />
   <Folder Name="/Microservices/InventoryService/Api/">
     <Project Path="Microservices/InventoryService/Api/Ecosystem.InventoryService.Api.csproj" />
+    <File Path="Microservices/InventoryService/Api/Dockerfile" />
   </Folder>
   <Folder Name="/Microservices/InventoryService/Application/">
     <Project Path="Microservices/InventoryService/Application/Ecosystem.InventoryService.Application.csproj" />
@@ -109,6 +172,7 @@
   <Folder Name="/Microservices/NotificationService/" />
   <Folder Name="/Microservices/NotificationService/Api/">
     <Project Path="Microservices/NotificationService/Api/Ecosystem.NotificationService.Api.csproj" />
+    <File Path="Microservices/NotificationService/Api/Dockerfile" />
   </Folder>
   <Folder Name="/Microservices/NotificationService/Application/">
     <Project Path="Microservices/NotificationService/Application/Ecosystem.NotificationService.Application.csproj" />
@@ -134,11 +198,17 @@
   </Folder>
   <Folder Name="/Microservices/WalletService/Api/">
     <Project Path="Microservices/WalletService/Api/Ecosystem.WalletService.Api.csproj" />
+    <File Path="Microservices/WalletService/Api/Dockerfile" />
   </Folder>
   <Folder Name="/Microservices/WalletService/Infra.IoC/">
     <Project Path="Microservices/WalletService/Infra.IoC/Ecosystem.WalletService.Infra.IoC.csproj" />
   </Folder>
   <Folder Name="/Tools/">
     <Project Path="Tools/Ecosystem.Migrator/Ecosystem.Migrator.csproj" />
+    <File Path="Tools/Ecosystem.Migrator/Dockerfile" />
+  </Folder>
+  <Folder Name="/.github/">
+    <File Path=".github/workflows/deploy-prod.yml" />
+    <File Path=".dockerignore" />
   </Folder>
 </Solution>

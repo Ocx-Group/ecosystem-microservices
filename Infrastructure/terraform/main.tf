@@ -10,6 +10,10 @@ terraform {
       source  = "digitalocean/digitalocean"
       version = "~> 2.40"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.0"
+    }
     kubernetes = {
       source  = "hashicorp/kubernetes"
       version = "~> 2.35"
@@ -20,23 +24,29 @@ terraform {
     }
   }
 
-  # Backend remoto - descomentar y configurar para estado compartido
-  # backend "s3" {
-  #   endpoint                    = "https://nyc3.digitaloceanspaces.com"
-  #   bucket                      = "ecosystem-terraform-state"
-  #   key                         = "prod/terraform.tfstate"
-  #   region                      = "us-east-1"
-  #   skip_credentials_validation = true
-  #   skip_metadata_api_check     = true
-  #   skip_requesting_account_id  = true
-  #   skip_s3_checksum            = true
-  # }
+  # Estado remoto en DigitalOcean Spaces (S3-compatible)
+  # Credenciales via env vars: AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
+  # Primera vez: terraform init -migrate-state
+  backend "s3" {
+    endpoint                    = "https://nyc3.digitaloceanspaces.com"
+    bucket                      = "ecosystem-storage"
+    key                         = "terraform/prod/terraform.tfstate"
+    region                      = "us-east-1"
+    skip_credentials_validation = true
+    skip_metadata_api_check     = true
+    skip_requesting_account_id  = true
+    skip_s3_checksum            = true
+  }
 }
 
 provider "digitalocean" {
   token             = var.do_token
   spaces_access_id  = var.spaces_access_id
   spaces_secret_key = var.spaces_secret_key
+}
+
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
 }
 
 # NOTA: Los providers kubernetes/helm requieren que el cluster exista primero.
@@ -192,4 +202,110 @@ resource "helm_release" "sealed_secrets" {
   }
 
   timeout = 300
+}
+
+# =============================================================================
+# NGINX Ingress Controller
+# =============================================================================
+
+resource "kubernetes_namespace" "ingress_nginx" {
+  metadata {
+    name = "ingress-nginx"
+  }
+  depends_on = [module.kubernetes]
+}
+
+resource "helm_release" "nginx_ingress" {
+  name       = "ingress-nginx"
+  repository = "https://kubernetes.github.io/ingress-nginx"
+  chart      = "ingress-nginx"
+  version    = var.nginx_ingress_chart_version
+  namespace  = kubernetes_namespace.ingress_nginx.metadata[0].name
+
+  set {
+    name  = "controller.service.type"
+    value = "LoadBalancer"
+  }
+
+  set {
+    name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/do-loadbalancer-name"
+    value = "ecosystem-prod-lb"
+  }
+
+  timeout = 600
+}
+
+# =============================================================================
+# cert-manager (TLS con Let's Encrypt)
+# =============================================================================
+
+resource "kubernetes_namespace" "cert_manager" {
+  metadata {
+    name = "cert-manager"
+  }
+  depends_on = [module.kubernetes]
+}
+
+resource "helm_release" "cert_manager" {
+  name       = "cert-manager"
+  repository = "https://charts.jetstack.io"
+  chart      = "cert-manager"
+  version    = var.cert_manager_chart_version
+  namespace  = kubernetes_namespace.cert_manager.metadata[0].name
+
+  set {
+    name  = "crds.enabled"
+    value = "true"
+  }
+
+  timeout = 300
+}
+
+# =============================================================================
+# Namespace: ecosystem (prod)
+# =============================================================================
+
+resource "kubernetes_namespace" "ecosystem" {
+  metadata {
+    name = "ecosystem"
+    labels = {
+      environment = "prod"
+      managed-by  = "terraform"
+    }
+  }
+  depends_on = [module.kubernetes]
+}
+
+# =============================================================================
+# Cloudflare Module
+# DESHABILITADO: Los nameservers del dominio están en DigitalOcean.
+# Para activar Cloudflare (proxy/WAF/cache) se requiere migrar los NS del
+# dominio a Cloudflare. Una vez migrados, descomentar el bloque siguiente
+# y eliminar (o comentar) los records duplicados del módulo `networking`.
+# =============================================================================
+
+# module "cloudflare" {
+#   count  = var.k8s_lb_ip != "" ? 1 : 0
+#   source = "./modules/cloudflare"
+#
+#   zone_id         = var.cloudflare_zone_id
+#   lb_ip           = var.k8s_lb_ip
+#   api_subdomain   = "api"
+#   allowed_origins = var.cors_allowed_origins
+# }
+
+# =============================================================================
+# Networking / Domain Module
+# NOTA: Solo se aplica cuando k8s_lb_ip tenga valor (después del cluster K8s)
+# =============================================================================
+
+module "networking" {
+  count  = var.k8s_lb_ip != "" ? 1 : 0
+  source = "./modules/networking"
+
+  domain    = var.domain
+  k8s_lb_ip = var.k8s_lb_ip
+  ttl       = var.dns_ttl
+
+  microservice_subdomains = var.microservice_subdomains
 }

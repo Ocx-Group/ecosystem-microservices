@@ -61,3 +61,19 @@ output "k8s_ipv4_address" {
   description = "IP publica del cluster"
   value       = module.kubernetes.ipv4_address
 }
+
+# Networking (solo disponible cuando k8s_lb_ip está configurado)
+output "domain_name" {
+  description = "Dominio principal"
+  value       = length(module.networking) > 0 ? module.networking[0].domain_name : null
+}
+
+output "api_fqdn" {
+  description = "FQDN del API"
+  value       = length(module.networking) > 0 ? module.networking[0].api_fqdn : null
+}
+
+output "argocd_fqdn" {
+  description = "URL de acceso a ArgoCD"
+  value       = length(module.networking) > 0 ? module.networking[0].argocd_fqdn : null
+}

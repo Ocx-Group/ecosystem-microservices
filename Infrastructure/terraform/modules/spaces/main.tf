@@ -14,7 +14,10 @@ resource "digitalocean_spaces_bucket" "main" {
   }
 
   lifecycle {
-    prevent_destroy = false
+    prevent_destroy = true
+    ignore_changes = [
+      versioning,
+    ]
   }
 }
 

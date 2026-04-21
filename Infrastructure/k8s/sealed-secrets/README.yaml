@@ -1,0 +1,45 @@
+# =============================================================================
+# Sealed Secrets - Templates
+# =============================================================================
+#
+# INSTRUCCIONES:
+#   1. El controller de Sealed Secrets debe estar corriendo en el cluster
+#   2. Instalar kubeseal CLI:
+#        brew install kubeseal   (macOS)
+#        choco install kubeseal  (Windows)
+#
+#   3. Crear el secret normal en YAML (NO commitear este archivo):
+#        kubectl create secret generic db-credentials \
+#          --namespace=ecosystem \
+#          --from-literal=connection-string="Host=...;Port=25060;..." \
+#          --dry-run=client -o yaml > /tmp/db-credentials.yaml
+#
+#   4. Encriptar con kubeseal:
+#        kubeseal --format=yaml \
+#          --controller-namespace=sealed-secrets \
+#          --controller-name=sealed-secrets-controller \
+#          < /tmp/db-credentials.yaml > sealed-secrets/db-credentials.yaml
+#
+#   5. Commitear el archivo .yaml resultante (es seguro, está encriptado)
+#
+# SECRETS NECESARIOS:
+#   - db-credentials        → connection-string (PostgreSQL connection string)
+#   - registry-credentials  → .dockerconfigjson (DO Registry - generado por Terraform)
+#
+# =============================================================================
+#
+# TEMPLATE (reemplazar con el resultado de kubeseal):
+#
+# apiVersion: bitnami.com/v1alpha1
+# kind: SealedSecret
+# metadata:
+#   name: db-credentials
+#   namespace: ecosystem
+# spec:
+#   encryptedData:
+#     connection-string: <ENCRYPTED_VALUE>
+#   template:
+#     metadata:
+#       name: db-credentials
+#       namespace: ecosystem
+#     type: Opaque

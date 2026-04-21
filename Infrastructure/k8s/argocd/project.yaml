@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ecosystem
+  namespace: argocd
+spec:
+  description: Ecosystem Microservices - Prod
+
+  sourceRepos:
+    - https://github.com/Ocx-Group/ecosystem-microservices
+
+  destinations:
+    - namespace: ecosystem
+      server: https://kubernetes.default.svc
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  orphanedResources:
+    warn: true
