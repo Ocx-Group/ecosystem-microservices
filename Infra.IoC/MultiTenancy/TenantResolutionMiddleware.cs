@@ -14,7 +14,7 @@ namespace Ecosystem.Infra.IoC.MultiTenancy;
 public class TenantResolutionMiddleware(RequestDelegate next)
 {
     private static readonly HashSet<string> SkipPaths = ["/health"];
-    private static readonly HashSet<string> SkipPrefixes = ["/hubs/"];
+    private static readonly HashSet<string> SkipPrefixes = ["/hubs/", "/health/"];
 
     /// <summary>
     /// Configures additional path prefixes to skip tenant resolution (e.g., SignalR hubs).
