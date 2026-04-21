@@ -66,6 +66,21 @@ spec:
                 configMapKeyRef:
                   name: gateway-config
                   key: Services__NotificationService
+            - name: RabbitMQ__Host
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: host
+            - name: RabbitMQ__Username
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: username
+            - name: RabbitMQ__Password
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: password
           resources:
             requests:
               memory: "192Mi"

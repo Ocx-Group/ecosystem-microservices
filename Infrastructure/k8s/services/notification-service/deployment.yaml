@@ -40,6 +40,21 @@ spec:
                 secretKeyRef:
                   name: db-credentials
                   key: connection-string
+            - name: RabbitMQ__Host
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: host
+            - name: RabbitMQ__Username
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: username
+            - name: RabbitMQ__Password
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: password
           resources:
             requests:
               memory: "128Mi"
