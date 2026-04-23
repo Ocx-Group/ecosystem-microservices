@@ -35,7 +35,7 @@ spec:
               value: "8080"
             - name: ASPNETCORE_GRPC_PORT
               value: "50051"
-            - name: ConnectionStrings__DefaultConnection
+            - name: ConnectionStrings__PostgreSqlConnection
               valueFrom:
                 secretKeyRef:
                   name: db-credentials
