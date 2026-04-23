@@ -26,9 +26,17 @@ public class IsUnderMaintenanceHandler : IRequestHandler<IsUnderMaintenanceQuery
 
     public async Task<bool> Handle(IsUnderMaintenanceQuery request, CancellationToken cancellationToken)
     {
-        var configuration = await _configurationRepository.GetConfigurationByKey(ConfigurationConstants.IsUnderMaintenance, _tenantContext.TenantId);
-        if (configuration is null) return false;
+        try
+        {
+            var configuration = await _configurationRepository.GetConfigurationByKey(ConfigurationConstants.IsUnderMaintenance, _tenantContext.TenantId);
+            if (configuration is null || string.IsNullOrWhiteSpace(configuration.Value)) return false;
 
-        return configuration.Value.ToBool();
+            return configuration.Value.ToBool();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resolviendo IsUnderMaintenance para Tenant {TenantId}. Se asume false.", _tenantContext.TenantId);
+            return false;
+        }
     }
 }
