@@ -1,8 +1,10 @@
+using Ecosystem.Infra.Cache;
 using Ecosystem.WalletService.Data.Context;
 using Ecosystem.WalletService.Infra.IoC;
 using Ecosystem.Infra.IoC;
 using Ecosystem.Infra.IoC.Extensions;
 using Ecosystem.Infra.IoC.MultiTenancy;
+using Ecosystem.WalletService.Api.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +32,9 @@ var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
 var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
 builder.Services.AddInfrastructure(rabbitHost, rabbitUser, rabbitPass);
 
+var redisConnection = builder.Configuration.GetConnectionString("RedisConnection") ?? "localhost:6379";
+builder.Services.AddSharedCache(redisConnection);
+
 builder.Services.AddWalletServiceDependencies(builder.Configuration);
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
@@ -44,6 +49,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 app.UseHttpsRedirection();
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseAuthorization();
 app.UseTenantResolution();
 app.MapHealthChecks("/health");
