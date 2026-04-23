@@ -66,7 +66,7 @@ builder.Services.AddRateLimiter(options =>
 // =============================================================================
 // CORS
 // =============================================================================
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? ["*"];
+var allowedOrigins = ResolveAllowedOrigins(builder.Configuration);
 
 builder.Services.AddCors(options =>
 {
@@ -85,6 +85,29 @@ builder.Services.AddCors(options =>
         }
     });
 });
+
+static string[] ResolveAllowedOrigins(IConfiguration configuration)
+{
+    var configuredOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+
+    if (configuredOrigins is not null && configuredOrigins.Length > 0 && !configuredOrigins.Contains("*"))
+    {
+        return configuredOrigins.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    var envOrigins = configuration["CORS_ALLOWED_ORIGINS"];
+    if (!string.IsNullOrWhiteSpace(envOrigins))
+    {
+        return envOrigins
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    return configuredOrigins is { Length: > 0 }
+        ? configuredOrigins.Distinct(StringComparer.OrdinalIgnoreCase).ToArray()
+        : ["*"];
+}
 
 // =============================================================================
 // Health Checks — `/health` is a fast self-check for k8s probes.
