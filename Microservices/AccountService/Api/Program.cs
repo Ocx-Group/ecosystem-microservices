@@ -9,7 +9,8 @@ using Ecosystem.Infra.IoC.MultiTenancy;
 var builder = WebApplication.CreateBuilder(args);
 
 // Core services
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddNewtonsoftJson();
 builder.Services.AddApiVersioning(opt =>
 {
     opt.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0);

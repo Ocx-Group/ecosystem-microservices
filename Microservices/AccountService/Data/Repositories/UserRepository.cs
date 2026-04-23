@@ -27,7 +27,9 @@ public class UserRepository : BaseRepository, IUserRepository
         => Context.Users.Include(x => x.Rol).FirstOrDefaultAsync(x => x.Username == userName && x.BrandId == brandId);
 
     public Task<User?> GetUserByIdAsync(int id, long brandId)
-        => Context.Users.FirstOrDefaultAsync(x => x.Id == id && x.BrandId == brandId);
+        => Context.Users
+            .Include(x => x.Rol)
+            .FirstOrDefaultAsync(x => x.Id == id && x.BrandId == brandId);
 
     public Task<List<User>> GetUserByRolIdAsync(int id, long brandId)
         => Context.Users.Where(x => x.RolId == id && x.BrandId == brandId).ToListAsync();
