@@ -176,6 +176,107 @@ resource "helm_release" "argocd" {
   version    = var.argocd_chart_version
   namespace  = kubernetes_namespace.argocd.metadata[0].name
 
+  values = [
+    yamlencode({
+      controller = {
+        resources = {
+          limits = {
+            cpu    = "500m"
+            memory = "512Mi"
+          }
+          requests = {
+            cpu    = "250m"
+            memory = "256Mi"
+          }
+        }
+      }
+      applicationSet = {
+        resources = {
+          limits = {
+            cpu    = "100m"
+            memory = "128Mi"
+          }
+          requests = {
+            cpu    = "100m"
+            memory = "128Mi"
+          }
+        }
+      }
+      dex = {
+        initImage = {
+          resources = {
+            limits = {
+              cpu    = "10m"
+              memory = "144Mi"
+            }
+            requests = {
+              cpu    = "5m"
+              memory = "96Mi"
+            }
+          }
+        }
+        resources = {
+          limits = {
+            cpu    = "50m"
+            memory = "64Mi"
+          }
+          requests = {
+            cpu    = "10m"
+            memory = "32Mi"
+          }
+        }
+      }
+      notifications = {
+        resources = {
+          limits = {
+            cpu    = "100m"
+            memory = "128Mi"
+          }
+          requests = {
+            cpu    = "100m"
+            memory = "128Mi"
+          }
+        }
+      }
+      redis = {
+        resources = {
+          limits = {
+            cpu    = "200m"
+            memory = "128Mi"
+          }
+          requests = {
+            cpu    = "100m"
+            memory = "64Mi"
+          }
+        }
+      }
+      repoServer = {
+        resources = {
+          limits = {
+            cpu    = "50m"
+            memory = "128Mi"
+          }
+          requests = {
+            cpu    = "10m"
+            memory = "64Mi"
+          }
+        }
+      }
+      server = {
+        resources = {
+          limits = {
+            cpu    = "100m"
+            memory = "128Mi"
+          }
+          requests = {
+            cpu    = "50m"
+            memory = "64Mi"
+          }
+        }
+      }
+    })
+  ]
+
   set {
     name  = "server.service.type"
     value = var.argocd_service_type
@@ -200,6 +301,21 @@ resource "helm_release" "argocd_image_updater" {
   chart      = "argocd-image-updater"
   version    = var.argocd_image_updater_chart_version
   namespace  = kubernetes_namespace.argocd.metadata[0].name
+
+  values = [
+    yamlencode({
+      resources = {
+        limits = {
+          cpu    = "100m"
+          memory = "128Mi"
+        }
+        requests = {
+          cpu    = "50m"
+          memory = "64Mi"
+        }
+      }
+    })
+  ]
 
   set {
     name  = "config.argocd.grpcWeb"
@@ -237,6 +353,21 @@ resource "helm_release" "sealed_secrets" {
   chart      = "sealed-secrets"
   version    = var.sealed_secrets_chart_version
   namespace  = kubernetes_namespace.sealed_secrets.metadata[0].name
+
+  values = [
+    yamlencode({
+      resources = {
+        limits = {
+          cpu    = "100m"
+          memory = "128Mi"
+        }
+        requests = {
+          cpu    = "10m"
+          memory = "32Mi"
+        }
+      }
+    })
+  ]
 
   set {
     name  = "fullnameOverride"
@@ -295,9 +426,53 @@ resource "helm_release" "cert_manager" {
   version    = var.cert_manager_chart_version
   namespace  = kubernetes_namespace.cert_manager.metadata[0].name
 
+  values = [
+    yamlencode({
+      resources = {
+        limits = {
+          cpu    = "100m"
+          memory = "128Mi"
+        }
+        requests = {
+          cpu    = "10m"
+          memory = "32Mi"
+        }
+      }
+      cainjector = {
+        resources = {
+          limits = {
+            cpu    = "100m"
+            memory = "128Mi"
+          }
+          requests = {
+            cpu    = "10m"
+            memory = "32Mi"
+          }
+        }
+      }
+      webhook = {
+        resources = {
+          limits = {
+            cpu    = "100m"
+            memory = "128Mi"
+          }
+          requests = {
+            cpu    = "10m"
+            memory = "32Mi"
+          }
+        }
+      }
+    })
+  ]
+
   set {
     name  = "crds.enabled"
     value = "true"
+  }
+
+  set {
+    name  = "webhook.timeoutSeconds"
+    value = "29"
   }
 
   timeout = 300
