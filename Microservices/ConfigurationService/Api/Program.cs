@@ -1,5 +1,6 @@
 using Ecosystem.ConfigurationService.Api.GrpcServices;
 using Ecosystem.ConfigurationService.Api.Mappings;
+using Ecosystem.ConfigurationService.Api.Middlewares;
 using Ecosystem.ConfigurationService.Data.Context;
 using Ecosystem.ConfigurationService.Infra.IoC;
 using Ecosystem.Infra.Cache;
@@ -48,6 +49,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors();
 app.UseHttpsRedirection();
 app.UseAuthorization();

@@ -1,4 +1,5 @@
 using Ecosystem.InventoryService.Api.GrpcServices;
+using Ecosystem.InventoryService.Api.Middlewares;
 using Ecosystem.InventoryService.Data.Context;
 using Ecosystem.InventoryService.Infra.IoC;
 using Ecosystem.Infra.IoC;
@@ -45,6 +46,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors();
 app.UseHttpsRedirection();
 app.UseAuthorization();
