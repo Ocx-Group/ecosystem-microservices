@@ -126,10 +126,10 @@ public static class IoCExtension
         var walletServiceUrl = configuration["GrpcServices:WalletService"] ?? "https://localhost:5003";
         var configurationServiceUrl = configuration["GrpcServices:ConfigurationService"] ?? "https://localhost:5004";
 
-        services.AddGrpcClient<Ecosystem.Grpc.Wallet.WalletGrpc.WalletGrpcClient>(o =>
+        services.AddGrpcClient<Grpc.Wallet.WalletGrpc.WalletGrpcClient>(o =>
             o.Address = new Uri(walletServiceUrl));
 
-        services.AddGrpcClient<Ecosystem.Grpc.Configuration.ConfigurationGrpc.ConfigurationGrpcClient>(o =>
+        services.AddGrpcClient<Grpc.Configuration.ConfigurationGrpc.ConfigurationGrpcClient>(o =>
             o.Address = new Uri(configurationServiceUrl));
 
         services.AddScoped<Application.Adapters.IWalletServiceAdapter, Application.Adapters.GrpcWalletServiceAdapter>();

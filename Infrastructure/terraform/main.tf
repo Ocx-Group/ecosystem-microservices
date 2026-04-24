@@ -251,14 +251,20 @@ resource "helm_release" "argocd" {
         }
       }
       repoServer = {
+        env = [
+          {
+            name  = "ARGOCD_EXEC_TIMEOUT"
+            value = "5m"
+          }
+        ]
         resources = {
           limits = {
-            cpu    = "50m"
-            memory = "128Mi"
+            cpu    = "250m"
+            memory = "256Mi"
           }
           requests = {
-            cpu    = "10m"
-            memory = "64Mi"
+            cpu    = "100m"
+            memory = "128Mi"
           }
         }
       }
