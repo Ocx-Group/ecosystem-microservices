@@ -55,6 +55,22 @@ spec:
                 secretKeyRef:
                   name: rabbitmq-credentials
                   key: password
+            - name: ObjectStorage__AccessKey
+              valueFrom:
+                secretKeyRef:
+                  name: spaces-credentials
+                  key: access-key
+            - name: ObjectStorage__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: spaces-credentials
+                  key: secret-key
+            - name: ObjectStorage__BucketName
+              value: "ecosystem-storage"
+            - name: ObjectStorage__Region
+              value: "nyc3"
+            - name: ObjectStorage__PublicBaseUrl
+              value: "https://ecosystem-storage.nyc3.digitaloceanspaces.com"
           resources:
             requests:
               memory: "128Mi"

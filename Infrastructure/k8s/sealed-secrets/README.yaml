@@ -24,7 +24,20 @@
 #
 # SECRETS NECESARIOS:
 #   - db-credentials        → connection-string (PostgreSQL connection string)
+#   - spaces-credentials    → access-key, secret-key (DigitalOcean Spaces)
 #   - registry-credentials  → .dockerconfigjson (DO Registry - generado por Terraform)
+#
+# SPACES:
+#   kubectl create secret generic spaces-credentials `
+#     --namespace=ecosystem `
+#     --from-literal=access-key="<SPACES_ACCESS_KEY>" `
+#     --from-literal=secret-key="<SPACES_SECRET_KEY>" `
+#     --dry-run=client -o yaml > spaces-credentials.yaml
+#
+#   kubeseal --format=yaml `
+#     --controller-namespace=sealed-secrets `
+#     --controller-name=sealed-secrets-controller `
+#     < spaces-credentials.yaml > sealed-secrets/spaces-credentials.yaml
 #
 # =============================================================================
 #

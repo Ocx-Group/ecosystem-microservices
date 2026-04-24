@@ -1,6 +1,8 @@
-﻿using Ecosystem.Domain.Core.Bus;
+using Ecosystem.Domain.Core.Bus;
+using Ecosystem.Infra.IoC.Storage;
 using InfraBus = Ecosystem.Infra.Bus.MassTransitBus;
 using MassTransit;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Ecosystem.Infra.IoC;
@@ -13,7 +15,6 @@ public static class DependencyContainer
         string username = "guest",
         string password = "guest")
     {
-        // MassTransit con RabbitMQ
         services.AddMassTransit(x =>
         {
             x.UsingRabbitMq((context, cfg) =>
@@ -28,7 +29,12 @@ public static class DependencyContainer
             });
         });
 
-        // Registrar IEventBus → MassTransitBus
         services.AddScoped<IEventBus, InfraBus>();
+    }
+
+    public static void AddObjectStorage(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<ObjectStorageSettings>(configuration.GetSection(ObjectStorageSettings.SectionName));
+        services.AddScoped<IObjectStorageService, SpacesObjectStorageService>();
     }
 }

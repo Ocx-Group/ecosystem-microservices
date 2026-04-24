@@ -34,9 +34,9 @@ registry_region            = "syd1"
 
 # Spaces
 spaces_bucket_name   = "ecosystem-storage"
-spaces_acl           = "private"
+spaces_acl           = "public-read"
 spaces_force_destroy = false # CRITICO: nunca true en prod
-spaces_cors_origins  = ["https://www.ecosystemfx.net"]
+spaces_cors_origins  = ["https://ecosystemfx.net", "https://www.ecosystemfx.net", "https://recybotia.com", "https://www.recybotia.com"]
 
 # Domain
 domain    = "ecosystemfx.net"

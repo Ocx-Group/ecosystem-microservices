@@ -6,6 +6,7 @@ using Ecosystem.AccountService.Data.Context;
 using Ecosystem.AccountService.Data.Repositories;
 using Ecosystem.AccountService.Domain.Interfaces;
 using Ecosystem.Domain.Core.Bus;
+using Ecosystem.Infra.IoC;
 using Ecosystem.Infra.IoC.MultiTenancy;
 using FluentValidation;
 using MassTransit;
@@ -33,6 +34,7 @@ public static class IoCExtension
         services.InjectValidators();
         services.InjectRepositories();
         services.InjectServices(configuration);
+        services.AddObjectStorage(configuration);
     }
 
     private static void AddMassTransitWithConsumers(

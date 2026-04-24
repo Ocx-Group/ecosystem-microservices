@@ -3,6 +3,7 @@ using Ecosystem.AccountService.Application.Commands.Ticket;
 using Ecosystem.AccountService.Application.DTOs.Ticket;
 using Ecosystem.AccountService.Domain.Models;
 using Ecosystem.AccountService.Domain.Models.CustomModels;
+using Ecosystem.Domain.Core.Storage;
 
 namespace Ecosystem.AccountService.Application.Mappings;
 
@@ -13,8 +14,10 @@ public class TicketMappingProfile : Profile
         CreateMap<TicketCategory, TicketCategoriesDto>();
 
         CreateMap<Domain.Models.Ticket, TicketDto>();
-        CreateMap<TicketImage, TicketImagesDto>();
-        CreateMap<MessageDetails, TicketMessageDto>();
+        CreateMap<TicketImage, TicketImagesDto>()
+            .ForMember(d => d.ImagePath, opt => opt.MapFrom(s => ObjectStorageUrl.Normalize(s.ImagePath) ?? string.Empty));
+        CreateMap<MessageDetails, TicketMessageDto>()
+            .ForMember(d => d.ImageProfileUrl, opt => opt.MapFrom(s => ObjectStorageUrl.Normalize(s.ImageProfileUrl) ?? string.Empty));
         CreateMap<TicketMessage, TicketMessageDto>();
 
         CreateMap<CreateTicketCommand, Domain.Models.Ticket>()

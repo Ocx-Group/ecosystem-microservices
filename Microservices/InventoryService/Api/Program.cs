@@ -32,6 +32,7 @@ var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq://localhost
 var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
 var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
 builder.Services.AddInfrastructure(rabbitHost, rabbitUser, rabbitPass);
+builder.Services.AddObjectStorage(builder.Configuration);
 
 // InventoryService dependencies
 builder.Services.AddInventoryServiceDependencies(builder.Configuration);

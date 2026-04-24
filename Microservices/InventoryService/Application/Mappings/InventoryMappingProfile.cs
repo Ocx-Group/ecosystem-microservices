@@ -9,6 +9,7 @@ using Ecosystem.InventoryService.Application.Commands.ProductDiscount;
 using Ecosystem.InventoryService.Application.Commands.ProductInventory;
 using Ecosystem.InventoryService.Application.DTOs;
 using Ecosystem.InventoryService.Domain.Models;
+using Ecosystem.Domain.Core.Storage;
 
 namespace Ecosystem.InventoryService.Application.Mappings;
 
@@ -19,7 +20,8 @@ public class InventoryMappingProfile : Profile
         // Model -> DTO
         CreateMap<Domain.Models.Product, ProductDto>()
             .ForMember(d => d.ProductsCategory, opt => opt.MapFrom(s => s.Category))
-            .ForMember(d => d.KeyWord, opt => opt.MapFrom(s => s.Keyword));
+            .ForMember(d => d.KeyWord, opt => opt.MapFrom(s => s.Keyword))
+            .ForMember(d => d.Image, opt => opt.MapFrom(s => ObjectStorageUrl.Normalize(s.Image)));
 
         CreateMap<ProductsCategory, ProductCategoryDto>()
             .ForMember(d => d.IdCategory, opt => opt.MapFrom(s => s.Category));
