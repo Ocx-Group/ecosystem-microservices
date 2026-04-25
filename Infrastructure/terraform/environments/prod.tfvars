@@ -17,9 +17,9 @@ vpc_uuid = "50a6b3b3-fa0a-4a48-bd99-905a25759089"
 # Pod-level autoscaling se controla con HPA por servicio (min 2, max 5)
 k8s_version    = "1.35.1-do.3"
 k8s_node_size  = "s-2vcpu-4gb"
-k8s_node_count = 2
+k8s_node_count = 3
 k8s_auto_scale = true
-k8s_min_nodes  = 2
+k8s_min_nodes  = 3
 k8s_max_nodes  = 4
 
 # Database - HA
