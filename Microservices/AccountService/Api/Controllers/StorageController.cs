@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using Ecosystem.AccountService.Api.Models;
 using Ecosystem.Infra.IoC.Storage;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,13 +17,12 @@ public class StorageController : BaseController
 
     [HttpPost("upload")]
     [RequestSizeLimit(10_485_760)]
+    [Consumes("multipart/form-data")]
     public async Task<IActionResult> Upload(
-        [FromForm] IFormFile file,
-        [FromForm] string folder,
-        [FromForm] string? fileName,
+        [FromForm] UploadFileRequest request,
         CancellationToken ct)
     {
-        var result = await _storage.UploadAsync(file, folder, fileName, ct);
+        var result = await _storage.UploadAsync(request.File, request.Folder, request.FileName, ct);
         return Ok(Success(result));
     }
 }

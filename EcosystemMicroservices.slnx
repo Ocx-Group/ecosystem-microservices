@@ -34,6 +34,7 @@
     <File Path="Infrastructure/k8s/argocd/apps/notification-service.yaml" />
     <File Path="Infrastructure/k8s/argocd/apps/gateway-service.yaml" />
   </Folder>
+  <Folder Name="/Infrastructure/k8s/services/" />
   <Folder Name="/Infrastructure/k8s/services/account-service/">
     <File Path="Infrastructure/k8s/services/account-service/deployment.yaml" />
     <File Path="Infrastructure/k8s/services/account-service/service.yaml" />
