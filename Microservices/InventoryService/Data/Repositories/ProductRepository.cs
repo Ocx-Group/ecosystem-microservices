@@ -17,6 +17,61 @@ public class ProductRepository : BaseRepository, IProductRepository
             .AsNoTracking()
             .ToListAsync();
 
+    public Task<List<Product>> GetProductsByBrand(
+        long brandId,
+        long[]? productIds,
+        int[]? paymentGroupIds,
+        bool? productType,
+        bool? state,
+        bool? visible,
+        bool? visiblePublic,
+        bool includeDeleted)
+    {
+        var query = Context.Products
+            .Where(x => x.BrandId == brandId)
+            .AsQueryable();
+
+        if (!includeDeleted)
+        {
+            query = query.Where(x => x.DeletedAt == null);
+        }
+
+        if (productIds is { Length: > 0 })
+        {
+            query = query.Where(x => productIds.Contains(x.Id));
+        }
+
+        if (paymentGroupIds is { Length: > 0 })
+        {
+            query = query.Where(x => paymentGroupIds.Contains(x.PaymentGroup));
+        }
+
+        if (productType.HasValue)
+        {
+            query = query.Where(x => x.ProductType == productType.Value);
+        }
+
+        if (state.HasValue)
+        {
+            query = query.Where(x => x.State == state.Value);
+        }
+
+        if (visible.HasValue)
+        {
+            query = query.Where(x => x.Visible == visible.Value);
+        }
+
+        if (visiblePublic.HasValue)
+        {
+            query = query.Where(x => x.VisiblePublic == visiblePublic.Value);
+        }
+
+        return query
+            .Include(x => x.Category)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
     public Task<List<Product>> GetAllProductsByIds(long[] ids)
         => Context.Products
             .Where(x => ids.Contains(x.Id))

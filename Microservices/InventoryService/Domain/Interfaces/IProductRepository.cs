@@ -5,6 +5,15 @@ namespace Ecosystem.InventoryService.Domain.Interfaces;
 public interface IProductRepository
 {
     Task<List<Product>> GetAllEcoPools();
+    Task<List<Product>> GetProductsByBrand(
+        long brandId,
+        long[]? productIds,
+        int[]? paymentGroupIds,
+        bool? productType,
+        bool? state,
+        bool? visible,
+        bool? visiblePublic,
+        bool includeDeleted);
     Task<List<Product>> GetAllProductsByIds(long[] ids);
     Task<List<Product>> GetAlMembership(long brandId);
     Task<Product?> GetProductsById(int id);

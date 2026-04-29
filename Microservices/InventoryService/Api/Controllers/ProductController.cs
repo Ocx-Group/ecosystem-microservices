@@ -19,6 +19,31 @@ public class ProductController : BaseController
     public record GetProductsByIdsRequest(long[] ProductIds);
     public record GetProductByIdRequest(int Id);
 
+    [HttpGet("by-brand")]
+    public async Task<IActionResult> GetProductsByBrand(
+        [FromQuery] long[]? productIds,
+        [FromQuery] int[]? paymentGroupIds,
+        [FromQuery] bool? productType,
+        [FromQuery] bool? state,
+        [FromQuery] bool? visible,
+        [FromQuery] bool? visiblePublic,
+        [FromQuery] bool includeDeleted,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(
+            new GetProductsByBrandQuery(
+                productIds,
+                paymentGroupIds,
+                productType,
+                state,
+                visible,
+                visiblePublic,
+                includeDeleted),
+            ct);
+
+        return Ok(Success(result));
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetAllEcoPools(CancellationToken ct)
     {
