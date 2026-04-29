@@ -27,7 +27,7 @@ public class UserAffiliateInfoRepository : BaseRepository, IUserAffiliateInfoRep
     public Task<List<AffiliatePersonalNetwork>> GetPersonalNetwork(int userId)
     {
         return Context.Set<AffiliatePersonalNetwork>()
-            .FromSqlRaw("SELECT * FROM get_personal_network({0})", userId)
+            .FromSqlRaw("SELECT * FROM account_service.get_personal_network({0})", userId)
             .ToListAsync();
     }
 
