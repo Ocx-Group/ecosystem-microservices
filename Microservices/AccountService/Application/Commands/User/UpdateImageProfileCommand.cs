@@ -4,7 +4,10 @@ using System.Text.Json.Serialization;
 
 namespace Ecosystem.AccountService.Application.Commands.User;
 
-public record UpdateImageProfileCommand(
-    int Id,
-    [property: JsonPropertyName("image_profile_url")] string ImageProfileUrl
-) : IRequest<UserDto?>;
+public record UpdateImageProfileCommand : IRequest<UserDto?>
+{
+    public int Id { get; init; }
+
+    [JsonPropertyName("image_profile_url")]
+    public string ImageProfileUrl { get; init; } = string.Empty;
+}
