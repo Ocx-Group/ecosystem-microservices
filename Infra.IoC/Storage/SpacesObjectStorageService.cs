@@ -43,7 +43,7 @@ public class SpacesObjectStorageService : IObjectStorageService
     {
         if (file.Length == 0) throw new ArgumentException("File is empty.", nameof(file));
 
-        var key = BuildKey(folder, fileName ?? file.FileName);
+        var key = BuildKey(folder, fileName ?? file.FileName, file.FileName);
         await using var stream = file.OpenReadStream();
 
         var request = new PutObjectRequest
@@ -62,10 +62,18 @@ public class SpacesObjectStorageService : IObjectStorageService
             ObjectStorageUrl.BuildPublicUrl(_settings.PublicBaseUrl, key));
     }
 
-    private static string BuildKey(string folder, string fileName)
+    private static string BuildKey(string folder, string fileName, string originalFileName)
     {
         var cleanFolder = SanitizePath(folder);
         var cleanFileName = Path.GetFileName(fileName.Replace('\\', '/'));
+        var originalExtension = Path.GetExtension(originalFileName.Replace('\\', '/'));
+
+        if (string.IsNullOrWhiteSpace(Path.GetExtension(cleanFileName)) &&
+            !string.IsNullOrWhiteSpace(originalExtension))
+        {
+            cleanFileName = $"{cleanFileName}{originalExtension}";
+        }
+
         return $"{cleanFolder.TrimEnd('/')}/{cleanFileName}";
     }
 
