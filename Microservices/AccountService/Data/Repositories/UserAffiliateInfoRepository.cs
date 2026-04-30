@@ -18,7 +18,7 @@ public class UserAffiliateInfoRepository : BaseRepository, IUserAffiliateInfoRep
         => Context.UsersAffiliates.Where(x => x.BrandId == brandId).AsNoTracking().ToListAsync();
 
     public Task<List<UsersAffiliate>> GetUsersWithoutAuthorization()
-        => Context.UsersAffiliates.Where(x => x.CardIdAuthorization == false && !string.IsNullOrEmpty(x.ImagePathId))
+        => Context.UsersAffiliates.Where(x => !x.CardIdAuthorization && !string.IsNullOrEmpty(x.ImagePathId))
             .AsNoTracking().ToListAsync();
 
     public Task<UsersAffiliate?> GetAffiliateByIdAsync(long id, long brandId)
@@ -45,8 +45,8 @@ public class UserAffiliateInfoRepository : BaseRepository, IUserAffiliateInfoRep
 
     public async Task<ExistenceStatus> CheckAffiliateExistenceAsync(string email, string userName, long brandId)
     {
-        var normalizedEmail = email?.Trim() ?? string.Empty;
-        var normalizedUserName = userName?.Trim() ?? string.Empty;
+        var normalizedEmail = email.Trim();
+        var normalizedUserName = userName.Trim();
 
         var activeAffiliates = Context.UsersAffiliates
             .Where(a => a.BrandId == brandId && a.DeletedAt == null);
@@ -68,10 +68,10 @@ public class UserAffiliateInfoRepository : BaseRepository, IUserAffiliateInfoRep
         return ExistenceStatus.None;
     }
 
-    public async Task<bool> DeleteAffiliateAsync(UsersAffiliate user)
+    public async Task<bool> DeleteAffiliateAsync(UsersAffiliate affiliate)
     {
-        user.DeletedAt = DateTime.Now;
-        Context.UsersAffiliates.Update(user);
+        affiliate.DeletedAt = DateTime.Now;
+        Context.UsersAffiliates.Update(affiliate);
         await Context.SaveChangesAsync();
         return true;
     }
@@ -94,20 +94,24 @@ public class UserAffiliateInfoRepository : BaseRepository, IUserAffiliateInfoRep
         return Context.Set<UniLevelFamilyTree>().FromSqlInterpolated(sql).ToListAsync();
     }
 
-    public async Task<UsersAffiliate> UpdateAffiliateAsync(UsersAffiliate user)
+    public async Task<UsersAffiliate> UpdateAffiliateAsync(UsersAffiliate affiliate)
     {
-        user.UpdatedAt = DateTime.Now;
-        Context.UsersAffiliates.Update(user);
+        affiliate.UpdatedAt = DateTime.Now;
+        Context.UsersAffiliates.Update(affiliate);
         await Context.SaveChangesAsync();
-        return user;
+        return affiliate;
     }
 
-    public async Task<UsersAffiliate> UpdateImageAffiliateAsync(UsersAffiliate user)
+    public async Task<UsersAffiliate> UpdateImageAffiliateAsync(UsersAffiliate affiliate)
     {
-        user.UpdatedAt = DateTime.Now;
-        Context.UsersAffiliates.Update(user);
-        await Context.SaveChangesAsync();
-        return user;
+        var now = DateTime.Now;
+        await Context.UsersAffiliates
+            .Where(x => x.Id == affiliate.Id)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.ImageProfileUrl, affiliate.ImageProfileUrl)
+                .SetProperty(x => x.UpdatedAt, now));
+        affiliate.UpdatedAt = now;
+        return affiliate;
     }
 
     public async Task UpdateBulkAffiliateAsync(List<UsersAffiliate> affiliates)
@@ -122,14 +126,14 @@ public class UserAffiliateInfoRepository : BaseRepository, IUserAffiliateInfoRep
         await Context.SaveChangesAsync();
     }
 
-    public async Task<UsersAffiliate> CreateAffiliateAsync(UsersAffiliate user)
+    public async Task<UsersAffiliate> CreateAffiliateAsync(UsersAffiliate affiliate)
     {
         var today = DateTime.Now;
-        user.UpdatedAt = today;
-        user.CreatedAt = today;
-        await Context.UsersAffiliates.AddAsync(user);
+        affiliate.UpdatedAt = today;
+        affiliate.CreatedAt = today;
+        await Context.UsersAffiliates.AddAsync(affiliate);
         await Context.SaveChangesAsync();
-        return user;
+        return affiliate;
     }
 
     public Task<UsersAffiliate?> GetAffiliateByUserNameAsync(string userName, long brandId)
@@ -148,20 +152,31 @@ public class UserAffiliateInfoRepository : BaseRepository, IUserAffiliateInfoRep
         return result.FirstOrDefault();
     }
 
-    public async Task<UsersAffiliate> UpdateImageIdPathAffiliateAsync(UsersAffiliate user)
+    public async Task<UsersAffiliate> UpdateImageIdPathAffiliateAsync(UsersAffiliate affiliate)
     {
-        user.UpdatedAt = DateTime.Now;
-        Context.UsersAffiliates.Update(user);
-        await Context.SaveChangesAsync();
-        return user;
+        var now = DateTime.Now;
+        await Context.UsersAffiliates
+            .Where(x => x.Id == affiliate.Id)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.ImagePathId, affiliate.ImagePathId)
+                .SetProperty(x => x.CardIdAuthorization, affiliate.CardIdAuthorization)
+                .SetProperty(x => x.CardIdMessage, affiliate.CardIdMessage)
+                .SetProperty(x => x.AuthorizationDate, affiliate.AuthorizationDate)
+                .SetProperty(x => x.UpdatedAt, now));
+        affiliate.UpdatedAt = now;
+        return affiliate;
     }
 
-    public async Task<UsersAffiliate> UpdateVerificationCodeAffiliateAsync(UsersAffiliate user)
+    public async Task<UsersAffiliate> UpdateVerificationCodeAffiliateAsync(UsersAffiliate affiliate)
     {
-        user.UpdatedAt = DateTime.Now;
-        Context.UsersAffiliates.Update(user);
-        await Context.SaveChangesAsync();
-        return user;
+        var now = DateTime.Now;
+        await Context.UsersAffiliates
+            .Where(x => x.Id == affiliate.Id)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.VerificationCode, affiliate.VerificationCode)
+                .SetProperty(x => x.UpdatedAt, now));
+        affiliate.UpdatedAt = now;
+        return affiliate;
     }
 
     public async Task<int> GetTotalActiveMembers(long brandId)
