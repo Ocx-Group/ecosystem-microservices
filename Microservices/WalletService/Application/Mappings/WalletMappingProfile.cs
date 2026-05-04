@@ -10,6 +10,7 @@ using Ecosystem.WalletService.Application.Commands.WalletWait;
 using Ecosystem.WalletService.Application.Commands.WalletWithdrawal;
 using Ecosystem.WalletService.Domain.CustomModels;
 using Ecosystem.WalletService.Domain.DTOs.InvoiceDetailDto;
+using Ecosystem.WalletService.Domain.DTOs.InvoiceDto;
 using Ecosystem.WalletService.Domain.DTOs.MatrixEarningDto;
 using Ecosystem.WalletService.Domain.DTOs.MatrixQualificationDto;
 using Ecosystem.WalletService.Domain.DTOs.PaymentTransactionDto;
@@ -52,6 +53,18 @@ public class WalletMappingProfile : Profile
         CreateMap<Transaction, PaymentTransactionDto>();
         CreateMap<InvoicesDetail, InvoiceDetailDto>()
             .ForMember(dest => dest.Invoice, opt => opt.Ignore());
+        CreateMap<Invoice, InvoiceDto>()
+            .ForMember(d => d.Id,               opt => opt.MapFrom(s => (int)s.Id))
+            .ForMember(d => d.PurchaseOrderId,  opt => opt.MapFrom(s => s.PurchaseOrderId ?? 0))
+            .ForMember(d => d.TotalInvoiceBtc,  opt => opt.MapFrom(s => s.TotalInvoiceBtc ?? 0m))
+            .ForMember(d => d.State,            opt => opt.MapFrom(s => s.State ?? false))
+            .ForMember(d => d.DepositDate,      opt => opt.MapFrom(s =>
+                s.DepositDate.HasValue
+                    ? (DateTime?)s.DepositDate.Value.ToDateTime(TimeOnly.MinValue)
+                    : null))
+            .ForMember(d => d.UserName,         opt => opt.Ignore())
+            .ForMember(d => d.Name,             opt => opt.Ignore())
+            .ForMember(d => d.LastName,         opt => opt.Ignore());
         CreateMap<ResultsModel2, ResultsEcoPoolDto>()
             .ForMember(dest => dest.ResultEcoPoolLevels, opt => opt.MapFrom(src => src.ResultsModel2Levels));
         CreateMap<ResultsModel2Level, ResultEcoPoolLevelsDto>();
