@@ -116,6 +116,19 @@ public class WalletRepository : BaseRepository, IWalletRepository
 
     public Task<decimal?> GetTotalAcquisitionsByAffiliateId(int affiliateId, long brandId)
     {
+        // Brand 5 (Recybots) opera con facturas migradas que no tienen
+        // InvoicesDetails. Para este brand sumamos directamente Invoice.TotalInvoice
+        // de las facturas no canceladas. El resto de brands mantiene la lógica
+        // original basada en detalles (PaymentGroup + ProductPack).
+        if (brandId == 5)
+        {
+            return Context.Invoices.AsNoTracking()
+                .Where(i => i.AffiliateId == affiliateId
+                            && i.BrandId == brandId
+                            && !i.CancellationDate.HasValue)
+                .SumAsync(i => i.TotalInvoice);
+        }
+
         var allowedPaymentGroups = new[] { 2, 11, 12, 13 };
 
         return Context.InvoicesDetails.Include(x => x.Invoice).AsNoTracking()
