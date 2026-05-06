@@ -8,7 +8,7 @@ namespace Ecosystem.NotificationService.Api.Controllers;
 
 [ApiController]
 [ApiVersion("1")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/email-sender-config")]
 public class BrandConfigurationController : BaseController
 {
     private readonly IMediator _mediator;
