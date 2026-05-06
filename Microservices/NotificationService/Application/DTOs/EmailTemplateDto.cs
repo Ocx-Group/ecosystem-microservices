@@ -2,7 +2,7 @@ namespace Ecosystem.NotificationService.Application.DTOs;
 
 public class EmailTemplateDto
 {
-    public string Id { get; set; } = null!;
+    public long Id { get; set; }
     public string TemplateKey { get; set; } = null!;
     public long BrandId { get; set; }
     public string Subject { get; set; } = null!;

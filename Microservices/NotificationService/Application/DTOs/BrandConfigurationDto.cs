@@ -2,7 +2,7 @@ namespace Ecosystem.NotificationService.Application.DTOs;
 
 public class BrandConfigurationDto
 {
-    public string Id { get; set; } = null!;
+    public long Id { get; set; }
     public long BrandId { get; set; }
     public string Name { get; set; } = null!;
     public string SenderName { get; set; } = null!;

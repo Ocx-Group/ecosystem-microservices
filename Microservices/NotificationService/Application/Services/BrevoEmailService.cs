@@ -15,8 +15,9 @@ public class BrevoEmailService : IEmailService
     public BrevoEmailService(IConfiguration configuration, ILogger<BrevoEmailService> logger)
     {
         _logger = logger;
-        var apiKey = configuration["Brevo:ApiKey"]
-            ?? throw new InvalidOperationException("Brevo:ApiKey is not configured");
+        var apiKey = configuration["Brevo:ApiKey"];
+        if (string.IsNullOrWhiteSpace(apiKey))
+            throw new InvalidOperationException("Brevo:ApiKey is not configured");
 
         Configuration.Default.AddApiKey("api-key", apiKey);
         _apiInstance = new TransactionalEmailsApi();

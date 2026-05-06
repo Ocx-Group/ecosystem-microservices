@@ -20,7 +20,7 @@ public class UpdateTemplateHandler : IRequestHandler<UpdateTemplateCommand, Emai
     public async Task<EmailTemplateDto> Handle(UpdateTemplateCommand request, CancellationToken cancellationToken)
     {
         var template = await _templateRepository.GetByIdAsync(request.Id)
-            ?? throw new KeyNotFoundException($"Template with id '{request.Id}' not found");
+            ?? throw new KeyNotFoundException($"Template with id {request.Id} not found");
 
         if (request.TemplateKey is not null) template.TemplateKey = request.TemplateKey;
         if (request.BrandId.HasValue) template.BrandId = request.BrandId.Value;

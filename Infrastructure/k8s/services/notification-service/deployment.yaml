@@ -55,6 +55,11 @@ spec:
                 secretKeyRef:
                   name: rabbitmq-credentials
                   key: password
+            - name: Brevo__ApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: brevo-credentials
+                  key: api-key
           resources:
             requests:
               memory: "128Mi"

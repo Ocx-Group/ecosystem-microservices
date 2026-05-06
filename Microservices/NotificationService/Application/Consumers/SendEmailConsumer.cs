@@ -48,8 +48,16 @@ public class SendEmailConsumer : IConsumer<SendEmailEvent>
             return;
         }
 
-        var htmlBody = ReplacePlaceholders(template.HtmlBody, message.Placeholders);
-        var subject = message.SubjectOverride ?? template.Subject;
+        var placeholders = new Dictionary<string, string>(message.Placeholders)
+        {
+            ["brandName"]    = brand.Name,
+            ["clientUrl"]    = brand.ClientUrl ?? string.Empty,
+            ["supportEmail"] = brand.SupportEmail ?? brand.SenderEmail,
+            ["senderName"]   = brand.SenderName
+        };
+
+        var htmlBody = ReplacePlaceholders(template.HtmlBody, placeholders);
+        var subject = ReplacePlaceholders(message.SubjectOverride ?? template.Subject, placeholders);
 
         await _emailService.SendEmailAsync(
             message.ToEmail,
@@ -60,9 +68,9 @@ public class SendEmailConsumer : IConsumer<SendEmailEvent>
             brand.SenderEmail);
     }
 
-    private static string ReplacePlaceholders(string html, Dictionary<string, string> placeholders)
+    private static string ReplacePlaceholders(string source, Dictionary<string, string> placeholders)
     {
-        var sb = new StringBuilder(html);
+        var sb = new StringBuilder(source);
         foreach (var (key, value) in placeholders)
         {
             sb.Replace($"{{{key}}}", value);

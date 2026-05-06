@@ -7,10 +7,10 @@ using Ecosystem.NotificationService.Application.Services;
 using Ecosystem.NotificationService.Application.Validators.Template;
 using Ecosystem.NotificationService.Data.Context;
 using Ecosystem.NotificationService.Data.Repositories;
-using Ecosystem.NotificationService.Data.Settings;
 using Ecosystem.NotificationService.Domain.Interfaces;
 using FluentValidation;
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,7 +25,7 @@ public static class IoCExtension
         string rabbitMqUsername,
         string rabbitMqPassword)
     {
-        services.AddMongoDb(configuration);
+        services.AddNotificationServiceDbContext(configuration);
         services.AddMassTransitWithConsumers(rabbitMqHost, rabbitMqUsername, rabbitMqPassword);
         services.InjectAutoMapper();
         services.InjectMediatR();
@@ -34,10 +34,11 @@ public static class IoCExtension
         services.InjectServices(configuration);
     }
 
-    private static void AddMongoDb(this IServiceCollection services, IConfiguration configuration)
+    private static void AddNotificationServiceDbContext(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<MongoDbSettings>(configuration.GetSection(MongoDbSettings.SectionName));
-        services.AddSingleton<MongoDbContext>();
+        var connectionString = configuration.GetConnectionString("PostgreSqlConnection");
+        services.AddDbContext<NotificationServiceDbContext>(options =>
+            options.UseNpgsql(connectionString));
     }
 
     private static void AddMassTransitWithConsumers(

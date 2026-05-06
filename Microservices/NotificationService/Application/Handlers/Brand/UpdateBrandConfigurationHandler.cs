@@ -22,7 +22,7 @@ public class UpdateBrandConfigurationHandler
         UpdateBrandConfigurationCommand request, CancellationToken cancellationToken)
     {
         var brand = await _brandRepository.GetByIdAsync(request.Id)
-            ?? throw new KeyNotFoundException($"Brand configuration with id '{request.Id}' not found");
+            ?? throw new KeyNotFoundException($"Brand configuration with id {request.Id} not found");
 
         if (request.BrandId.HasValue) brand.BrandId = request.BrandId.Value;
         if (request.Name is not null) brand.Name = request.Name;

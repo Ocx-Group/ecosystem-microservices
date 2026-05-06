@@ -3,7 +3,7 @@ using MediatR;
 namespace Ecosystem.NotificationService.Application.Commands.Brand;
 
 public record UpdateBrandConfigurationCommand(
-    string Id,
+    long Id,
     long? BrandId,
     string? Name,
     string? SenderName,

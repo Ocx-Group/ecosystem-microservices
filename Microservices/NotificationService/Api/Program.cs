@@ -20,7 +20,7 @@ var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq://localhost
 var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
 var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
 
-// NotificationService dependencies (MongoDB, MediatR, Brevo, MassTransit, Repositories)
+// NotificationService dependencies (Postgres, MediatR, Brevo, MassTransit, Repositories)
 builder.Services.AddNotificationServiceDependencies(builder.Configuration, rabbitHost, rabbitUser, rabbitPass);
 
 var app = builder.Build();

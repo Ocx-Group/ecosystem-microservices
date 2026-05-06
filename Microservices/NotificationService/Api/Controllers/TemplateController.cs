@@ -40,16 +40,16 @@ public class TemplateController : BaseController
             Success(result));
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(string id, [FromBody] UpdateTemplateCommand command)
+    [HttpPut("{id:long}")]
+    public async Task<IActionResult> Update(long id, [FromBody] UpdateTemplateCommand command)
     {
         var updatedCommand = command with { Id = id };
         var result = await _mediator.Send(updatedCommand);
         return Ok(Success(result));
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(string id)
+    [HttpDelete("{id:long}")]
+    public async Task<IActionResult> Delete(long id)
     {
         var result = await _mediator.Send(new DeleteTemplateCommand(id));
         return result ? Ok(Success("Template deleted")) : NotFound(Fail("Template not found"));

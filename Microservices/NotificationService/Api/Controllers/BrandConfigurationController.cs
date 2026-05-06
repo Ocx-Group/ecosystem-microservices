@@ -29,8 +29,8 @@ public class BrandConfigurationController : BaseController
         return CreatedAtAction(nameof(GetAll), Success(result));
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(string id, [FromBody] UpdateBrandConfigurationCommand command)
+    [HttpPut("{id:long}")]
+    public async Task<IActionResult> Update(long id, [FromBody] UpdateBrandConfigurationCommand command)
     {
         var updatedCommand = command with { Id = id };
         var result = await _mediator.Send(updatedCommand);

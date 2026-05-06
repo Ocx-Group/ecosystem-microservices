@@ -1,56 +1,60 @@
 using Ecosystem.NotificationService.Data.Context;
 using Ecosystem.NotificationService.Domain.Interfaces;
 using Ecosystem.NotificationService.Domain.Models;
-using MongoDB.Driver;
+using Microsoft.EntityFrameworkCore;
 
 namespace Ecosystem.NotificationService.Data.Repositories;
 
 public class EmailTemplateRepository : IEmailTemplateRepository
 {
-    private readonly MongoDbContext _context;
+    private readonly NotificationServiceDbContext _context;
 
-    public EmailTemplateRepository(MongoDbContext context)
+    public EmailTemplateRepository(NotificationServiceDbContext context)
         => _context = context;
 
     public async Task<EmailTemplate?> GetByKeyAndBrandAsync(string templateKey, long brandId)
         => await _context.EmailTemplates
-            .Find(t => t.TemplateKey == templateKey && t.BrandId == brandId && t.IsActive)
-            .FirstOrDefaultAsync();
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.TemplateKey == templateKey && t.BrandId == brandId && t.IsActive);
 
     public async Task<ICollection<EmailTemplate>> GetAllAsync()
         => await _context.EmailTemplates
-            .Find(_ => true)
-            .SortByDescending(t => t.CreatedAt)
+            .AsNoTracking()
+            .OrderByDescending(t => t.CreatedAt)
             .ToListAsync();
 
     public async Task<ICollection<EmailTemplate>> GetByBrandAsync(long brandId)
         => await _context.EmailTemplates
-            .Find(t => t.BrandId == brandId)
-            .SortByDescending(t => t.CreatedAt)
+            .AsNoTracking()
+            .Where(t => t.BrandId == brandId)
+            .OrderByDescending(t => t.CreatedAt)
             .ToListAsync();
 
-    public async Task<EmailTemplate?> GetByIdAsync(string id)
-        => await _context.EmailTemplates
-            .Find(t => t.Id == id)
-            .FirstOrDefaultAsync();
+    public async Task<EmailTemplate?> GetByIdAsync(long id)
+        => await _context.EmailTemplates.FindAsync(id);
 
     public async Task<EmailTemplate> CreateAsync(EmailTemplate template)
     {
         template.CreatedAt = DateTime.UtcNow;
-        await _context.EmailTemplates.InsertOneAsync(template);
+        _context.EmailTemplates.Add(template);
+        await _context.SaveChangesAsync();
         return template;
     }
 
     public async Task<EmailTemplate> UpdateAsync(EmailTemplate template)
     {
         template.UpdatedAt = DateTime.UtcNow;
-        await _context.EmailTemplates.ReplaceOneAsync(t => t.Id == template.Id, template);
+        _context.EmailTemplates.Update(template);
+        await _context.SaveChangesAsync();
         return template;
     }
 
-    public async Task<bool> DeleteAsync(string id)
+    public async Task<bool> DeleteAsync(long id)
     {
-        var result = await _context.EmailTemplates.DeleteOneAsync(t => t.Id == id);
-        return result.DeletedCount > 0;
+        var template = await _context.EmailTemplates.FindAsync(id);
+        if (template is null) return false;
+        _context.EmailTemplates.Remove(template);
+        await _context.SaveChangesAsync();
+        return true;
     }
 }

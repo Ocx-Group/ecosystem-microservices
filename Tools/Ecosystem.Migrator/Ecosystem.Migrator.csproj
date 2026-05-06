@@ -19,6 +19,7 @@
         <ProjectReference Include="..\..\Microservices\AccountService\Data\Ecosystem.AccountService.Data.csproj" />
         <ProjectReference Include="..\..\Microservices\ConfigurationService\Data\Ecosystem.ConfigurationService.Data.csproj" />
         <ProjectReference Include="..\..\Microservices\InventoryService\Data\Ecosystem.InventoryService.Data.csproj" />
+        <ProjectReference Include="..\..\Microservices\NotificationService\Data\Ecosystem.NotificationService.Data.csproj" />
         <ProjectReference Include="..\..\Microservices\WalletService\Data\Ecosystem.WalletService.Data.csproj" />
     </ItemGroup>
 

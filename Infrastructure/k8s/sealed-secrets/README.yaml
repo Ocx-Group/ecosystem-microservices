@@ -26,6 +26,18 @@
 #   - db-credentials        → connection-string (PostgreSQL connection string)
 #   - spaces-credentials    → access-key, secret-key (DigitalOcean Spaces)
 #   - registry-credentials  → .dockerconfigjson (DO Registry - generado por Terraform)
+#   - brevo-credentials     → api-key (Brevo transactional email API)
+#
+# BREVO:
+#   kubectl create secret generic brevo-credentials `
+#     --namespace=ecosystem `
+#     --from-literal=api-key="<BREVO_API_KEY>" `
+#     --dry-run=client -o yaml > brevo-credentials.yaml
+#
+#   kubeseal --format=yaml `
+#     --controller-namespace=sealed-secrets `
+#     --controller-name=sealed-secrets-controller `
+#     < brevo-credentials.yaml > sealed-secrets/brevo-credentials.yaml
 #
 # SPACES:
 #   kubectl create secret generic spaces-credentials `

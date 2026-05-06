@@ -2,6 +2,7 @@
 using Ecosystem.AccountService.Data.Context;
 using Ecosystem.ConfigurationService.Data.Context;
 using Ecosystem.InventoryService.Data.Context;
+using Ecosystem.NotificationService.Data.Context;
 using Ecosystem.WalletService.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -19,10 +20,8 @@ using Npgsql;
 //   - AccountService        (schema: account_service)
 //   - ConfigurationService  (schema: configuration_service)
 //   - InventoryService      (schema: inventory_service)
+//   - NotificationService   (schema: notification_service)
 //   - WalletService         (schema: wallet_service)
-//
-// Excluded:
-//   - NotificationService   (uses MongoDB — no EF Core migrations)
 // =============================================================================
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -34,6 +33,7 @@ builder.Logging.SetMinimumLevel(LogLevel.Information);
 RegisterDbContext<AccountServiceDbContext>(builder, "ACCOUNT_DB_CONNECTION");
 RegisterDbContext<ConfigurationServiceDbContext>(builder, "CONFIGURATION_DB_CONNECTION");
 RegisterDbContext<InventoryServiceDbContext>(builder, "INVENTORY_DB_CONNECTION");
+RegisterDbContext<NotificationServiceDbContext>(builder, "NOTIFICATION_DB_CONNECTION");
 RegisterDbContext<WalletServiceDbContext>(builder, "WALLET_DB_CONNECTION");
 
 var host = builder.Build();
@@ -55,6 +55,7 @@ try
         ("AccountService", scope.ServiceProvider.GetRequiredService<AccountServiceDbContext>()),
         ("ConfigurationService", scope.ServiceProvider.GetRequiredService<ConfigurationServiceDbContext>()),
         ("InventoryService", scope.ServiceProvider.GetRequiredService<InventoryServiceDbContext>()),
+        ("NotificationService", scope.ServiceProvider.GetRequiredService<NotificationServiceDbContext>()),
         ("WalletService", scope.ServiceProvider.GetRequiredService<WalletServiceDbContext>()),
     };
 

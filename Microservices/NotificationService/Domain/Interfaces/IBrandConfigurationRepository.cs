@@ -6,8 +6,8 @@ public interface IBrandConfigurationRepository
 {
     Task<BrandConfiguration?> GetByBrandIdAsync(long brandId);
     Task<ICollection<BrandConfiguration>> GetAllAsync();
-    Task<BrandConfiguration?> GetByIdAsync(string id);
+    Task<BrandConfiguration?> GetByIdAsync(long id);
     Task<BrandConfiguration> CreateAsync(BrandConfiguration brand);
     Task<BrandConfiguration> UpdateAsync(BrandConfiguration brand);
-    Task<bool> DeleteAsync(string id);
+    Task<bool> DeleteAsync(long id);
 }
