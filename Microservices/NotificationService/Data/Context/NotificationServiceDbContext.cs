@@ -1,5 +1,6 @@
 using Ecosystem.NotificationService.Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Ecosystem.NotificationService.Data.Context;
 
@@ -22,6 +23,14 @@ public class NotificationServiceDbContext : DbContext
     public virtual DbSet<BrandConfiguration> BrandConfigurations { get; set; }
     public virtual DbSet<Brand> Brands { get; set; }
     public virtual DbSet<ApiClient> ApiClients { get; set; }
+
+    private static readonly ValueConverter<DateTime, DateTime> UtcDateTimeConverter = new(
+        v => v.Kind == DateTimeKind.Utc ? v : DateTime.SpecifyKind(v, DateTimeKind.Utc),
+        v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+    private static readonly ValueConverter<DateTime?, DateTime?> NullableUtcDateTimeConverter = new(
+        v => v.HasValue ? (v.Value.Kind == DateTimeKind.Utc ? v.Value : DateTime.SpecifyKind(v.Value, DateTimeKind.Utc)) : v,
+        v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -51,8 +60,8 @@ public class NotificationServiceDbContext : DbContext
                     v => v.ToList()));
             entity.Property(e => e.IsActive).HasDefaultValueSql("true").HasColumnName(ColIsActive);
             entity.Property(e => e.Version).HasDefaultValueSql("1").HasColumnName("version");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql(SqlCurrentTimestamp).HasColumnName(ColCreatedAt);
-            entity.Property(e => e.UpdatedAt).HasColumnName(ColUpdatedAt);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql(SqlCurrentTimestamp).HasColumnName(ColCreatedAt).HasConversion(UtcDateTimeConverter);
+            entity.Property(e => e.UpdatedAt).HasColumnName(ColUpdatedAt).HasConversion(NullableUtcDateTimeConverter);
         });
 
         modelBuilder.Entity<BrandConfiguration>(entity =>
@@ -71,8 +80,8 @@ public class NotificationServiceDbContext : DbContext
             entity.Property(e => e.SupportEmail).HasMaxLength(255).HasColumnName("support_email");
             entity.Property(e => e.ClientUrl).HasMaxLength(500).HasColumnName("client_url");
             entity.Property(e => e.IsActive).HasDefaultValueSql("true").HasColumnName(ColIsActive);
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql(SqlCurrentTimestamp).HasColumnName(ColCreatedAt);
-            entity.Property(e => e.UpdatedAt).HasColumnName(ColUpdatedAt);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql(SqlCurrentTimestamp).HasColumnName(ColCreatedAt).HasConversion(UtcDateTimeConverter);
+            entity.Property(e => e.UpdatedAt).HasColumnName(ColUpdatedAt).HasConversion(NullableUtcDateTimeConverter);
         });
 
         modelBuilder.Entity<Brand>(entity =>
@@ -84,9 +93,9 @@ public class NotificationServiceDbContext : DbContext
             entity.Property(e => e.Name).IsRequired().HasColumnName("name");
             entity.Property(e => e.SecretKey).IsRequired().HasColumnName("secret_key");
             entity.Property(e => e.IsActive).HasDefaultValueSql("true").HasColumnName(ColIsActive);
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql(SqlCurrentTimestamp).HasColumnName(ColCreatedAt);
-            entity.Property(e => e.UpdatedAt).HasColumnName(ColUpdatedAt);
-            entity.Property(e => e.DeletedAt).HasColumnName(ColDeletedAt);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql(SqlCurrentTimestamp).HasColumnName(ColCreatedAt).HasConversion(UtcDateTimeConverter);
+            entity.Property(e => e.UpdatedAt).HasColumnName(ColUpdatedAt).HasConversion(NullableUtcDateTimeConverter);
+            entity.Property(e => e.DeletedAt).HasColumnName(ColDeletedAt).HasConversion(NullableUtcDateTimeConverter);
             entity.HasQueryFilter(e => !e.DeletedAt.HasValue);
         });
 
@@ -98,9 +107,9 @@ public class NotificationServiceDbContext : DbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name).IsRequired().HasColumnName("name");
             entity.Property(e => e.Token).IsRequired().HasColumnName("token");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql(SqlCurrentTimestamp).HasColumnName(ColCreatedAt);
-            entity.Property(e => e.UpdatedAt).HasColumnName(ColUpdatedAt);
-            entity.Property(e => e.DeletedAt).HasColumnName(ColDeletedAt);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql(SqlCurrentTimestamp).HasColumnName(ColCreatedAt).HasConversion(UtcDateTimeConverter);
+            entity.Property(e => e.UpdatedAt).HasColumnName(ColUpdatedAt).HasConversion(NullableUtcDateTimeConverter);
+            entity.Property(e => e.DeletedAt).HasColumnName(ColDeletedAt).HasConversion(NullableUtcDateTimeConverter);
             entity.HasQueryFilter(e => !e.DeletedAt.HasValue);
         });
     }
