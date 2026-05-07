@@ -7,9 +7,6 @@ public class CreateBrandConfigurationValidator : AbstractValidator<CreateBrandCo
 {
     public CreateBrandConfigurationValidator()
     {
-        RuleFor(x => x.BrandId)
-            .GreaterThan(0).WithMessage("BrandId must be greater than 0");
-
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Name is required");
 

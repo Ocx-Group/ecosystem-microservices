@@ -48,6 +48,15 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
                     Message = exception.Message
                 };
                 return context.Response.WriteAsync(JsonConvert.SerializeObject(conflictResponse));
+            case UnauthorizedAccessException:
+                context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                var forbiddenResponse = new ServicesResponse
+                {
+                    Success = false,
+                    Code = context.Response.StatusCode,
+                    Message = exception.Message
+                };
+                return context.Response.WriteAsync(JsonConvert.SerializeObject(forbiddenResponse));
             default:
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                 var response = new ServicesResponse

@@ -1,6 +1,7 @@
 using Ecosystem.Domain.Core.Bus;
 using MassTransitBus = Ecosystem.Infra.Bus.MassTransitBus;
 using Ecosystem.Grpc.Configuration;
+using Ecosystem.Infra.IoC.MultiTenancy;
 using Ecosystem.NotificationService.Application.Consumers;
 using Ecosystem.NotificationService.Application.Mappings;
 using Ecosystem.NotificationService.Application.Services;
@@ -26,6 +27,7 @@ public static class IoCExtension
         string rabbitMqPassword)
     {
         services.AddNotificationServiceDbContext(configuration);
+        services.AddMultiTenancy<BrandTenantStore, ApiClientTokenValidator>();
         services.AddMassTransitWithConsumers(rabbitMqHost, rabbitMqUsername, rabbitMqPassword);
         services.InjectAutoMapper();
         services.InjectMediatR();
@@ -72,6 +74,8 @@ public static class IoCExtension
     {
         services.AddScoped<IEmailTemplateRepository, EmailTemplateRepository>();
         services.AddScoped<IBrandConfigurationRepository, BrandConfigurationRepository>();
+        services.AddScoped<IBrandRepository, BrandRepository>();
+        services.AddScoped<IApiClientRepository, ApiClientRepository>();
     }
 
     private static void InjectServices(this IServiceCollection services, IConfiguration configuration)

@@ -16,18 +16,18 @@ public class TemplateController : BaseController
     public TemplateController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] long? brandId)
+    public async Task<IActionResult> GetAll()
     {
-        var result = await _mediator.Send(new GetAllTemplatesQuery(brandId));
+        var result = await _mediator.Send(new GetAllTemplatesQuery());
         return Ok(Success(result));
     }
 
-    [HttpGet("{templateKey}/brand/{brandId:long}")]
-    public async Task<IActionResult> GetByKey(string templateKey, long brandId)
+    [HttpGet("{templateKey}")]
+    public async Task<IActionResult> GetByKey(string templateKey)
     {
-        var result = await _mediator.Send(new GetTemplateByKeyQuery(templateKey, brandId));
+        var result = await _mediator.Send(new GetTemplateByKeyQuery(templateKey));
         return result is null
-            ? NotFound(Fail($"Template '{templateKey}' not found for brand {brandId}"))
+            ? NotFound(Fail($"Template '{templateKey}' not found"))
             : Ok(Success(result));
     }
 
@@ -36,7 +36,7 @@ public class TemplateController : BaseController
     {
         var result = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetByKey),
-            new { templateKey = result.TemplateKey, brandId = result.BrandId },
+            new { templateKey = result.TemplateKey },
             Success(result));
     }
 

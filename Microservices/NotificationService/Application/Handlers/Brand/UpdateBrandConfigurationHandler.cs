@@ -1,4 +1,5 @@
 using AutoMapper;
+using Ecosystem.Domain.Core.MultiTenancy;
 using Ecosystem.NotificationService.Application.Commands.Brand;
 using Ecosystem.NotificationService.Application.DTOs;
 using Ecosystem.NotificationService.Domain.Interfaces;
@@ -10,11 +11,16 @@ public class UpdateBrandConfigurationHandler
     : IRequestHandler<UpdateBrandConfigurationCommand, BrandConfigurationDto>
 {
     private readonly IBrandConfigurationRepository _brandRepository;
+    private readonly ITenantContext _tenantContext;
     private readonly IMapper _mapper;
 
-    public UpdateBrandConfigurationHandler(IBrandConfigurationRepository brandRepository, IMapper mapper)
+    public UpdateBrandConfigurationHandler(
+        IBrandConfigurationRepository brandRepository,
+        ITenantContext tenantContext,
+        IMapper mapper)
     {
         _brandRepository = brandRepository;
+        _tenantContext = tenantContext;
         _mapper = mapper;
     }
 
@@ -24,7 +30,10 @@ public class UpdateBrandConfigurationHandler
         var brand = await _brandRepository.GetByIdAsync(request.Id)
             ?? throw new KeyNotFoundException($"Brand configuration with id {request.Id} not found");
 
-        if (request.BrandId.HasValue) brand.BrandId = request.BrandId.Value;
+        if (brand.BrandId != _tenantContext.TenantId)
+            throw new UnauthorizedAccessException(
+                $"Brand configuration {request.Id} does not belong to the current tenant");
+
         if (request.Name is not null) brand.Name = request.Name;
         if (request.SenderName is not null) brand.SenderName = request.SenderName;
         if (request.SenderEmail is not null) brand.SenderEmail = request.SenderEmail;

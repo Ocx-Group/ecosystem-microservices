@@ -1,4 +1,5 @@
 using AutoMapper;
+using Ecosystem.Domain.Core.MultiTenancy;
 using Ecosystem.NotificationService.Application.Commands.Template;
 using Ecosystem.NotificationService.Application.DTOs;
 using Ecosystem.NotificationService.Domain.Interfaces;
@@ -9,11 +10,16 @@ namespace Ecosystem.NotificationService.Application.Handlers.Template;
 public class UpdateTemplateHandler : IRequestHandler<UpdateTemplateCommand, EmailTemplateDto>
 {
     private readonly IEmailTemplateRepository _templateRepository;
+    private readonly ITenantContext _tenantContext;
     private readonly IMapper _mapper;
 
-    public UpdateTemplateHandler(IEmailTemplateRepository templateRepository, IMapper mapper)
+    public UpdateTemplateHandler(
+        IEmailTemplateRepository templateRepository,
+        ITenantContext tenantContext,
+        IMapper mapper)
     {
         _templateRepository = templateRepository;
+        _tenantContext = tenantContext;
         _mapper = mapper;
     }
 
@@ -22,8 +28,11 @@ public class UpdateTemplateHandler : IRequestHandler<UpdateTemplateCommand, Emai
         var template = await _templateRepository.GetByIdAsync(request.Id)
             ?? throw new KeyNotFoundException($"Template with id {request.Id} not found");
 
+        if (template.BrandId != _tenantContext.TenantId)
+            throw new UnauthorizedAccessException(
+                $"Template {request.Id} does not belong to the current tenant");
+
         if (request.TemplateKey is not null) template.TemplateKey = request.TemplateKey;
-        if (request.BrandId.HasValue) template.BrandId = request.BrandId.Value;
         if (request.Subject is not null) template.Subject = request.Subject;
         if (request.HtmlBody is not null) template.HtmlBody = request.HtmlBody;
         if (request.Placeholders is not null) template.Placeholders = request.Placeholders;

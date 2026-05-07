@@ -10,9 +10,6 @@ public class SendEmailValidator : AbstractValidator<SendEmailCommand>
         RuleFor(x => x.TemplateKey)
             .NotEmpty().WithMessage("TemplateKey is required");
 
-        RuleFor(x => x.BrandId)
-            .GreaterThan(0).WithMessage("BrandId must be greater than 0");
-
         RuleFor(x => x.ToEmail)
             .NotEmpty().WithMessage("ToEmail is required")
             .EmailAddress().WithMessage("ToEmail must be a valid email address");

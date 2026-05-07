@@ -5,7 +5,6 @@ namespace Ecosystem.NotificationService.Application.Commands.Template;
 public record UpdateTemplateCommand(
     long Id,
     string? TemplateKey,
-    long? BrandId,
     string? Subject,
     string? HtmlBody,
     List<string>? Placeholders,

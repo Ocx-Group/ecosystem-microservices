@@ -1,4 +1,5 @@
 using System.Text;
+using Ecosystem.Domain.Core.MultiTenancy;
 using Ecosystem.NotificationService.Application.Commands.Email;
 using Ecosystem.NotificationService.Domain.Interfaces;
 using MediatR;
@@ -11,31 +12,44 @@ public class SendEmailHandler : IRequestHandler<SendEmailCommand, bool>
     private readonly IEmailTemplateRepository _templateRepository;
     private readonly IBrandConfigurationRepository _brandRepository;
     private readonly IEmailService _emailService;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<SendEmailHandler> _logger;
 
     public SendEmailHandler(
         IEmailTemplateRepository templateRepository,
         IBrandConfigurationRepository brandRepository,
         IEmailService emailService,
+        ITenantContext tenantContext,
         ILogger<SendEmailHandler> logger)
     {
         _templateRepository = templateRepository;
         _brandRepository = brandRepository;
         _emailService = emailService;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
     public async Task<bool> Handle(SendEmailCommand request, CancellationToken cancellationToken)
     {
-        var template = await _templateRepository.GetByKeyAndBrandAsync(request.TemplateKey, request.BrandId)
+        var brandId = _tenantContext.TenantId;
+
+        var template = await _templateRepository.GetByKeyAndBrandAsync(request.TemplateKey, brandId)
             ?? throw new KeyNotFoundException(
-                $"Template '{request.TemplateKey}' not found for brand {request.BrandId}");
+                $"Template '{request.TemplateKey}' not found for brand {brandId}");
 
-        var brand = await _brandRepository.GetByBrandIdAsync(request.BrandId)
-            ?? throw new KeyNotFoundException($"Brand configuration not found for brand {request.BrandId}");
+        var brand = await _brandRepository.GetByBrandIdAsync(brandId)
+            ?? throw new KeyNotFoundException($"Brand configuration not found for brand {brandId}");
 
-        var htmlBody = ReplacePlaceholders(template.HtmlBody, request.Placeholders);
-        var subject = request.SubjectOverride ?? template.Subject;
+        var placeholders = new Dictionary<string, string>(request.Placeholders)
+        {
+            ["brandName"]    = brand.Name,
+            ["clientUrl"]    = brand.ClientUrl ?? string.Empty,
+            ["supportEmail"] = brand.SupportEmail ?? brand.SenderEmail,
+            ["senderName"]   = brand.SenderName,
+        };
+
+        var htmlBody = ReplacePlaceholders(template.HtmlBody, placeholders);
+        var subject = ReplacePlaceholders(request.SubjectOverride ?? template.Subject, placeholders);
 
         var attachments = request.Attachments?
             .Select(a => new EmailAttachment(a.FileName, a.Content, a.ContentType))
@@ -43,7 +57,7 @@ public class SendEmailHandler : IRequestHandler<SendEmailCommand, bool>
 
         _logger.LogInformation(
             "Sending email: template={TemplateKey}, brand={BrandId}, to={ToEmail}",
-            request.TemplateKey, request.BrandId, request.ToEmail);
+            request.TemplateKey, brandId, request.ToEmail);
 
         return await _emailService.SendEmailAsync(
             request.ToEmail,
@@ -55,9 +69,9 @@ public class SendEmailHandler : IRequestHandler<SendEmailCommand, bool>
             attachments);
     }
 
-    private static string ReplacePlaceholders(string html, Dictionary<string, string> placeholders)
+    private static string ReplacePlaceholders(string source, Dictionary<string, string> placeholders)
     {
-        var sb = new StringBuilder(html);
+        var sb = new StringBuilder(source);
         foreach (var (key, value) in placeholders)
         {
             sb.Replace($"{{{key}}}", value);

@@ -8,6 +8,7 @@ public class NotificationServiceDbContext : DbContext
     private const string SchemaName          = "notification_service";
     private const string ColCreatedAt        = "created_at";
     private const string ColUpdatedAt        = "updated_at";
+    private const string ColDeletedAt        = "deleted_at";
     private const string ColBrandId          = "brand_id";
     private const string ColIsActive         = "is_active";
     private const string SqlCurrentTimestamp = "CURRENT_TIMESTAMP";
@@ -19,6 +20,8 @@ public class NotificationServiceDbContext : DbContext
 
     public virtual DbSet<EmailTemplate> EmailTemplates { get; set; }
     public virtual DbSet<BrandConfiguration> BrandConfigurations { get; set; }
+    public virtual DbSet<Brand> Brands { get; set; }
+    public virtual DbSet<ApiClient> ApiClients { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -70,6 +73,35 @@ public class NotificationServiceDbContext : DbContext
             entity.Property(e => e.IsActive).HasDefaultValueSql("true").HasColumnName(ColIsActive);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql(SqlCurrentTimestamp).HasColumnName(ColCreatedAt);
             entity.Property(e => e.UpdatedAt).HasColumnName(ColUpdatedAt);
+        });
+
+        modelBuilder.Entity<Brand>(entity =>
+        {
+            entity.ToTable("brands", SchemaName);
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.SecretKey).IsUnique();
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name).IsRequired().HasColumnName("name");
+            entity.Property(e => e.SecretKey).IsRequired().HasColumnName("secret_key");
+            entity.Property(e => e.IsActive).HasDefaultValueSql("true").HasColumnName(ColIsActive);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql(SqlCurrentTimestamp).HasColumnName(ColCreatedAt);
+            entity.Property(e => e.UpdatedAt).HasColumnName(ColUpdatedAt);
+            entity.Property(e => e.DeletedAt).HasColumnName(ColDeletedAt);
+            entity.HasQueryFilter(e => !e.DeletedAt.HasValue);
+        });
+
+        modelBuilder.Entity<ApiClient>(entity =>
+        {
+            entity.ToTable("api_clients", SchemaName);
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Token).IsUnique();
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name).IsRequired().HasColumnName("name");
+            entity.Property(e => e.Token).IsRequired().HasColumnName("token");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql(SqlCurrentTimestamp).HasColumnName(ColCreatedAt);
+            entity.Property(e => e.UpdatedAt).HasColumnName(ColUpdatedAt);
+            entity.Property(e => e.DeletedAt).HasColumnName(ColDeletedAt);
+            entity.HasQueryFilter(e => !e.DeletedAt.HasValue);
         });
     }
 }

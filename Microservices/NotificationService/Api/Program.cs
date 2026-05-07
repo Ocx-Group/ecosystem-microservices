@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using Ecosystem.Infra.IoC.MultiTenancy;
 using Ecosystem.NotificationService.Api.Middlewares;
 using Ecosystem.NotificationService.Infra.IoC;
 
@@ -34,6 +35,8 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseHttpsRedirection();
 app.UseMiddleware<ExceptionMiddleware>();
+
+app.UseTenantResolution();
 
 app.MapHealthChecks("/health");
 app.MapControllers();
