@@ -119,6 +119,8 @@ public static class IoCExtension
 
         services.Configure<Application.Settings.AccountServiceSettings>(
             configuration.GetSection(Application.Settings.AccountServiceSettings.SectionName));
+        services.Configure<Application.Settings.GoogleAuthSettings>(
+            configuration.GetSection(Application.Settings.GoogleAuthSettings.SectionName));
 
         services.InjectGrpcClients(configuration);
     }

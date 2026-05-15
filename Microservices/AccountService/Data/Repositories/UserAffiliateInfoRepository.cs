@@ -144,6 +144,10 @@ public class UserAffiliateInfoRepository : BaseRepository, IUserAffiliateInfoRep
         => Context.UsersAffiliates.FirstOrDefaultAsync(x =>
             x.Username.ToLower() == userName.ToLower() && x.Status == 1 && x.BrandId == brandId);
 
+    public Task<UsersAffiliate?> GetAffiliateByGoogleAuthCodeAsync(string googleAuthCode, long brandId)
+        => Context.UsersAffiliates.FirstOrDefaultAsync(x =>
+            x.GoogleAuthCode == googleAuthCode && x.Status == 1 && x.BrandId == brandId);
+
     public async Task<AffiliateBinarySponsor?> GetBinarySponsor(int side, long father)
     {
         var sql = FormattableStringFactory.Create(

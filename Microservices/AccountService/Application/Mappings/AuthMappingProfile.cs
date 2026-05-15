@@ -27,5 +27,13 @@ public class AuthMappingProfile : Profile
             .ForMember(d => d.Status, opt => opt.MapFrom(s => true))
             .ForMember(d => d.CreatedAt, opt => opt.MapFrom(s => DateTime.Now))
             .ForMember(d => d.UpdatedAt, opt => opt.MapFrom(s => DateTime.Now));
+        CreateMap<GoogleAuthenticationCommand, LoginMovement>()
+            .ForMember(d => d.Id, opt => opt.Ignore())
+            .ForMember(d => d.BrowserInfo, opt => opt.MapFrom(s => s.BrowserInfo))
+            .ForMember(d => d.OperatingSystem, opt => opt.MapFrom(s => s.OperatingSystem))
+            .ForMember(d => d.IpAddress, opt => opt.MapFrom(s => s.IpAddress))
+            .ForMember(d => d.Status, opt => opt.MapFrom(s => true))
+            .ForMember(d => d.CreatedAt, opt => opt.MapFrom(s => DateTime.Now))
+            .ForMember(d => d.UpdatedAt, opt => opt.MapFrom(s => DateTime.Now));
     }
 }

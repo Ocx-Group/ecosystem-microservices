@@ -28,6 +28,18 @@ public class AuthController : BaseController
         return Ok(Success(result.Affiliate is not null ? result.Affiliate : result.User!));
     }
 
+    [HttpPost("google")]
+    public async Task<IActionResult> GoogleAuthentication(
+        [FromBody] GoogleAuthenticationCommand command, CancellationToken ct)
+    {
+        var result = await _mediator.Send(command, ct);
+
+        if (!result.IsAuthenticated)
+            return Ok(Fail(result.ErrorMessage ?? "Google authentication failed."));
+
+        return Ok(Success(result.Affiliate is not null ? result.Affiliate : result.User!));
+    }
+
     [HttpGet("countries")]
     public async Task<IActionResult> GetCountries(CancellationToken ct)
     {

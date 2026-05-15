@@ -35,6 +35,8 @@ spec:
               value: "8080"
             - name: ASPNETCORE_GRPC_PORT
               value: "50051"
+            - name: GoogleAuth__ClientIds__0
+              value: "378354244505-86veruf9kchr221e953erkp8jbrq8883.apps.googleusercontent.com"
             - name: ConnectionStrings__PostgreSqlConnection
               valueFrom:
                 secretKeyRef:

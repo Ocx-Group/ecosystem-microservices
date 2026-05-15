@@ -13,6 +13,7 @@ public interface IUserAffiliateInfoRepository
     Task<AffiliateBinarySponsor?> GetBinarySponsor(int side, long father);
     Task<UsersAffiliate?> GetAffiliateByUserNameAsync(string userName, long brandId);
     Task<UsersAffiliate?> GetAffiliateByUserNameAuthAsync(string userName, long brandId);
+    Task<UsersAffiliate?> GetAffiliateByGoogleAuthCodeAsync(string googleAuthCode, long brandId);
     Task<List<UsersAffiliate>> GetAffiliatesByIds(long[] ids, long brandId);
     Task<UsersAffiliate?> GetAffiliateByEmailAsync(string email, long brandId);
     Task<ExistenceStatus> CheckAffiliateExistenceAsync(string email, string userName, long brandId);
