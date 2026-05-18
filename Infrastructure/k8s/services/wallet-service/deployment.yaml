@@ -35,6 +35,8 @@ spec:
               value: "8080"
             - name: ASPNETCORE_GRPC_PORT
               value: "50051"
+            - name: GrpcServices__AccountService
+              value: "http://account-service:50051"
             - name: ConnectionStrings__PostgreSqlConnection
               valueFrom:
                 secretKeyRef:

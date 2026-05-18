@@ -8,6 +8,17 @@ using Ecosystem.Infra.IoC.MultiTenancy;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var httpPort = int.Parse(builder.Configuration["ASPNETCORE_HTTP_PORTS"] ?? "8080");
+var grpcPort = int.Parse(builder.Configuration["ASPNETCORE_GRPC_PORT"] ?? "50051");
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(httpPort, listenOptions =>
+        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2);
+    options.ListenAnyIP(grpcPort, listenOptions =>
+        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2);
+});
+
 // Core services
 builder.Services.AddControllers()
     .AddNewtonsoftJson();
