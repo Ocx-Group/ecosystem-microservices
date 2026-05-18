@@ -6,6 +6,7 @@ public interface ITicketRepository
 {
     Task<Ticket> CreateTicket(Ticket ticket, long brandId);
     Task<List<Ticket>> GetAllTicketsByAffiliateId(int affiliateId, long brandId);
+    Task<List<Ticket>> GetTicketsByBrandId(int brandId);
     Task<List<Ticket>> GetAllTickets(int brandId);
     Task<Ticket?> GetTicketById(int ticketId);
     Task<List<Ticket>> DeleteTickets(List<Ticket> tickets);

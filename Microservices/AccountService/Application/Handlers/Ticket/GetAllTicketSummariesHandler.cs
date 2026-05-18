@@ -24,7 +24,7 @@ public class GetAllTicketSummariesHandler : IRequestHandler<GetAllTicketSummarie
 
     public async Task<List<TicketSummaryDto>> Handle(GetAllTicketSummariesQuery request, CancellationToken cancellationToken)
     {
-        var tickets = await _ticketRepository.GetAllTickets(request.BrandId);
+        var tickets = await _ticketRepository.GetTicketsByBrandId(request.BrandId);
         var ticketSummaries = new List<TicketSummaryDto>();
 
         foreach (var ticket in tickets)

@@ -3,8 +3,6 @@ using Ecosystem.AccountService.Domain.Interfaces;
 using Ecosystem.AccountService.Domain.Models;
 using Ecosystem.AccountService.Domain.Models.CustomModels;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
-using NpgsqlTypes;
 
 namespace Ecosystem.AccountService.Data.Repositories;
 
@@ -27,6 +25,12 @@ public class TicketRepository : BaseRepository, ITicketRepository
     public Task<List<Ticket>> GetAllTicketsByAffiliateId(int affiliateId, long brandId)
         => Context.Tickets.Where(e => e.AffiliateId == affiliateId && e.BrandId == brandId).Include(x => x.TicketImages)
             .AsNoTracking().ToListAsync();
+
+    public Task<List<Ticket>> GetTicketsByBrandId(int brandId)
+        => Context.Tickets
+            .Where(x => x.BrandId == brandId)
+            .AsNoTracking()
+            .ToListAsync();
 
     public async Task<Ticket?> GetTicketById(int ticketId)
     {
@@ -79,10 +83,31 @@ public class TicketRepository : BaseRepository, ITicketRepository
 
     private async Task<ICollection<MessageDetails>> GetTicketMessagesByTicketId(long ticketId)
     {
-        var sql = "SELECT * FROM account_service.get_ticket_details_by_id(@p_ticket_id)";
-        var ticketIdParam = new NpgsqlParameter("p_ticket_id", NpgsqlDbType.Integer) { Value = ticketId };
-        var messages = await Context.Set<MessageDetails>().FromSqlRaw(sql, ticketIdParam).ToListAsync();
-        return messages;
+        var messages =
+            from ticketMessage in Context.TicketMessages.AsNoTracking()
+            join affiliate in Context.UsersAffiliates.AsNoTracking()
+                on ticketMessage.UserId equals affiliate.Id into affiliateJoin
+            from affiliate in affiliateJoin.DefaultIfEmpty()
+            join user in Context.Users.AsNoTracking()
+                on ticketMessage.UserId equals user.Id into userJoin
+            from user in userJoin.DefaultIfEmpty()
+            where ticketMessage.TicketId == ticketId
+            orderby ticketMessage.Id
+            select new MessageDetails
+            {
+                Id = (int)ticketMessage.Id,
+                TicketId = (int)ticketMessage.TicketId,
+                UserId = ticketMessage.UserId,
+                MessageContent = ticketMessage.MessageContent,
+                CreatedAt = ticketMessage.CreatedAt,
+                UpdatedAt = ticketMessage.UpdatedAt,
+                DeletedAt = ticketMessage.DeletedAt,
+                IsRead = ticketMessage.IsRead,
+                UserName = affiliate != null ? affiliate.Username : user != null ? user.Username : string.Empty,
+                ImageProfileUrl = affiliate != null ? affiliate.ImageProfileUrl : user != null ? user.ImageProfileUrl : string.Empty
+            };
+
+        return await messages.ToListAsync();
     }
 
     public async Task<List<TicketMessage>?> GetMessagesByTicketId(int ticketId)
