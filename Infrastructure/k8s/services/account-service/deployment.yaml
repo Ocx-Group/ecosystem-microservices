@@ -37,6 +37,10 @@ spec:
               value: "50051"
             - name: GoogleAuth__ClientIds__0
               value: "378354244505-86veruf9kchr221e953erkp8jbrq8883.apps.googleusercontent.com"
+            - name: GoogleAuth__ClientIds__1
+              value: "378354244505-njjch822319jnpid67vbkd8gq8mnm9vq.apps.googleusercontent.com"
+            - name: GoogleAuth__ClientIds__2
+              value: "378354244505-og1ep1ouapeduggjj5l7r89uc9kqkg37.apps.googleusercontent.com" 
             - name: ConnectionStrings__PostgreSqlConnection
               valueFrom:
                 secretKeyRef:
