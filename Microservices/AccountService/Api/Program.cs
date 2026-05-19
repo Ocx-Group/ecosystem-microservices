@@ -52,6 +52,7 @@ builder.Services.AddAccountServiceDependencies(
     typeof(Ecosystem.AccountService.Api.Mappings.GrpcMappingProfile).Assembly);
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+TenantResolutionMiddleware.AddSkipPrefix("/account.AccountGrpc/");
 
 var app = builder.Build();
 
