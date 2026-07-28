@@ -114,6 +114,21 @@ jobs:
           cache-from: type=registry,ref=${{ env.REGISTRY }}/inventory-service:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/inventory-service:buildcache,mode=max
 
+      # Publish the migration image before ConfigurationService. When Image
+      # Updater detects the new service tag, its PreSync hook can already pull
+      # the matching migration payload through migrator:latest.
+      - name: Build & Push migrator
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Tools/Ecosystem.Migrator/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/migrator:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/migrator:latest
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/migrator:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/migrator:buildcache,mode=max
+
       - name: Build & Push configuration-service
         uses: docker/build-push-action@v5
         with:
@@ -137,18 +152,6 @@ jobs:
             ${{ env.REGISTRY }}/notification-service:latest
           cache-from: type=registry,ref=${{ env.REGISTRY }}/notification-service:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/notification-service:buildcache,mode=max
-
-      - name: Build & Push migrator
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Tools/Ecosystem.Migrator/Dockerfile
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/migrator:${{ steps.version.outputs.version }}
-            ${{ env.REGISTRY }}/migrator:latest
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/migrator:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/migrator:buildcache,mode=max
 
   # ===========================================================================
   # JOB 2 — Terraform apply (idempotente)

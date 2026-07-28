@@ -1,6 +1,5 @@
 using Ecosystem.WalletService.Domain.Requests.ConPaymentRequest;
 using Ecosystem.WalletService.Domain.Responses;
-using Ecosystem.WalletService.Domain.Responses.BaseResponses;
 
 namespace Ecosystem.WalletService.Application.Adapters;
 

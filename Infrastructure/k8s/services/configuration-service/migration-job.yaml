@@ -1,0 +1,62 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ecosystem-database-migrator
+  namespace: ecosystem
+  labels:
+    app: ecosystem-database-migrator
+  annotations:
+    # Block the ConfigurationService rollout until every pending migration succeeds.
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        app: ecosystem-database-migrator
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrator
+          image: registry.digitalocean.com/ocx-registry/migrator:latest
+          imagePullPolicy: Always
+          env:
+            # All services currently share one PostgreSQL database and use
+            # separate schemas. Keep separate variables so this remains
+            # compatible if databases are split later.
+            - name: ACCOUNT_DB_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: connection-string
+            - name: CONFIGURATION_DB_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: connection-string
+            - name: INVENTORY_DB_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: connection-string
+            - name: NOTIFICATION_DB_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: connection-string
+            - name: WALLET_DB_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: connection-string
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "384Mi"
+              cpu: "500m"
+      imagePullSecrets:
+        - name: ocx-registry

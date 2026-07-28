@@ -407,7 +407,9 @@ public partial class ConfigurationServiceDbContext : DbContext
 
             entity.ToTable("brand_configuration", "configuration_service");
 
-            entity.HasIndex(e => e.BrandId, "idx_brand_configuration_brand_id").IsUnique();
+            entity.HasIndex(e => e.BrandId, "idx_brand_configuration_brand_id")
+                .IsUnique()
+                .HasFilter("deleted_at IS NULL");
 
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("nextval('brand_configuration_id_seq'::regclass)")
@@ -495,7 +497,8 @@ public partial class ConfigurationServiceDbContext : DbContext
             entity.ToTable("pdf_template", "configuration_service");
 
             entity.HasIndex(e => new { e.BrandId, e.TemplateKey }, "idx_pdf_template_brand_key")
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("deleted_at IS NULL");
 
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("nextval('pdf_template_id_seq'::regclass)")
