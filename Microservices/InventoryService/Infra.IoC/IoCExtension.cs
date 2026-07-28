@@ -1,3 +1,5 @@
+using Ecosystem.Grpc.Configuration;
+using Ecosystem.InventoryService.Application.Adapters;
 using Ecosystem.InventoryService.Application.Mappings;
 using Ecosystem.InventoryService.Data.Context;
 using Ecosystem.InventoryService.Data.Repositories;
@@ -22,6 +24,7 @@ public static class IoCExtension
         services.InjectMediatR();
         services.InjectValidators();
         services.InjectRepositories();
+        services.InjectGrpcClients(configuration);
     }
 
     private static void InjectRepositories(this IServiceCollection services)
@@ -59,5 +62,19 @@ public static class IoCExtension
         var connectionString = configuration.GetConnectionString("PostgreSqlConnection");
         services.AddDbContext<InventoryServiceDbContext>(options =>
             options.UseNpgsql(connectionString));
+    }
+
+    private static void InjectGrpcClients(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var configurationServiceUrl =
+            configuration["GrpcServices:ConfigurationService"] ?? "https://localhost:5103";
+
+        services.AddGrpcClient<ConfigurationGrpc.ConfigurationGrpcClient>(options =>
+        {
+            options.Address = new Uri(configurationServiceUrl);
+        });
+        services.AddScoped<IConfigurationServiceAdapter, GrpcConfigurationServiceAdapter>();
     }
 }

@@ -49,6 +49,8 @@ spec:
               value: "50051"
             - name: GrpcServices__AccountService
               value: "http://account-service:50051"
+            - name: GrpcServices__InventoryService
+              value: "http://inventory-service:50051"
             - name: GrpcServices__ConfigurationService
               value: "http://configuration-service:50051"
             - name: ConnectionStrings__PostgreSqlConnection

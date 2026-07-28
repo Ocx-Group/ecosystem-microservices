@@ -145,13 +145,6 @@ public class ProductRepository : BaseRepository, IProductRepository
             .AsNoTracking()
             .ToListAsync();
 
-    public Task<List<Product>> GetAllTradingAcademy(int paymentGroup)
-        => Context.Products
-            .Where(x => x.PaymentGroup == paymentGroup)
-            .Include(x => x.Category)
-            .AsNoTracking()
-            .ToListAsync();
-
     public Task<List<Product>> GetAllSavingsPlans()
         => Context.Products
             .Where(x => x.PaymentGroup == InventoryConstants.SavingsPlans)
@@ -176,13 +169,6 @@ public class ProductRepository : BaseRepository, IProductRepository
     public Task<List<Product>> GetAllAlternativeHealthForEurope()
         => Context.Products
             .Where(x => x.PaymentGroup == InventoryConstants.AlternativeHealthForEurope)
-            .Include(x => x.Category)
-            .AsNoTracking()
-            .ToListAsync();
-
-    public Task<List<Product>> GetAllRecyCoin()
-        => Context.Products
-            .Where(x => x.PaymentGroup == InventoryConstants.RecyCoin)
             .Include(x => x.Category)
             .AsNoTracking()
             .ToListAsync();

@@ -8,8 +8,16 @@
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="13.0.1"/>
         <PackageReference Include="FluentValidation" Version="12.1.1"/>
+        <PackageReference Include="Google.Protobuf" Version="3.26.1"/>
+        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.62.0"/>
+        <PackageReference Include="Grpc.Tools" Version="2.62.0" PrivateAssets="All"/>
         <PackageReference Include="MediatR" Version="12.2.0"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Protobuf Include="..\..\..\Domain\Protos\configuration.proto"
+                  GrpcServices="Client"
+                  Link="Protos\configuration.proto"/>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Domain\Ecosystem.InventoryService.Domain.csproj" />
