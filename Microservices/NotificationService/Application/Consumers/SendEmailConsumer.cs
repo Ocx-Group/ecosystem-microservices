@@ -1,5 +1,6 @@
 using System.Text;
 using Ecosystem.Domain.Core.Events;
+using Ecosystem.NotificationService.Application.Adapters;
 using Ecosystem.NotificationService.Domain.Interfaces;
 using MassTransit;
 using Microsoft.Extensions.Logging;
@@ -9,18 +10,18 @@ namespace Ecosystem.NotificationService.Application.Consumers;
 public class SendEmailConsumer : IConsumer<SendEmailEvent>
 {
     private readonly IEmailTemplateRepository _templateRepository;
-    private readonly IBrandConfigurationRepository _brandRepository;
+    private readonly IBrandConfigurationReader _brandConfigurationReader;
     private readonly IEmailService _emailService;
     private readonly ILogger<SendEmailConsumer> _logger;
 
     public SendEmailConsumer(
         IEmailTemplateRepository templateRepository,
-        IBrandConfigurationRepository brandRepository,
+        IBrandConfigurationReader brandConfigurationReader,
         IEmailService emailService,
         ILogger<SendEmailConsumer> logger)
     {
         _templateRepository = templateRepository;
-        _brandRepository = brandRepository;
+        _brandConfigurationReader = brandConfigurationReader;
         _emailService = emailService;
         _logger = logger;
     }
@@ -41,7 +42,9 @@ public class SendEmailConsumer : IConsumer<SendEmailEvent>
             return;
         }
 
-        var brand = await _brandRepository.GetByBrandIdAsync(message.BrandId);
+        var brand = await _brandConfigurationReader.GetByBrandIdAsync(
+            message.BrandId,
+            context.CancellationToken);
         if (brand is null)
         {
             _logger.LogWarning("Brand configuration not found for brand {BrandId}", message.BrandId);
@@ -51,8 +54,10 @@ public class SendEmailConsumer : IConsumer<SendEmailEvent>
         var placeholders = new Dictionary<string, string>(message.Placeholders)
         {
             ["brandName"]    = brand.Name,
-            ["clientUrl"]    = brand.ClientUrl ?? string.Empty,
-            ["supportEmail"] = brand.SupportEmail ?? brand.SenderEmail,
+            ["clientUrl"]    = brand.ClientUrl,
+            ["supportEmail"] = string.IsNullOrWhiteSpace(brand.SupportEmail)
+                ? brand.SenderEmail
+                : brand.SupportEmail,
             ["senderName"]   = brand.SenderName
         };
 

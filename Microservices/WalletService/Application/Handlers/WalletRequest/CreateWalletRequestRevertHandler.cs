@@ -25,6 +25,7 @@ public class CreateWalletRequestRevertHandler : IRequestHandler<CreateWalletRequ
     private readonly IAccountServiceAdapter _accountServiceAdapter;
     private readonly IMapper _mapper;
     private readonly ITenantContext _tenantContext;
+    private readonly IConfigurationAdapter _configurationAdapter;
 
     public CreateWalletRequestRevertHandler(
         IWalletRequestRepository walletRequestRepository,
@@ -35,6 +36,7 @@ public class CreateWalletRequestRevertHandler : IRequestHandler<CreateWalletRequ
         IAccountServiceAdapter accountServiceAdapter,
         IMapper mapper,
         ITenantContext tenantContext,
+        IConfigurationAdapter configurationAdapter,
         ILogger<CreateWalletRequestRevertHandler> logger)
     {
         _walletRequestRepository = walletRequestRepository;
@@ -45,12 +47,18 @@ public class CreateWalletRequestRevertHandler : IRequestHandler<CreateWalletRequ
         _accountServiceAdapter = accountServiceAdapter;
         _mapper = mapper;
         _tenantContext = tenantContext;
+        _configurationAdapter = configurationAdapter;
     }
 
     public async Task<WalletRequestDto?> Handle(CreateWalletRequestRevertCommand command, CancellationToken cancellationToken)
     {
         var request = command.Request;
         var brandId = _tenantContext.TenantId;
+        var brandConfiguration = await _configurationAdapter.GetBrandConfiguration(
+            brandId,
+            cancellationToken);
+        if (brandConfiguration is null)
+            return null;
 
         var response = await _invoiceRepository.GetInvoiceById(request.InvoiceId, brandId);
         var userInfoResponse = await _accountServiceAdapter.GetUserInfo(response!.AffiliateId, brandId);
@@ -65,7 +73,7 @@ public class CreateWalletRequestRevertHandler : IRequestHandler<CreateWalletRequ
             Concept = Constants.RevertEcoPoolConcept + $" Factura# {request.InvoiceId}",
             Credit = Convert.ToDouble(amountReverted),
             AffiliateUserName = userInfoResponse!.UserName,
-            AdminUserName = Constants.AdminEcosystemUserName,
+            AdminUserName = brandConfiguration.AdminUserName,
             ConceptType = nameof(WalletConceptType.revert_pool),
             BrandId = brandId
         };

@@ -1,4 +1,4 @@
-using Ecosystem.Domain.Core.BrandConfiguration;
+using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Domain.Requests.WalletRequest;
 using Ecosystem.WalletService.Domain.Services;
 using Ecosystem.WalletService.Domain.ValueObjects;
@@ -7,7 +7,7 @@ namespace Ecosystem.WalletService.Application.Services;
 
 public class DebitTransactionBuilder : IDebitTransactionBuilder
 {
-    private readonly IBrandConfigurationProvider _brandConfigProvider;
+    private readonly IConfigurationAdapter _configurationAdapter;
 
     private int _affiliateId;
     private string _affiliateUserName = string.Empty;
@@ -27,9 +27,9 @@ public class DebitTransactionBuilder : IDebitTransactionBuilder
     private string? _adminUserNameOverride;
     private bool? _includeInCommissionCalculation;
 
-    public DebitTransactionBuilder(IBrandConfigurationProvider brandConfigProvider)
+    public DebitTransactionBuilder(IConfigurationAdapter configurationAdapter)
     {
-        _brandConfigProvider = brandConfigProvider;
+        _configurationAdapter = configurationAdapter;
     }
 
     public IDebitTransactionBuilder ForAffiliate(int affiliateId, string affiliateUserName)
@@ -104,7 +104,7 @@ public class DebitTransactionBuilder : IDebitTransactionBuilder
         var adminUserName = _adminUserNameOverride;
         if (string.IsNullOrEmpty(adminUserName))
         {
-            var brandConfig = await _brandConfigProvider.GetByBrandIdAsync(brandId);
+            var brandConfig = await _configurationAdapter.GetBrandConfiguration(brandId);
             adminUserName = brandConfig?.AdminUserName ?? string.Empty;
         }
 

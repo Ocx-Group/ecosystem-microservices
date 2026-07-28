@@ -31,10 +31,14 @@ spec:
           env:
             - name: ASPNETCORE_ENVIRONMENT
               value: "Production"
-            - name: ASPNETCORE_HTTP_PORTS
-              value: "8080"
-            - name: ASPNETCORE_GRPC_PORT
-              value: "50051"
+            - name: Kestrel__Endpoints__Http__Url
+              value: "http://0.0.0.0:8080"
+            - name: Kestrel__Endpoints__Http__Protocols
+              value: "Http1"
+            - name: Kestrel__Endpoints__Grpc__Url
+              value: "http://0.0.0.0:50051"
+            - name: Kestrel__Endpoints__Grpc__Protocols
+              value: "Http2"
             - name: ConnectionStrings__PostgreSqlConnection
               valueFrom:
                 secretKeyRef:

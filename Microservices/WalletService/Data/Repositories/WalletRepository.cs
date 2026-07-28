@@ -114,13 +114,14 @@ public class WalletRepository : BaseRepository, IWalletRepository
         return Convert.ToDecimal(reverseBalance);
     }
 
-    public Task<decimal?> GetTotalAcquisitionsByAffiliateId(int affiliateId, long brandId)
+    public Task<decimal?> GetTotalAcquisitionsByAffiliateId(
+        int affiliateId,
+        long brandId,
+        int? paymentGroupId)
     {
-        // Brand 5 (Recybots) opera con facturas migradas que no tienen
-        // InvoicesDetails. Para este brand sumamos directamente Invoice.TotalInvoice
-        // de las facturas no canceladas. El resto de brands mantiene la lógica
-        // original basada en detalles (PaymentGroup + ProductPack).
-        if (brandId == 5)
+        // A null payment group represents brands whose migrated invoices do not
+        // have detail rows. The decision is configuration-driven, not BrandId-driven.
+        if (paymentGroupId is null)
         {
             return Context.Invoices.AsNoTracking()
                 .Where(i => i.AffiliateId == affiliateId
@@ -129,12 +130,10 @@ public class WalletRepository : BaseRepository, IWalletRepository
                 .SumAsync(i => i.TotalInvoice);
         }
 
-        var allowedPaymentGroups = new[] { 2, 11, 12, 13 };
-
         return Context.InvoicesDetails.Include(x => x.Invoice).AsNoTracking()
             .Where(x
                 => x.Invoice.AffiliateId == affiliateId
-                   && allowedPaymentGroups.Contains(x.PaymentGroupId)
+                   && x.PaymentGroupId == paymentGroupId.Value
                    && x.ProductPack
                    && !x.Invoice.CancellationDate.HasValue
                    && x.BrandId == brandId)

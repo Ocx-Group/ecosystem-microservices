@@ -1,3 +1,4 @@
+using Ecosystem.NotificationService.Application.Adapters;
 using Ecosystem.NotificationService.Domain.Interfaces;
 using Fluid;
 using Microsoft.Extensions.Logging;
@@ -9,7 +10,7 @@ namespace Ecosystem.NotificationService.Application.Services.Pdf;
 public class PdfService : IPdfService
 {
     private readonly IPdfTemplateProvider _templateProvider;
-    private readonly IBrandConfigurationRepository _brandRepository;
+    private readonly IBrandConfigurationReader _brandConfigurationReader;
     private readonly IBrowserProvider _browserProvider;
     private readonly ILogger<PdfService> _logger;
 
@@ -17,12 +18,12 @@ public class PdfService : IPdfService
 
     public PdfService(
         IPdfTemplateProvider templateProvider,
-        IBrandConfigurationRepository brandRepository,
+        IBrandConfigurationReader brandConfigurationReader,
         IBrowserProvider browserProvider,
         ILogger<PdfService> logger)
     {
         _templateProvider = templateProvider;
-        _brandRepository = brandRepository;
+        _brandConfigurationReader = brandConfigurationReader;
         _browserProvider = browserProvider;
         _logger = logger;
     }
@@ -36,7 +37,7 @@ public class PdfService : IPdfService
             return [];
         }
 
-        var brandConfig = await _brandRepository.GetByBrandIdAsync(brandId);
+        var brandConfig = await _brandConfigurationReader.GetByBrandIdAsync(brandId);
         if (brandConfig is null)
         {
             _logger.LogWarning("Brand configuration not found for brand {BrandId}", brandId);
@@ -47,13 +48,16 @@ public class PdfService : IPdfService
         return await ConvertHtmlToPdfAsync(html);
     }
 
-    private static string RenderTemplate(string htmlTemplate, Domain.Models.BrandConfiguration brandConfig, object data)
+    private static string RenderTemplate(
+        string htmlTemplate,
+        NotificationBrandConfiguration brandConfig,
+        object data)
     {
         if (!Parser.TryParse(htmlTemplate, out var template, out var error))
             throw new InvalidOperationException($"Failed to parse template: {error}");
 
         var options = new TemplateOptions();
-        options.MemberAccessStrategy.Register<Domain.Models.BrandConfiguration>();
+        options.MemberAccessStrategy.Register<NotificationBrandConfiguration>();
         options.MemberAccessStrategy.MemberNameStrategy = MemberNameStrategies.CamelCase;
 
         var context = new TemplateContext(data, options);

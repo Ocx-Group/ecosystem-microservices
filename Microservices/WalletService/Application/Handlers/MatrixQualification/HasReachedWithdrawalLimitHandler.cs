@@ -33,7 +33,9 @@ public class HasReachedWithdrawalLimitHandler : IRequestHandler<HasReachedWithdr
     public async Task<bool> Handle(HasReachedWithdrawalLimitQuery request, CancellationToken cancellationToken)
     {
         var userId = (int)request.UserId;
-        var brandId = _tenantContext.TenantId == 0 ? 2 : _tenantContext.TenantId;
+        var brandId = _tenantContext.TenantId;
+        if (brandId <= 0)
+            throw new InvalidOperationException("A valid tenant is required to check withdrawal limits.");
 
         try
         {

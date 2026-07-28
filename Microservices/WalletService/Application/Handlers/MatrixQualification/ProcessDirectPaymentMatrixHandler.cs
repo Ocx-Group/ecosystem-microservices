@@ -52,6 +52,11 @@ public class ProcessDirectPaymentMatrixHandler : IRequestHandler<ProcessDirectPa
             if (matrixConfig is null)
                 throw new InvalidDataException("Error retrieving matrix configuration");
 
+            var brandConfiguration = await _configurationAdapter.GetBrandConfiguration(
+                brandId,
+                cancellationToken)
+                ?? throw new InvalidDataException("Error retrieving brand configuration");
+
             var availableBalance = await _walletRepository.GetAvailableBalanceByAffiliateId(request.UserId, brandId);
             var pendingAmount = await _walletRequestRepository.GetTotalWalletRequestAmountByAffiliateId(request.UserId, brandId);
             availableBalance -= pendingAmount;
@@ -79,7 +84,8 @@ public class ProcessDirectPaymentMatrixHandler : IRequestHandler<ProcessDirectPa
                     AffiliateId = request.UserId, UserId = 0,
                     Concept = $"Activation of {matrixConfig.MatrixName} for {targetName}",
                     Deferred = 0, Debit = matrixConfig.FeeAmount, Status = true,
-                    AffiliateUserName = payerName, AdminUserName = "adminrecycoin",
+                    AffiliateUserName = payerName,
+                    AdminUserName = brandConfiguration.AdminUserName,
                     ConceptType = "purchasing_pool", BrandId = brandId, Date = DateTime.Now,
                 });
 
@@ -114,7 +120,8 @@ public class ProcessDirectPaymentMatrixHandler : IRequestHandler<ProcessDirectPa
                     Concept = $"Admin fee 30% - {matrixConfig.MatrixName} (User {targetUserId})",
                     Detail = $"Cycle {qualification.QualificationCount}",
                     Debit = 0, Credit = adminBase,
-                    AffiliateUserName = Constants.RecycoinAdmin, AdminUserName = Constants.RecycoinAdmin,
+                    AffiliateUserName = brandConfiguration.AdminUserName,
+                    AdminUserName = brandConfiguration.AdminUserName,
                     Status = true, ConceptType = nameof(WalletConceptType.commission_passed_wallet),
                     BrandId = brandId, Date = DateTime.Now,
                 });

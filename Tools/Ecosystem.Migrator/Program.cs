@@ -64,6 +64,11 @@ try
         await MigrateContextAsync(name, context, logger);
     }
 
+    await ValidateNotificationBrandCoverageAsync(
+        scope.ServiceProvider.GetRequiredService<NotificationServiceDbContext>(),
+        scope.ServiceProvider.GetRequiredService<ConfigurationServiceDbContext>(),
+        logger);
+
     logger.LogInformation("=== All migrations completed successfully! ===");
 }
 catch (Exception ex)
@@ -179,4 +184,84 @@ static async Task<MigrationResult> AttemptMigrationAsync(
             name, attempt, maxRetries);
         return MigrationResult.Retry;
     }
+}
+
+// Read-only deployment guard for the NotificationService consolidation.
+// If the legacy table exists, every active local sender configuration must have
+// an active central counterpart before the old table can stop serving traffic.
+static async Task ValidateNotificationBrandCoverageAsync(
+    NotificationServiceDbContext notificationContext,
+    ConfigurationServiceDbContext configurationContext,
+    ILogger logger)
+{
+    var notificationConnection = notificationContext.Database.GetDbConnection();
+    var shouldCloseNotification =
+        notificationConnection.State != System.Data.ConnectionState.Open;
+
+    if (shouldCloseNotification)
+        await notificationConnection.OpenAsync();
+
+    var activeLegacyBrandIds = new List<long>();
+    try
+    {
+        await using var tableCheck = notificationConnection.CreateCommand();
+        tableCheck.CommandText =
+            "SELECT to_regclass('notification_service.brand_configurations') IS NOT NULL";
+
+        var legacyTableExists = (bool)(await tableCheck.ExecuteScalarAsync() ?? false);
+        if (!legacyTableExists)
+        {
+            logger.LogInformation(
+                "[BrandCoverage] Legacy notification brand table does not exist; validation skipped.");
+            return;
+        }
+
+        await using var legacyBrandCheck = notificationConnection.CreateCommand();
+        legacyBrandCheck.CommandText = """
+            SELECT n.brand_id
+            FROM notification_service.brand_configurations AS n
+            WHERE n.is_active = true
+            ORDER BY n.brand_id
+            """;
+
+        await using var reader = await legacyBrandCheck.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            activeLegacyBrandIds.Add(reader.GetInt64(0));
+    }
+    finally
+    {
+        if (shouldCloseNotification)
+            await notificationConnection.CloseAsync();
+    }
+
+    if (activeLegacyBrandIds.Count == 0)
+    {
+        logger.LogInformation(
+            "[BrandCoverage] Legacy notification brand table has no active configurations.");
+        return;
+    }
+
+    var coveredBrandIds = await configurationContext.BrandConfigurations
+        .AsNoTracking()
+        .Where(configuration =>
+            activeLegacyBrandIds.Contains(configuration.BrandId) &&
+            configuration.IsActive &&
+            configuration.DeletedAt == null)
+        .Select(configuration => configuration.BrandId)
+        .ToListAsync();
+
+    var missingBrandIds = activeLegacyBrandIds
+        .Except(coveredBrandIds)
+        .OrderBy(brandId => brandId)
+        .ToList();
+
+    if (missingBrandIds.Count > 0)
+    {
+        throw new InvalidOperationException(
+            "NotificationService cannot switch to central brand configuration. " +
+            $"Missing active central configuration for BrandId(s): {string.Join(", ", missingBrandIds)}.");
+    }
+
+    logger.LogInformation(
+        "[BrandCoverage] Every active notification brand has an active central configuration.");
 }

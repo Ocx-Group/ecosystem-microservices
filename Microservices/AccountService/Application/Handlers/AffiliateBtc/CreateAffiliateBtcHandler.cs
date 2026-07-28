@@ -1,4 +1,5 @@
 using AutoMapper;
+using Ecosystem.AccountService.Application.Adapters;
 using Ecosystem.AccountService.Application.Commands.AffiliateBtc;
 using Ecosystem.AccountService.Application.DTOs;
 using Ecosystem.AccountService.Application.Helpers;
@@ -16,25 +17,33 @@ public class CreateAffiliateBtcHandler : IRequestHandler<CreateAffiliateBtcComma
     private readonly IBlockchainService _blockchainService;
     private readonly ITenantContext _tenantContext;
     private readonly IMapper _mapper;
+    private readonly IConfigurationServiceAdapter _configurationServiceAdapter;
 
     public CreateAffiliateBtcHandler(
         IAffiliateBtcRepository affiliateBtcRepository,
         IUserAffiliateInfoRepository userAffiliateInfoRepository,
         IBlockchainService blockchainService,
         ITenantContext tenantContext,
-        IMapper mapper)
+        IMapper mapper,
+        IConfigurationServiceAdapter configurationServiceAdapter)
     {
         _affiliateBtcRepository = affiliateBtcRepository;
         _userAffiliateInfoRepository = userAffiliateInfoRepository;
         _blockchainService = blockchainService;
         _tenantContext = tenantContext;
         _mapper = mapper;
+        _configurationServiceAdapter = configurationServiceAdapter;
     }
 
     public async Task<List<AffiliateBtcDto>> Handle(
         CreateAffiliateBtcCommand request, CancellationToken cancellationToken)
     {
         var brandId = _tenantContext.TenantId;
+        var brandConfiguration = await _configurationServiceAdapter
+            .GetBrandConfigurationAsync(brandId, cancellationToken);
+
+        if (brandConfiguration is null)
+            return [];
 
         var userAffiliate = await _userAffiliateInfoRepository.FindAffiliateByIdAsync(request.AffiliateId, brandId);
         if (userAffiliate is null
@@ -46,21 +55,15 @@ public class CreateAffiliateBtcHandler : IRequestHandler<CreateAffiliateBtcComma
 
         var createdWallets = new List<AffiliateBtcDto>();
 
-        // TRC20 wallet for Ecosystem (brandId 1)
-        if (!string.IsNullOrEmpty(request.Trc20Address)
-            && await _blockchainService.IsValidTrc20Address(request.Trc20Address)
-            && brandId == 1)
+        if (!string.IsNullOrEmpty(request.Trc20Address) &&
+            brandConfiguration.BlockchainNetworkId is int networkId &&
+            await IsValidConfiguredAddress(request.Trc20Address, networkId))
         {
-            var wallet = await CreateWallet(request.AffiliateId, request.Trc20Address, 99, brandId);
-            if (wallet is not null) createdWallets.Add(wallet);
-        }
-
-        // TRC20 wallet for RecyCoin (brandId 2) — uses BSC validation
-        if (!string.IsNullOrEmpty(request.Trc20Address)
-            && await _blockchainService.IsValidBscAddress(request.Trc20Address)
-            && brandId == 2)
-        {
-            var wallet = await CreateWallet(request.AffiliateId, request.Trc20Address, 56, brandId);
+            var wallet = await CreateWallet(
+                request.AffiliateId,
+                request.Trc20Address,
+                networkId,
+                brandId);
             if (wallet is not null) createdWallets.Add(wallet);
         }
 
@@ -74,6 +77,11 @@ public class CreateAffiliateBtcHandler : IRequestHandler<CreateAffiliateBtcComma
 
         return createdWallets;
     }
+
+    private Task<bool> IsValidConfiguredAddress(string address, int networkId) =>
+        networkId == 99
+            ? _blockchainService.IsValidTrc20Address(address)
+            : _blockchainService.IsValidBscAddress(address);
 
     private async Task<AffiliateBtcDto?> CreateWallet(long affiliateId, string address, int networkId, long brandId)
     {

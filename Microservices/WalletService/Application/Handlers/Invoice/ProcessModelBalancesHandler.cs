@@ -1,4 +1,5 @@
 using Ecosystem.Domain.Core.Caching;
+using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Commands.Invoice;
 using Ecosystem.WalletService.Domain.Constants;
 using Ecosystem.WalletService.Domain.DTOs.InvoiceDto;
@@ -21,6 +22,7 @@ public class ProcessModelBalancesHandler : IRequestHandler<ProcessModelBalancesC
     private readonly ICacheService _cacheService;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<ProcessModelBalancesHandler> _logger;
+    private readonly IConfigurationAdapter _configurationAdapter;
 
     public ProcessModelBalancesHandler(
         IInvoiceRepository invoiceRepository,
@@ -29,6 +31,7 @@ public class ProcessModelBalancesHandler : IRequestHandler<ProcessModelBalancesC
         IWalletRepository walletRepository,
         ICacheService cacheService,
         ITenantContext tenantContext,
+        IConfigurationAdapter configurationAdapter,
         ILogger<ProcessModelBalancesHandler> logger)
     {
         _invoiceRepository = invoiceRepository;
@@ -37,6 +40,7 @@ public class ProcessModelBalancesHandler : IRequestHandler<ProcessModelBalancesC
         _walletRepository = walletRepository;
         _cacheService = cacheService;
         _tenantContext = tenantContext;
+        _configurationAdapter = configurationAdapter;
         _logger = logger;
     }
 
@@ -44,6 +48,12 @@ public class ProcessModelBalancesHandler : IRequestHandler<ProcessModelBalancesC
     {
         var request = command.Request;
         var brandId = _tenantContext.TenantId;
+        var brandConfiguration = await _configurationAdapter.GetBrandConfiguration(
+            brandId,
+            cancellationToken);
+        if (brandConfiguration is null)
+            return null;
+
         var totalModels = request.Model1AAmount + request.Model1BAmount + request.Model2Amount;
 
         if (request.InvoiceId.Length == 0)
@@ -58,15 +68,30 @@ public class ProcessModelBalancesHandler : IRequestHandler<ProcessModelBalancesC
 
         if (request.Model1AAmount > 0)
             isAnyCreditTransactionSuccessful |=
-                await CreditAmountToWallet(affiliateId, request.UserName, request.Model1AAmount, "Model1A");
+                await CreditAmountToWallet(
+                    affiliateId,
+                    request.UserName,
+                    request.Model1AAmount,
+                    "Model1A",
+                    brandConfiguration.AdminUserName);
 
         if (request.Model1BAmount > 0)
             isAnyCreditTransactionSuccessful |=
-                await CreditAmountToWallet(affiliateId, request.UserName, request.Model1BAmount, "Model1B");
+                await CreditAmountToWallet(
+                    affiliateId,
+                    request.UserName,
+                    request.Model1BAmount,
+                    "Model1B",
+                    brandConfiguration.AdminUserName);
 
         if (request.Model2Amount > 0)
             isAnyCreditTransactionSuccessful |=
-                await CreditAmountToWallet(affiliateId, request.UserName, request.Model2Amount, "Model2");
+                await CreditAmountToWallet(
+                    affiliateId,
+                    request.UserName,
+                    request.Model2Amount,
+                    "Model2",
+                    brandConfiguration.AdminUserName);
 
         if (isAnyCreditTransactionSuccessful && validInvoiceIds.Any())
         {
@@ -113,7 +138,12 @@ public class ProcessModelBalancesHandler : IRequestHandler<ProcessModelBalancesC
         return (validInvoiceIds.ToList(), affiliateId, totalInvoices);
     }
 
-    private async Task<bool> CreditAmountToWallet(int affiliateId, string userName, decimal amount, string model)
+    private async Task<bool> CreditAmountToWallet(
+        int affiliateId,
+        string userName,
+        decimal amount,
+        string model,
+        string adminUserName)
     {
         if (amount <= 0) return false;
 
@@ -124,7 +154,7 @@ public class ProcessModelBalancesHandler : IRequestHandler<ProcessModelBalancesC
             Concept = Constants.BalanceRefunds,
             Credit = Convert.ToDouble(amount),
             AffiliateUserName = userName,
-            AdminUserName = Constants.AdminEcosystemUserName,
+            AdminUserName = adminUserName,
             ConceptType = WalletConceptType.revert_pool.ToString()
         };
 

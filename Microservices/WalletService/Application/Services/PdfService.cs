@@ -13,7 +13,7 @@ namespace Ecosystem.WalletService.Application.Services;
 public class PdfService : IPdfService
 {
     private readonly IConfigurationServicePdfAdapter _pdfAdapter;
-    private readonly IBrandConfigurationProvider _brandConfigProvider;
+    private readonly IConfigurationAdapter _configurationAdapter;
     private readonly IBrowserProvider _browserProvider;
     private readonly ILogger<PdfService> _logger;
 
@@ -21,12 +21,12 @@ public class PdfService : IPdfService
 
     public PdfService(
         IConfigurationServicePdfAdapter pdfAdapter,
-        IBrandConfigurationProvider brandConfigProvider,
+        IConfigurationAdapter configurationAdapter,
         IBrowserProvider browserProvider,
         ILogger<PdfService> logger)
     {
         _pdfAdapter = pdfAdapter;
-        _brandConfigProvider = brandConfigProvider;
+        _configurationAdapter = configurationAdapter;
         _browserProvider = browserProvider;
         _logger = logger;
     }
@@ -37,7 +37,7 @@ public class PdfService : IPdfService
         if (template is null)
             throw new InvalidOperationException($"PDF template '{templateKey}' not found for brand {brandId}");
 
-        var brandConfig = await _brandConfigProvider.GetByBrandIdAsync(brandId);
+        var brandConfig = await _configurationAdapter.GetBrandConfiguration(brandId);
         if (brandConfig is null)
             throw new InvalidOperationException($"Brand configuration not found for brand {brandId}");
 

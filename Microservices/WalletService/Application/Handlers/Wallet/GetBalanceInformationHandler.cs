@@ -1,4 +1,5 @@
 using Ecosystem.Domain.Core.Caching;
+using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Queries.Wallet;
 using Ecosystem.WalletService.Domain.Constants;
 using Ecosystem.WalletService.Domain.DTOs.BalanceInformationDto;
@@ -17,6 +18,7 @@ public class GetBalanceInformationHandler : IRequestHandler<GetBalanceInformatio
     private readonly ICacheService _cacheService;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<GetBalanceInformationHandler> _logger;
+    private readonly IConfigurationAdapter _configurationAdapter;
 
     public GetBalanceInformationHandler(
         IWalletRepository walletRepository,
@@ -24,6 +26,7 @@ public class GetBalanceInformationHandler : IRequestHandler<GetBalanceInformatio
         IBonusRepository bonusRepository,
         ICacheService cacheService,
         ITenantContext tenantContext,
+        IConfigurationAdapter configurationAdapter,
         ILogger<GetBalanceInformationHandler> logger)
     {
         _walletRepository = walletRepository;
@@ -31,6 +34,7 @@ public class GetBalanceInformationHandler : IRequestHandler<GetBalanceInformatio
         _bonusRepository = bonusRepository;
         _cacheService = cacheService;
         _tenantContext = tenantContext;
+        _configurationAdapter = configurationAdapter;
         _logger = logger;
     }
 
@@ -38,6 +42,12 @@ public class GetBalanceInformationHandler : IRequestHandler<GetBalanceInformatio
     {
         var affiliateId = request.AffiliateId;
         var brandId = _tenantContext.TenantId;
+        var brandConfiguration = await _configurationAdapter.GetBrandConfiguration(
+            brandId,
+            cancellationToken)
+            ?? throw new InvalidOperationException(
+                $"Active brand configuration not found for brand {brandId}.");
+
         var key = string.Format(CacheKeys.BalanceInformationModel2, affiliateId);
         var existsKey = await _cacheService.KeyExists(key);
 
@@ -48,7 +58,10 @@ public class GetBalanceInformationHandler : IRequestHandler<GetBalanceInformatio
             var amountRequests = await _walletRequestRepository.GetTotalWalletRequestAmountByAffiliateId(affiliateId, brandId);
             var availableBalance = await _walletRepository.GetAvailableBalanceByAffiliateId(affiliateId, brandId);
             var reverseBalance = await _walletRepository.GetReverseBalanceByAffiliateId(affiliateId, brandId);
-            var totalAcquisitions = await _walletRepository.GetTotalAcquisitionsByAffiliateId(affiliateId, brandId);
+            var totalAcquisitions = await _walletRepository.GetTotalAcquisitionsByAffiliateId(
+                affiliateId,
+                brandId,
+                brandConfiguration.DefaultPaymentGroupId);
             var totalCommissionsPaid = await _walletRepository.GetTotalCommissionsPaid(affiliateId, brandId);
             var totalServiceBalance = await _walletRepository.GetTotalServiceBalance(affiliateId, brandId);
             var bonusAmount = await _bonusRepository.GetBonusAmountByAffiliateId(affiliateId);

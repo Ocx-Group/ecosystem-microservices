@@ -19,18 +19,21 @@ public class CreateServiceBalanceAdmin1BHandler : IRequestHandler<CreateServiceB
     private readonly ICacheService _cacheService;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<CreateServiceBalanceAdmin1BHandler> _logger;
+    private readonly IConfigurationAdapter _configurationAdapter;
 
     public CreateServiceBalanceAdmin1BHandler(
         IWalletModel1BRepository walletModel1BRepository,
         IAccountServiceAdapter accountServiceAdapter,
         ICacheService cacheService,
         ITenantContext tenantContext,
+        IConfigurationAdapter configurationAdapter,
         ILogger<CreateServiceBalanceAdmin1BHandler> logger)
     {
         _walletModel1BRepository = walletModel1BRepository;
         _accountServiceAdapter = accountServiceAdapter;
         _cacheService = cacheService;
         _tenantContext = tenantContext;
+        _configurationAdapter = configurationAdapter;
         _logger = logger;
     }
 
@@ -38,6 +41,11 @@ public class CreateServiceBalanceAdmin1BHandler : IRequestHandler<CreateServiceB
     {
         var request = command.Request;
         var brandId = _tenantContext.TenantId;
+        var brandConfiguration = await _configurationAdapter.GetBrandConfiguration(
+            brandId,
+            cancellationToken);
+        if (brandConfiguration is null)
+            return false;
 
         if (request.Amount == 0)
             return false;
@@ -49,7 +57,7 @@ public class CreateServiceBalanceAdmin1BHandler : IRequestHandler<CreateServiceB
 
         var credit = new CreditTransactionRequest
         {
-            AdminUserName = Constants.AdminEcosystemUserName,
+            AdminUserName = brandConfiguration.AdminUserName,
             AffiliateId = user.Id,
             Concept = Constants.AdminCredit,
             Credit = request.Amount,

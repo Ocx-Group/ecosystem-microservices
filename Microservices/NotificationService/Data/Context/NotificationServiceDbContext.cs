@@ -20,7 +20,6 @@ public class NotificationServiceDbContext : DbContext
         : base(options) { }
 
     public virtual DbSet<EmailTemplate> EmailTemplates { get; set; }
-    public virtual DbSet<BrandConfiguration> BrandConfigurations { get; set; }
     public virtual DbSet<Brand> Brands { get; set; }
     public virtual DbSet<ApiClient> ApiClients { get; set; }
 
@@ -60,26 +59,6 @@ public class NotificationServiceDbContext : DbContext
                     v => v.ToList()));
             entity.Property(e => e.IsActive).HasDefaultValueSql("true").HasColumnName(ColIsActive);
             entity.Property(e => e.Version).HasDefaultValueSql("1").HasColumnName("version");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql(SqlCurrentTimestamp).HasColumnName(ColCreatedAt).HasConversion(UtcDateTimeConverter);
-            entity.Property(e => e.UpdatedAt).HasColumnName(ColUpdatedAt).HasConversion(NullableUtcDateTimeConverter);
-        });
-
-        modelBuilder.Entity<BrandConfiguration>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("brand_configurations_pkey");
-            entity.ToTable("brand_configurations", SchemaName);
-            entity.HasIndex(e => e.BrandId, "uq_brand_configurations_brand_id").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("nextval('notification_service.brand_configurations_id_seq'::regclass)")
-                .HasColumnName("id");
-            entity.Property(e => e.BrandId).HasColumnName(ColBrandId);
-            entity.Property(e => e.Name).IsRequired().HasMaxLength(100).HasColumnName("name");
-            entity.Property(e => e.SenderName).IsRequired().HasMaxLength(100).HasColumnName("sender_name");
-            entity.Property(e => e.SenderEmail).IsRequired().HasMaxLength(255).HasColumnName("sender_email");
-            entity.Property(e => e.SupportEmail).HasMaxLength(255).HasColumnName("support_email");
-            entity.Property(e => e.ClientUrl).HasMaxLength(500).HasColumnName("client_url");
-            entity.Property(e => e.IsActive).HasDefaultValueSql("true").HasColumnName(ColIsActive);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql(SqlCurrentTimestamp).HasColumnName(ColCreatedAt).HasConversion(UtcDateTimeConverter);
             entity.Property(e => e.UpdatedAt).HasColumnName(ColUpdatedAt).HasConversion(NullableUtcDateTimeConverter);
         });

@@ -28,7 +28,10 @@ public interface IWalletRepository
     Task<decimal> GetAvailableBalanceByAffiliateId(int userId, long brandId);
     Task<decimal> GetAvailableBalanceAdmin(long brandId);
     Task<decimal?> GetReverseBalanceByAffiliateId(int userId, long brandId);
-    Task<decimal?> GetTotalAcquisitionsByAffiliateId(int userId, long brandId);
+    Task<decimal?> GetTotalAcquisitionsByAffiliateId(
+        int userId,
+        long brandId,
+        int? paymentGroupId);
     Task<InvoicesSpResponse?> DebitTransaction(DebitTransactionRequest request);
     Task<bool> CreditTransaction(CreditTransactionRequest request);
     Task<bool> CreateTransferBalance(Wallet debitTransaction, Wallet creditTransaction);

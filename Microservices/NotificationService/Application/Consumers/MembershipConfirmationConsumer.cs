@@ -1,4 +1,5 @@
 using Ecosystem.Domain.Core.Events;
+using Ecosystem.NotificationService.Application.Adapters;
 using Ecosystem.NotificationService.Domain.Interfaces;
 using MassTransit;
 using Microsoft.Extensions.Logging;
@@ -8,20 +9,20 @@ namespace Ecosystem.NotificationService.Application.Consumers;
 public class MembershipConfirmationConsumer : IConsumer<SendMembershipConfirmationEvent>
 {
     private readonly IPdfService _pdfService;
-    private readonly IBrandConfigurationRepository _brandRepository;
+    private readonly IBrandConfigurationReader _brandConfigurationReader;
     private readonly IEmailTemplateRepository _templateRepository;
     private readonly IEmailService _emailService;
     private readonly ILogger<MembershipConfirmationConsumer> _logger;
 
     public MembershipConfirmationConsumer(
         IPdfService pdfService,
-        IBrandConfigurationRepository brandRepository,
+        IBrandConfigurationReader brandConfigurationReader,
         IEmailTemplateRepository templateRepository,
         IEmailService emailService,
         ILogger<MembershipConfirmationConsumer> logger)
     {
         _pdfService = pdfService;
-        _brandRepository = brandRepository;
+        _brandConfigurationReader = brandConfigurationReader;
         _templateRepository = templateRepository;
         _emailService = emailService;
         _logger = logger;
@@ -35,7 +36,9 @@ public class MembershipConfirmationConsumer : IConsumer<SendMembershipConfirmati
             "Processing membership confirmation for {ToEmail}, brand={BrandId}",
             msg.ToEmail, msg.BrandId);
 
-        var brand = await _brandRepository.GetByBrandIdAsync(msg.BrandId);
+        var brand = await _brandConfigurationReader.GetByBrandIdAsync(
+            msg.BrandId,
+            context.CancellationToken);
         if (brand is null)
         {
             _logger.LogWarning("Brand {BrandId} not found, skipping membership confirmation", msg.BrandId);

@@ -46,7 +46,16 @@ public class ProcessQualificationHandler : IRequestHandler<ProcessQualificationQ
     public async Task<(bool AnyQualified, List<int> QualifiedMatrixTypes)> Handle(
         ProcessQualificationQuery request, CancellationToken cancellationToken)
     {
-        var brandId = _tenantContext.TenantId == 0 ? 2 : _tenantContext.TenantId;
+        var brandId = _tenantContext.TenantId;
+        if (brandId <= 0)
+            throw new InvalidOperationException("A valid tenant is required to process matrix qualification.");
+
+        var brandConfiguration = await _configurationAdapter.GetBrandConfiguration(
+            brandId,
+            cancellationToken)
+            ?? throw new InvalidOperationException(
+                $"Active brand configuration not found for brand {brandId}.");
+
         var userId = (int)request.UserId;
 
         var allMatrices = await _configurationAdapter.GetAllMatrixConfigurations(brandId);
@@ -76,10 +85,21 @@ public class ProcessQualificationHandler : IRequestHandler<ProcessQualificationQ
 
             try
             {
-                var newAvailable = await ApplyQualificationAsync(q, m, userName, availableBalance, brandId);
+                var newAvailable = await ApplyQualificationAsync(
+                    q,
+                    m,
+                    userName,
+                    availableBalance,
+                    brandId,
+                    brandConfiguration.AdminUserName);
                 await _accountServiceAdapter.PlaceUserInMatrix(
                     new MatrixRequest { UserId = userId, MatrixType = m.MatrixType }, brandId);
-                var recipients = await ProcessMatrixCommissionsAsync(userId, m.MatrixType, q.QualificationCount, brandId);
+                var recipients = await ProcessMatrixCommissionsAsync(
+                    userId,
+                    m.MatrixType,
+                    q.QualificationCount,
+                    brandId,
+                    brandConfiguration.AdminUserName);
 
                 availableBalance = newAvailable;
                 anyQualified = true;
@@ -171,7 +191,7 @@ public class ProcessQualificationHandler : IRequestHandler<ProcessQualificationQ
 
     private async Task<decimal> ApplyQualificationAsync(
         Domain.Models.MatrixQualification qualification, MatrixConfiguration matrixCfg,
-        string userName, decimal availableBalance, long brandId)
+        string userName, decimal availableBalance, long brandId, string adminUserName)
     {
         if (availableBalance < matrixCfg.FeeAmount)
             throw new InvalidOperationException(
@@ -190,7 +210,7 @@ public class ProcessQualificationHandler : IRequestHandler<ProcessQualificationQ
                 Detail = $"Activation cycle: {qualification.QualificationCount + 1}",
                 Debit = matrixCfg.FeeAmount, Credit = 0,
                 AffiliateUserName = userName,
-                AdminUserName = Constants.RecycoinAdmin,
+                AdminUserName = adminUserName,
                 Status = true,
                 ConceptType = "purchasing_pool",
                 BrandId = brandId, Date = DateTime.Now,
@@ -202,8 +222,8 @@ public class ProcessQualificationHandler : IRequestHandler<ProcessQualificationQ
                 Concept = $"Admin fee 30% - {matrixCfg.MatrixName} (User {qualification.UserId})",
                 Detail = $"Cycle {qualification.QualificationCount + 1}",
                 Debit = 0, Credit = adminBase,
-                AffiliateUserName = Constants.RecycoinAdmin,
-                AdminUserName = Constants.RecycoinAdmin,
+                AffiliateUserName = adminUserName,
+                AdminUserName = adminUserName,
                 Status = true,
                 ConceptType = nameof(WalletConceptType.commission_passed_wallet),
                 BrandId = brandId, Date = DateTime.Now,
@@ -229,7 +249,12 @@ public class ProcessQualificationHandler : IRequestHandler<ProcessQualificationQ
         }
     }
 
-    private async Task<HashSet<int>> ProcessMatrixCommissionsAsync(int userId, int matrixType, int qualificationCount, long brandId)
+    private async Task<HashSet<int>> ProcessMatrixCommissionsAsync(
+        int userId,
+        int matrixType,
+        int qualificationCount,
+        long brandId,
+        string adminUserName)
     {
         var usersReceivedCommissions = new HashSet<int>();
         await using var transaction = await _matrixEarningsRepository.BeginTransactionAsync();
@@ -293,7 +318,8 @@ public class ProcessQualificationHandler : IRequestHandler<ProcessQualificationQ
                         Concept = $"Unpaid commissions x{missedCount} - {matrixConfig.MatrixName}",
                         Detail = $"User {userId} • Cycle {qualificationCount}",
                         Debit = 0, Credit = adminMissed,
-                        AffiliateUserName = "adminrecycoin", AdminUserName = "adminrecycoin",
+                        AffiliateUserName = adminUserName,
+                        AdminUserName = adminUserName,
                         Status = true, ConceptType = "admin_missed_commission",
                         BrandId = brandId, Date = DateTime.Now,
                     });

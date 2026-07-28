@@ -6,6 +6,7 @@ package configuration;
 
 service ConfigurationGrpc {
   rpc GetPdfTemplate (GetPdfTemplateRequest) returns (GetPdfTemplateResponse);
+  rpc GetBrandConfiguration (GetBrandConfigurationRequest) returns (GetBrandConfigurationResponse);
   rpc GetMatrixConfiguration (GetMatrixConfigurationRequest) returns (GetMatrixConfigurationResponse);
   rpc GetAllMatrixConfigurations (GetAllMatrixConfigurationsRequest) returns (GetAllMatrixConfigurationsResponse);
 }
@@ -21,6 +22,56 @@ message GetPdfTemplateResponse {
   string css_content = 3;
   int32 version = 4;
   string message = 5;
+}
+
+message GetBrandConfigurationRequest {
+  int64 brand_id = 1;
+}
+
+message GetBrandConfigurationResponse {
+  bool success = 1;
+  BrandConfigurationMessage configuration = 2;
+  string message = 3;
+}
+
+// Internal service-to-service contract. Public HTTP endpoints must expose only
+// the subset appropriate for their caller.
+message BrandConfigurationMessage {
+  int64 brand_id = 1;
+  string name = 2;
+  string sender_name = 3;
+  string sender_email = 4;
+  string client_url = 5;
+  string company_name = 6;
+  string support_email = 7;
+  optional string company_identifier = 8;
+  optional string support_phone = 9;
+  optional string document_type = 10;
+  optional string logo_url = 11;
+  string primary_color = 12;
+  string secondary_color = 13;
+  string background_color = 14;
+  bool is_active = 15;
+  string admin_user_name = 16;
+  string email_template_folder = 17;
+  bool commission_enabled = 18;
+  repeated double commission_levels = 19;
+  double bonus_percentage = 20;
+  string pdf_template_name = 21;
+  optional int32 default_father_affiliate_id = 22;
+  bool activate_on_registration = 23;
+  optional int32 default_payment_group_id = 24;
+  optional int32 trading_academy_payment_group_id = 25;
+  string withdrawal_validation_type = 26;
+  optional string withdrawal_time_zone = 27;
+  optional int32 withdrawal_start_hour = 28;
+  optional int32 withdrawal_end_hour = 29;
+  optional double withdrawal_cap_no_directs = 30;
+  bool requires_10_percent_purchase_rule = 31;
+  bool pool_validation_required = 32;
+  bool con_payment_enabled = 33;
+  optional string con_payment_address = 34;
+  optional int32 blockchain_network_id = 35;
 }
 
 // MatrixConfiguration messages

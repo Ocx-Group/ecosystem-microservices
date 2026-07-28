@@ -23,6 +23,7 @@ public class TransferBalanceForNewAffiliateHandler : IRequestHandler<TransferBal
     private readonly ICacheService _cacheService;
     private readonly ITenantContext _tenantContext;
     private readonly IMapper _mapper;
+    private readonly IConfigurationAdapter _configurationAdapter;
 
     public TransferBalanceForNewAffiliateHandler(
         IWalletRepository walletRepository,
@@ -31,7 +32,8 @@ public class TransferBalanceForNewAffiliateHandler : IRequestHandler<TransferBal
         IMediator mediator,
         ICacheService cacheService,
         ITenantContext tenantContext,
-        IMapper mapper)
+        IMapper mapper,
+        IConfigurationAdapter configurationAdapter)
     {
         _walletRepository = walletRepository;
         _accountServiceAdapter = accountServiceAdapter;
@@ -39,12 +41,19 @@ public class TransferBalanceForNewAffiliateHandler : IRequestHandler<TransferBal
         _cacheService = cacheService;
         _tenantContext = tenantContext;
         _mapper = mapper;
+        _configurationAdapter = configurationAdapter;
     }
 
     public async Task<bool> Handle(TransferBalanceForNewAffiliateCommand command, CancellationToken cancellationToken)
     {
         var request = command.Request;
         var brandId = _tenantContext.TenantId;
+        var brandConfiguration = await _configurationAdapter.GetBrandConfiguration(
+            brandId,
+            cancellationToken);
+        if (brandConfiguration is null)
+            return false;
+
         var today = DateTime.Now;
         var amount = 10;
 
@@ -71,14 +80,7 @@ public class TransferBalanceForNewAffiliateHandler : IRequestHandler<TransferBal
         if (userInfo.ActivationDate != null)
             return false;
 
-        var adminUserName = brandId switch
-        {
-            1 => Constants.AdminEcosystemUserName,
-            2 => Constants.RecycoinAdmin,
-            3 => Constants.HouseCoinAdmin,
-            4 => Constants.ExitoJuntosAdmin,
-            _ => Constants.AdminEcosystemUserName
-        };
+        var adminUserName = brandConfiguration.AdminUserName;
 
         var debitTransaction = new WalletTransactionRequest
         {

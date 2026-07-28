@@ -38,7 +38,9 @@ public class CheckQualificationHandler : IRequestHandler<CheckQualificationComma
 
     public async Task<bool> Handle(CheckQualificationCommand request, CancellationToken cancellationToken)
     {
-        var brandId = _tenantContext.TenantId == 0 ? 2 : _tenantContext.TenantId;
+        var brandId = _tenantContext.TenantId;
+        if (brandId <= 0)
+            throw new InvalidOperationException("A valid tenant is required to check matrix qualification.");
 
         var cfg = await _configurationAdapter.GetMatrixConfiguration(brandId, request.MatrixType);
         if (cfg is null)

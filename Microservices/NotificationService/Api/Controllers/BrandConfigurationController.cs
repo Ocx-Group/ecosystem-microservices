@@ -1,39 +1,58 @@
 using Asp.Versioning;
-using Ecosystem.NotificationService.Application.Commands.Brand;
-using Ecosystem.NotificationService.Application.Queries.Brand;
-using MediatR;
+using Ecosystem.Domain.Core.MultiTenancy;
+using Ecosystem.NotificationService.Application.Adapters;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ecosystem.NotificationService.Api.Controllers;
 
+/// <summary>
+/// Backward-compatible, read-only facade for existing template dashboards.
+/// Configuration writes belong exclusively to ConfigurationService.
+/// </summary>
 [ApiController]
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/email-sender-config")]
 public class BrandConfigurationController : BaseController
 {
-    private readonly IMediator _mediator;
+    private readonly IBrandConfigurationReader _brandConfigurationReader;
+    private readonly ITenantContext _tenantContext;
 
-    public BrandConfigurationController(IMediator mediator) => _mediator = mediator;
+    public BrandConfigurationController(
+        IBrandConfigurationReader brandConfigurationReader,
+        ITenantContext tenantContext)
+    {
+        _brandConfigurationReader = brandConfigurationReader;
+        _tenantContext = tenantContext;
+    }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetCurrent(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetAllBrandConfigurationsQuery());
-        return Ok(Success(result));
+        var configuration = await _brandConfigurationReader.GetByBrandIdAsync(
+            _tenantContext.TenantId,
+            cancellationToken);
+
+        if (configuration is null)
+            return Ok(Success(Array.Empty<EmailSenderConfigurationResponse>()));
+
+        var response = new EmailSenderConfigurationResponse(
+            configuration.BrandId,
+            configuration.Name,
+            configuration.SenderName,
+            configuration.SenderEmail,
+            configuration.SupportEmail,
+            configuration.ClientUrl,
+            true);
+
+        return Ok(Success(new[] { response }));
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateBrandConfigurationCommand command)
-    {
-        var result = await _mediator.Send(command);
-        return CreatedAtAction(nameof(GetAll), Success(result));
-    }
-
-    [HttpPut("{id:long}")]
-    public async Task<IActionResult> Update(long id, [FromBody] UpdateBrandConfigurationCommand command)
-    {
-        var updatedCommand = command with { Id = id };
-        var result = await _mediator.Send(updatedCommand);
-        return Ok(Success(result));
-    }
+    public sealed record EmailSenderConfigurationResponse(
+        long BrandId,
+        string Name,
+        string SenderName,
+        string SenderEmail,
+        string SupportEmail,
+        string ClientUrl,
+        bool IsActive);
 }

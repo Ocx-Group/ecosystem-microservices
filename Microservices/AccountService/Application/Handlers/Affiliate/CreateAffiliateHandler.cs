@@ -1,4 +1,5 @@
 using AutoMapper;
+using Ecosystem.AccountService.Application.Adapters;
 using Ecosystem.AccountService.Application.Commands.Affiliate;
 using Ecosystem.AccountService.Application.DTOs;
 using Ecosystem.AccountService.Application.Helpers;
@@ -19,51 +20,50 @@ public class CreateAffiliateHandler : IRequestHandler<CreateAffiliateCommand, Se
     private readonly ITenantContext _tenantContext;
     private readonly IEventBus _eventBus;
     private readonly IMapper _mapper;
+    private readonly IConfigurationServiceAdapter _configurationServiceAdapter;
 
     public CreateAffiliateHandler(
         IUserAffiliateInfoRepository repo,
         ITenantContext tenantContext,
         IEventBus eventBus,
-        IMapper mapper)
+        IMapper mapper,
+        IConfigurationServiceAdapter configurationServiceAdapter)
     {
         _repo = repo;
         _tenantContext = tenantContext;
         _eventBus = eventBus;
         _mapper = mapper;
+        _configurationServiceAdapter = configurationServiceAdapter;
     }
 
     public async Task<ServicesResponse> Handle(CreateAffiliateCommand request, CancellationToken ct)
     {
         var brandId = _tenantContext.TenantId;
+        var brandConfiguration = await _configurationServiceAdapter
+            .GetBrandConfigurationAsync(brandId, ct);
+
+        if (brandConfiguration is null)
+        {
+            return new ServicesResponse
+            {
+                Success = false,
+                Message = $"Active brand configuration not found for brand {brandId}.",
+                Code = 503
+            };
+        }
+
         var father = request.Father;
         var sponsor = request.Sponsor;
         var binarySponsor = request.BinarySponsor;
         var affiliateType = request.AffiliateType;
 
-        // Auto-assign father for specific brands when father is 0
-        if (father == 0)
+        if (father == 0 &&
+            brandConfiguration.DefaultFatherAffiliateId is int defaultFatherAffiliateId)
         {
-            switch (brandId)
-            {
-                case AccountServiceConstants.RecyCoinId:
-                    father = AccountServiceConstants.FatherRecyCoin;
-                    sponsor = AccountServiceConstants.FatherRecyCoin;
-                    binarySponsor = AccountServiceConstants.FatherRecyCoin;
-                    affiliateType = "01_Membresia_10";
-                    break;
-                case AccountServiceConstants.ExitoJuntosId:
-                    father = AccountServiceConstants.FatherExitoJuntos;
-                    sponsor = AccountServiceConstants.FatherExitoJuntos;
-                    binarySponsor = AccountServiceConstants.FatherExitoJuntos;
-                    affiliateType = "01_Membresia_10";
-                    break;
-                case AccountServiceConstants.HouseCoinId:
-                    father = AccountServiceConstants.FatherHouseCoin;
-                    sponsor = AccountServiceConstants.FatherHouseCoin;
-                    binarySponsor = AccountServiceConstants.FatherHouseCoin;
-                    affiliateType = "01_Membresia_10";
-                    break;
-            }
+            father = defaultFatherAffiliateId;
+            sponsor = defaultFatherAffiliateId;
+            binarySponsor = defaultFatherAffiliateId;
+            affiliateType = "01_Membresia_10";
         }
 
         var existenceStatus = await _repo.CheckAffiliateExistenceAsync(request.Email, request.UserName, brandId);
@@ -115,7 +115,9 @@ public class CreateAffiliateHandler : IRequestHandler<CreateAffiliateCommand, Se
             StatusActivation = nameof(AccountServiceConstants.AffiliateStatus.Confirmación_Pendiente),
             TermsConditions = true,
             BrandId = brandId,
-            ActivationDate = AccountServiceConstants.EcosystemId == brandId ? null : DateTime.Now
+            ActivationDate = brandConfiguration.ActivateOnRegistration
+                ? DateTime.Now
+                : null
         };
 
         affiliate = await _repo.CreateAffiliateAsync(affiliate);

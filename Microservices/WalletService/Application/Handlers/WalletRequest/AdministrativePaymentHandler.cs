@@ -22,18 +22,21 @@ public class AdministrativePaymentHandler : IRequestHandler<AdministrativePaymen
     private readonly ICacheService _cacheService;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<AdministrativePaymentHandler> _logger;
+    private readonly IConfigurationAdapter _configurationAdapter;
 
     public AdministrativePaymentHandler(
         IWalletRequestRepository walletRequestRepository,
         IAccountServiceAdapter accountServiceAdapter,
         ICacheService cacheService,
         ITenantContext tenantContext,
+        IConfigurationAdapter configurationAdapter,
         ILogger<AdministrativePaymentHandler> logger)
     {
         _walletRequestRepository = walletRequestRepository;
         _accountServiceAdapter = accountServiceAdapter;
         _cacheService = cacheService;
         _tenantContext = tenantContext;
+        _configurationAdapter = configurationAdapter;
         _logger = logger;
     }
 
@@ -41,6 +44,12 @@ public class AdministrativePaymentHandler : IRequestHandler<AdministrativePaymen
     {
         var requestIds = command.RequestIds;
         var brandId = _tenantContext.TenantId;
+        var brandConfiguration = await _configurationAdapter.GetBrandConfiguration(
+            brandId,
+            cancellationToken);
+
+        if (brandConfiguration is null)
+            return ResultResponse<int>.Fail("Configuración de marca no disponible");
 
         if (requestIds.Length == 0)
             return ResultResponse<int>.Fail("No se proporcionaron IDs de solicitudes");
@@ -77,13 +86,7 @@ public class AdministrativePaymentHandler : IRequestHandler<AdministrativePaymen
         if (!paymentRequests.Any())
             return ResultResponse<int>.Fail("No se pudo obtener información de los usuarios");
 
-        var adminUserName = brandId switch
-        {
-            1 => Constants.AdminEcosystemUserName,
-            2 => Constants.RecycoinAdmin,
-            3 => Constants.HouseCoinAdmin,
-            _ => Constants.AdminEcosystemUserName
-        };
+        var adminUserName = brandConfiguration.AdminUserName;
 
         var (success, processedCount, errorMessage) = await _walletRequestRepository
             .ProcessAdministrativePaymentAsync(paymentRequests, brandId, adminUserName);

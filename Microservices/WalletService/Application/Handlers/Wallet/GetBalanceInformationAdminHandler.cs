@@ -16,6 +16,7 @@ public class GetBalanceInformationAdminHandler : IRequestHandler<GetBalanceInfor
     private readonly IAccountServiceAdapter _accountServiceAdapter;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<GetBalanceInformationAdminHandler> _logger;
+    private readonly IConfigurationAdapter _configurationAdapter;
 
     public GetBalanceInformationAdminHandler(
         IWalletRepository walletRepository,
@@ -23,6 +24,7 @@ public class GetBalanceInformationAdminHandler : IRequestHandler<GetBalanceInfor
         IInvoiceRepository invoiceRepository,
         IAccountServiceAdapter accountServiceAdapter,
         ITenantContext tenantContext,
+        IConfigurationAdapter configurationAdapter,
         ILogger<GetBalanceInformationAdminHandler> logger)
     {
         _walletRepository = walletRepository;
@@ -30,23 +32,24 @@ public class GetBalanceInformationAdminHandler : IRequestHandler<GetBalanceInfor
         _invoiceRepository = invoiceRepository;
         _accountServiceAdapter = accountServiceAdapter;
         _tenantContext = tenantContext;
+        _configurationAdapter = configurationAdapter;
         _logger = logger;
     }
 
     public async Task<BalanceInformationAdminDto> Handle(GetBalanceInformationAdminQuery request, CancellationToken cancellationToken)
     {
         var brandId = _tenantContext.TenantId;
+        var brandConfiguration = await _configurationAdapter.GetBrandConfiguration(
+            brandId,
+            cancellationToken)
+            ?? throw new InvalidOperationException(
+                $"Active brand configuration not found for brand {brandId}.");
 
         var totalActiveMembers = await _accountServiceAdapter.GetTotalActiveMembers(brandId);
 
-        var paymentGroupId = brandId switch
-        {
-            1 => 2,
-            2 => 11,
-            3 => 12,
-            4 => 13,
-            _ => 2
-        };
+        var paymentGroupId = brandConfiguration.DefaultPaymentGroupId
+            ?? throw new InvalidOperationException(
+                $"Default payment group is not configured for brand {brandId}.");
 
         var enabledAffiliates = totalActiveMembers;
         var walletProfit = await _walletRepository.GetAvailableBalanceAdmin(brandId);

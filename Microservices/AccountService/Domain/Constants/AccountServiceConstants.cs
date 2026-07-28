@@ -20,18 +20,6 @@ public static class AccountServiceConstants
     public const string SubjectPasswordRecovery = "Recuperación de contraseña";
     public const string SubjectPasswordChangeConfirmation = "Restablecimiento de contraseña exitoso";
     public const string GetTotalAffiliatesByCountries = "account_service.get_total_affiliates_by_country()";
-    public const int EcosystemId = 1;
-    public const int RecyCoinId = 2;
-    public const int HouseCoinId = 3;
-    public const int ExitoJuntosId = 4;
-    public const int FatherRecyCoin = 12557;
-    public const int FatherExitoJuntos = 12673;
-    public const int FatherHouseCoin = 12586;
-    public const string EcosystemSenderName = "Ecosystem Sharing Evolution";
-    public const string RecyCoinSenderName = "Recycoin";
-    public const string HouseCoinSenderName = "Housecoin";
-    public const string ExitoJuntosSenderName = "Éxito Juntos";
-
     public enum AffiliateStatus
     {
         Confirmación_Pendiente,

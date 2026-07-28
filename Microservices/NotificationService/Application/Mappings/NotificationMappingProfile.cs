@@ -9,6 +9,5 @@ public class NotificationMappingProfile : Profile
     public NotificationMappingProfile()
     {
         CreateMap<EmailTemplate, EmailTemplateDto>();
-        CreateMap<BrandConfiguration, BrandConfigurationDto>();
     }
 }

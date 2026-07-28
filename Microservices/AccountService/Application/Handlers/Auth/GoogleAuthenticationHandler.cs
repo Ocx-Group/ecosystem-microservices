@@ -1,4 +1,5 @@
 using AutoMapper;
+using Ecosystem.AccountService.Application.Adapters;
 using Ecosystem.AccountService.Application.Commands.Auth;
 using Ecosystem.AccountService.Application.DTOs;
 using Ecosystem.AccountService.Application.DTOs.Auth;
@@ -28,6 +29,7 @@ public class GoogleAuthenticationHandler : IRequestHandler<GoogleAuthenticationC
     private readonly IMapper _mapper;
     private readonly GoogleAuthSettings _settings;
     private readonly ILogger<GoogleAuthenticationHandler> _logger;
+    private readonly IConfigurationServiceAdapter _configurationServiceAdapter;
 
     public GoogleAuthenticationHandler(
         IUserAffiliateInfoRepository affiliateRepository,
@@ -37,6 +39,7 @@ public class GoogleAuthenticationHandler : IRequestHandler<GoogleAuthenticationC
         IEventBus eventBus,
         IMapper mapper,
         IOptions<GoogleAuthSettings> settings,
+        IConfigurationServiceAdapter configurationServiceAdapter,
         ILogger<GoogleAuthenticationHandler> logger)
     {
         _affiliateRepository = affiliateRepository;
@@ -46,6 +49,7 @@ public class GoogleAuthenticationHandler : IRequestHandler<GoogleAuthenticationC
         _eventBus = eventBus;
         _mapper = mapper;
         _settings = settings.Value;
+        _configurationServiceAdapter = configurationServiceAdapter;
         _logger = logger;
     }
 
@@ -100,8 +104,19 @@ public class GoogleAuthenticationHandler : IRequestHandler<GoogleAuthenticationC
         if (!request.TermsConditions)
             return Fail("Debe aceptar los términos y condiciones.");
 
+        var brandConfiguration = await _configurationServiceAdapter
+            .GetBrandConfigurationAsync(brandId, cancellationToken);
+        if (brandConfiguration is null)
+            return Fail("La configuración de la marca no está disponible.");
+
         var userName = await GenerateAvailableUserName(email, brandId);
-        var newAffiliate = await CreateAffiliateFromGoogle(request, payload, userName, sponsor, brandId);
+        var newAffiliate = await CreateAffiliateFromGoogle(
+            request,
+            payload,
+            userName,
+            sponsor,
+            brandId,
+            brandConfiguration.ActivateOnRegistration);
 
         return await CompleteAffiliateLogin(request, newAffiliate, brandId);
     }
@@ -164,7 +179,8 @@ public class GoogleAuthenticationHandler : IRequestHandler<GoogleAuthenticationC
         GoogleJsonWebSignature.Payload payload,
         string userName,
         UsersAffiliate sponsor,
-        long brandId)
+        long brandId,
+        bool activateOnRegistration)
     {
         var affiliateType = request.ReferralUserName is null ? null : sponsor.AffiliateType;
 
@@ -197,7 +213,7 @@ public class GoogleAuthenticationHandler : IRequestHandler<GoogleAuthenticationC
             StatusActivation = nameof(AccountServiceConstants.AffiliateStatus.Confirmación_Pendiente),
             TermsConditions = true,
             BrandId = brandId,
-            ActivationDate = AccountServiceConstants.EcosystemId == brandId ? null : DateTime.Now,
+            ActivationDate = activateOnRegistration ? DateTime.Now : null,
             GoogleAuthCode = payload.Subject,
             IsGoogleAuth = true,
             ImageProfileUrl = payload.Picture

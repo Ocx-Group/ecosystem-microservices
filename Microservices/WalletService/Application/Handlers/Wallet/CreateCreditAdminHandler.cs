@@ -21,6 +21,7 @@ public class CreateCreditAdminHandler : IRequestHandler<CreateCreditAdminCommand
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<CreateCreditAdminHandler> _logger;
+    private readonly IConfigurationAdapter _configurationAdapter;
 
     public CreateCreditAdminHandler(
         IWalletRepository walletRepository,
@@ -29,6 +30,7 @@ public class CreateCreditAdminHandler : IRequestHandler<CreateCreditAdminCommand
         ICacheService cacheService,
         IUnitOfWork unitOfWork,
         ITenantContext tenantContext,
+        IConfigurationAdapter configurationAdapter,
         ILogger<CreateCreditAdminHandler> logger)
     {
         _walletRepository = walletRepository;
@@ -37,6 +39,7 @@ public class CreateCreditAdminHandler : IRequestHandler<CreateCreditAdminCommand
         _cacheService = cacheService;
         _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
+        _configurationAdapter = configurationAdapter;
         _logger = logger;
     }
 
@@ -44,6 +47,11 @@ public class CreateCreditAdminHandler : IRequestHandler<CreateCreditAdminCommand
     {
         var request = command.Request;
         var brandId = _tenantContext.TenantId;
+        var brandConfiguration = await _configurationAdapter.GetBrandConfiguration(
+            brandId,
+            cancellationToken);
+        if (brandConfiguration is null)
+            return false;
 
         if (request.Amount == 0)
             return false;
@@ -55,14 +63,7 @@ public class CreateCreditAdminHandler : IRequestHandler<CreateCreditAdminCommand
 
         var today = DateTime.Now;
 
-        var adminUserName = brandId switch
-        {
-            1 => Constants.AdminEcosystemUserName,
-            2 => Constants.RecycoinAdmin,
-            3 => Constants.HouseCoinAdmin,
-            4 => Constants.ExitoJuntosAdmin,
-            _ => Constants.AdminEcosystemUserName
-        };
+        var adminUserName = brandConfiguration.AdminUserName;
 
         var wallet = new Domain.Models.Wallet
         {

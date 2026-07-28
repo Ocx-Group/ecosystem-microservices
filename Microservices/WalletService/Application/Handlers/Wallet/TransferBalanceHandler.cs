@@ -25,6 +25,7 @@ public class TransferBalanceHandler : IRequestHandler<TransferBalanceCommand, Se
     private readonly ICacheService _cacheService;
     private readonly ITenantContext _tenantContext;
     private readonly IMapper _mapper;
+    private readonly IConfigurationAdapter _configurationAdapter;
 
     public TransferBalanceHandler(
         IWalletRepository walletRepository,
@@ -33,6 +34,7 @@ public class TransferBalanceHandler : IRequestHandler<TransferBalanceCommand, Se
         ICacheService cacheService,
         ITenantContext tenantContext,
         IMapper mapper,
+        IConfigurationAdapter configurationAdapter,
         ILogger<TransferBalanceHandler> logger)
     {
         _walletRepository = walletRepository;
@@ -41,11 +43,20 @@ public class TransferBalanceHandler : IRequestHandler<TransferBalanceCommand, Se
         _cacheService = cacheService;
         _tenantContext = tenantContext;
         _mapper = mapper;
+        _configurationAdapter = configurationAdapter;
     }
 
     public async Task<ServicesResponse> Handle(TransferBalanceCommand command, CancellationToken cancellationToken)
     {
         var brandId = _tenantContext.TenantId;
+        var brandConfiguration = await _configurationAdapter.GetBrandConfiguration(
+            brandId,
+            cancellationToken);
+
+        if (brandConfiguration is null)
+            return new ServicesResponse
+                { Success = false, Message = "Configuración de marca no disponible", Code = 503 };
+
         var data = CommonExtensions.DecryptObject<TransferBalanceRequest>(command.Encrypted);
 
         var today = DateTime.Now;
@@ -54,7 +65,7 @@ public class TransferBalanceHandler : IRequestHandler<TransferBalanceCommand, Se
         var userInfo = await _accountServiceAdapter.GetAffiliateByUserName(data.ToUserName, brandId);
         var isActivePool = await _walletRepository.IsActivePoolGreaterThanOrEqualTo25(data.FromAffiliateId, brandId);
 
-        if (!isActivePool && brandId == 1)
+        if (!isActivePool && brandConfiguration.PoolValidationRequired)
             return new ServicesResponse { Success = false, Message = "No tiene un Pool activo", Code = 400 };
 
         if (userInfo is null)
@@ -77,14 +88,7 @@ public class TransferBalanceHandler : IRequestHandler<TransferBalanceCommand, Se
             return new ServicesResponse
                 { Success = false, Message = "El estatus del afiliado a transferir es inactivo.", Code = 400 };
 
-        var adminUserName = brandId switch
-        {
-            1 => Constants.AdminEcosystemUserName,
-            2 => Constants.RecycoinAdmin,
-            3 => Constants.HouseCoinAdmin,
-            4 => Constants.ExitoJuntosAdmin,
-            _ => Constants.AdminEcosystemUserName
-        };
+        var adminUserName = brandConfiguration.AdminUserName;
 
         var debitTransaction = new WalletTransactionRequest
         {

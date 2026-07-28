@@ -8,6 +8,17 @@ using Ecosystem.WalletService.Api.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var httpPort = int.Parse(builder.Configuration["ASPNETCORE_HTTP_PORTS"] ?? "8080");
+var grpcPort = int.Parse(builder.Configuration["ASPNETCORE_GRPC_PORT"] ?? "50051");
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(httpPort, listenOptions =>
+        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2);
+    options.ListenAnyIP(grpcPort, listenOptions =>
+        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2);
+});
+
 builder.Services.AddControllers();
 builder.Services.AddApiVersioning(opt =>
 {
@@ -51,6 +62,7 @@ app.UseCors();
 app.UseHttpsRedirection();
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseAuthorization();
+TenantResolutionMiddleware.AddSkipPrefix("/wallet.WalletGrpc/");
 app.UseTenantResolution();
 app.MapHealthChecks("/health");
 app.MapControllers();

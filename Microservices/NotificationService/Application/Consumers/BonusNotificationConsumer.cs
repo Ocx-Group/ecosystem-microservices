@@ -1,4 +1,5 @@
 using Ecosystem.Domain.Core.Events;
+using Ecosystem.NotificationService.Application.Adapters;
 using Ecosystem.NotificationService.Domain.Interfaces;
 using MassTransit;
 using Microsoft.Extensions.Logging;
@@ -7,18 +8,18 @@ namespace Ecosystem.NotificationService.Application.Consumers;
 
 public class BonusNotificationConsumer : IConsumer<SendBonusNotificationEvent>
 {
-    private readonly IBrandConfigurationRepository _brandRepository;
+    private readonly IBrandConfigurationReader _brandConfigurationReader;
     private readonly IEmailTemplateRepository _templateRepository;
     private readonly IEmailService _emailService;
     private readonly ILogger<BonusNotificationConsumer> _logger;
 
     public BonusNotificationConsumer(
-        IBrandConfigurationRepository brandRepository,
+        IBrandConfigurationReader brandConfigurationReader,
         IEmailTemplateRepository templateRepository,
         IEmailService emailService,
         ILogger<BonusNotificationConsumer> logger)
     {
-        _brandRepository = brandRepository;
+        _brandConfigurationReader = brandConfigurationReader;
         _templateRepository = templateRepository;
         _emailService = emailService;
         _logger = logger;
@@ -32,7 +33,9 @@ public class BonusNotificationConsumer : IConsumer<SendBonusNotificationEvent>
             "Processing bonus notification for {ToEmail}, brand={BrandId}",
             msg.ToEmail, msg.BrandId);
 
-        var brand = await _brandRepository.GetByBrandIdAsync(msg.BrandId);
+        var brand = await _brandConfigurationReader.GetByBrandIdAsync(
+            msg.BrandId,
+            context.CancellationToken);
         if (brand is null)
         {
             _logger.LogWarning("Brand {BrandId} not found, skipping bonus notification", msg.BrandId);

@@ -1,4 +1,3 @@
-using Ecosystem.Domain.Core.BrandConfiguration;
 using Ecosystem.Domain.Core.Bus;
 using Ecosystem.Domain.Core.Events;
 using Ecosystem.WalletService.Application.Adapters;
@@ -22,7 +21,7 @@ public class CoinPaymentsPaymentStrategy : ICoinPaymentsPaymentStrategy
     private readonly IWalletRepository _walletRepository;
     private readonly IAccountServiceAdapter _accountAdapter;
     private readonly IMembershipBonusService _membershipBonus;
-    private readonly IBrandConfigurationProvider _brandConfigProvider;
+    private readonly IConfigurationAdapter _configurationAdapter;
     private readonly IEventBus _eventBus;
 
     public CoinPaymentsPaymentStrategy(
@@ -35,7 +34,7 @@ public class CoinPaymentsPaymentStrategy : ICoinPaymentsPaymentStrategy
         IWalletRepository walletRepository,
         IAccountServiceAdapter accountAdapter,
         IMembershipBonusService membershipBonus,
-        IBrandConfigurationProvider brandConfigProvider,
+        IConfigurationAdapter configurationAdapter,
         IEventBus eventBus)
     {
         _productValidator = productValidator;
@@ -47,7 +46,7 @@ public class CoinPaymentsPaymentStrategy : ICoinPaymentsPaymentStrategy
         _walletRepository = walletRepository;
         _accountAdapter = accountAdapter;
         _membershipBonus = membershipBonus;
-        _brandConfigProvider = brandConfigProvider;
+        _configurationAdapter = configurationAdapter;
         _eventBus = eventBus;
     }
 
@@ -133,7 +132,7 @@ public class CoinPaymentsPaymentStrategy : ICoinPaymentsPaymentStrategy
 
         if (paymentType == CoinPaymentType.HouseCoin)
         {
-            var brandConfig = await _brandConfigProvider.GetByBrandIdAsync(request.BrandId);
+            var brandConfig = await _configurationAdapter.GetBrandConfiguration(request.BrandId);
 
             if (brandConfig is { CommissionEnabled: true, CommissionLevels.Length: > 0 })
             {

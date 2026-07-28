@@ -17,6 +17,18 @@ spec:
         app: wallet-service
         version: "1.0.0"
     spec:
+      initContainers:
+        - name: wait-for-brand-configuration-contract
+          image: busybox:1.36.1
+          command:
+            - sh
+            - -c
+            - >-
+              until wget -T 5 -qO-
+              http://configuration-service:8080/health/contracts/brand-configuration-v2;
+              do echo "Waiting for ConfigurationService brand configuration contract";
+              sleep 2;
+              done
       containers:
         - name: wallet-service
           image: registry.digitalocean.com/ocx-registry/wallet-service:latest
@@ -37,6 +49,8 @@ spec:
               value: "50051"
             - name: GrpcServices__AccountService
               value: "http://account-service:50051"
+            - name: GrpcServices__ConfigurationService
+              value: "http://configuration-service:50051"
             - name: ConnectionStrings__PostgreSqlConnection
               valueFrom:
                 secretKeyRef:

@@ -2,6 +2,7 @@ using Ecosystem.Domain.Core.Bus;
 using MassTransitBus = Ecosystem.Infra.Bus.MassTransitBus;
 using Ecosystem.Grpc.Configuration;
 using Ecosystem.Infra.IoC.MultiTenancy;
+using Ecosystem.NotificationService.Application.Adapters;
 using Ecosystem.NotificationService.Application.Consumers;
 using Ecosystem.NotificationService.Application.Mappings;
 using Ecosystem.NotificationService.Application.Services;
@@ -73,7 +74,6 @@ public static class IoCExtension
     private static void InjectRepositories(this IServiceCollection services)
     {
         services.AddScoped<IEmailTemplateRepository, EmailTemplateRepository>();
-        services.AddScoped<IBrandConfigurationRepository, BrandConfigurationRepository>();
         services.AddScoped<IBrandRepository, BrandRepository>();
         services.AddScoped<IApiClientRepository, ApiClientRepository>();
     }
@@ -89,13 +89,17 @@ public static class IoCExtension
         services.AddSingleton<IBrowserProvider, Application.Services.Pdf.BrowserProvider>();
         services.AddScoped<IPdfService, Application.Services.Pdf.PdfService>();
 
-        // gRPC client → ConfigurationService for PDF templates
+        // Single read channel to ConfigurationService for brand identity and PDF templates.
         var configServiceUrl = configuration["GrpcServices:ConfigurationService"] ?? "https://localhost:5103";
         services.AddGrpcClient<ConfigurationGrpc.ConfigurationGrpcClient>(o =>
         {
             o.Address = new Uri(configServiceUrl);
         });
-        services.AddScoped<IPdfTemplateProvider, Application.Adapters.GrpcConfigurationServiceAdapter>();
+        services.AddScoped<GrpcConfigurationServiceAdapter>();
+        services.AddScoped<IPdfTemplateProvider>(
+            sp => sp.GetRequiredService<GrpcConfigurationServiceAdapter>());
+        services.AddScoped<IBrandConfigurationReader>(
+            sp => sp.GetRequiredService<GrpcConfigurationServiceAdapter>());
     }
 
     private static void InjectMediatR(this IServiceCollection services)

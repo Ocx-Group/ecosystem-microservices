@@ -1,4 +1,5 @@
 using AutoMapper;
+using Ecosystem.Domain.Core.BrandConfiguration;
 using Ecosystem.Domain.Core.Caching;
 using Ecosystem.WalletService.Application.Extensions;
 using Ecosystem.WalletService.Application.Adapters;
@@ -27,6 +28,7 @@ public class CreateWalletRequestHandler : IRequestHandler<CreateWalletRequestCom
     private readonly IMapper _mapper;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<CreateWalletRequestHandler> _logger;
+    private readonly IConfigurationAdapter _configurationAdapter;
 
     public CreateWalletRequestHandler(
         IWalletRequestRepository walletRequestRepository,
@@ -36,6 +38,7 @@ public class CreateWalletRequestHandler : IRequestHandler<CreateWalletRequestCom
         ICacheService cacheService,
         IMapper mapper,
         ITenantContext tenantContext,
+        IConfigurationAdapter configurationAdapter,
         ILogger<CreateWalletRequestHandler> logger)
     {
         _walletRequestRepository = walletRequestRepository;
@@ -45,6 +48,7 @@ public class CreateWalletRequestHandler : IRequestHandler<CreateWalletRequestCom
         _cacheService = cacheService;
         _mapper = mapper;
         _tenantContext = tenantContext;
+        _configurationAdapter = configurationAdapter;
         _logger = logger;
     }
 
@@ -52,15 +56,15 @@ public class CreateWalletRequestHandler : IRequestHandler<CreateWalletRequestCom
     {
         var request = command.Request;
         var brandId = _tenantContext.TenantId;
+        var brandConfiguration = await _configurationAdapter.GetBrandConfiguration(
+            brandId,
+            cancellationToken);
 
-        bool isDateValid = brandId switch
-        {
-            1 => await IsWithdrawalDateAllowed(),
-            3 => IsWithdrawalUtcDateAllowed(),
-            _ => true
-        };
+        if (brandConfiguration is null)
+            return ResultResponse<WalletRequestDto>.Fail("Configuración de marca no disponible");
 
-        if (!isDateValid && (brandId == 1 || brandId == 3))
+        var isDateValid = await IsWithdrawalDateAllowed(brandConfiguration);
+        if (!isDateValid)
             return ResultResponse<WalletRequestDto>.Fail("La fecha de retiro no está permitida");
 
         if (!await HasWalletAddress(request.AffiliateId, brandId))
@@ -77,13 +81,23 @@ public class CreateWalletRequestHandler : IRequestHandler<CreateWalletRequestCom
         if (request.Amount > available)
             return ResultResponse<WalletRequestDto>.Fail("El monto excede el saldo disponible");
 
-        if (brandId == 2 && !await CheckFor10PercentPurchaseEarnings(request.AffiliateId, brandId))
+        if (brandConfiguration.Requires10PercentPurchaseRule &&
+            !await CheckFor10PercentPurchaseEarnings(
+                request.AffiliateId,
+                brandId,
+                brandConfiguration.DefaultPaymentGroupId))
             return ResultResponse<WalletRequestDto>.Fail("Necesita tener el 10% de lo que haya ganado en compras para retirar dinero");
 
-        var cap = await CheckUserWithdrawalCap(request.AffiliateId, brandId);
-
-        if (brandId == 2 && request.Amount > cap)
-            return ResultResponse<WalletRequestDto>.Fail($"Sin directos el máximo que puede retirar es de ${cap}");
+        if (brandConfiguration.WithdrawalCapNoDirects is decimal configuredCap)
+        {
+            var cap = await CheckUserWithdrawalCap(
+                request.AffiliateId,
+                brandId,
+                configuredCap);
+            if (request.Amount > cap)
+                return ResultResponse<WalletRequestDto>.Fail(
+                    $"Sin directos el máximo que puede retirar es de ${cap}");
+        }
 
         var walletRequest = new WalletsRequest
         {
@@ -107,13 +121,26 @@ public class CreateWalletRequestHandler : IRequestHandler<CreateWalletRequestCom
         return ResultResponse<WalletRequestDto>.Ok(dto);
     }
 
-    private async Task<bool> IsWithdrawalDateAllowed()
+    private async Task<bool> IsWithdrawalDateAllowed(
+        BrandConfigurationDto configuration)
     {
-        var defaultZone = Constants.DefaultWithdrawalZone;
-        var timeZone = TimeZoneInfo.FindSystemTimeZoneById(defaultZone);
+        return configuration.WithdrawalValidationType switch
+        {
+            "None" => true,
+            "DatabaseDriven" => await IsDatabaseDrivenWithdrawalDateAllowed(configuration),
+            "FridayUtc" => IsFridayWithdrawalDateAllowed(configuration),
+            _ => throw new InvalidOperationException(
+                $"Unsupported withdrawal validation type '{configuration.WithdrawalValidationType}'.")
+        };
+    }
+
+    private async Task<bool> IsDatabaseDrivenWithdrawalDateAllowed(
+        BrandConfigurationDto configuration)
+    {
+        var timeZone = GetWithdrawalTimeZone(configuration);
         var localDateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
 
-        if (localDateTime.TimeOfDay < new TimeSpan(8, 0, 0) || localDateTime.TimeOfDay > new TimeSpan(18, 0, 0))
+        if (!IsInsideConfiguredHours(localDateTime.TimeOfDay, configuration))
             return false;
 
         var allowedDatesObjects = await _walletPeriodRepository.GetAllWalletsPeriods();
@@ -122,16 +149,41 @@ public class CreateWalletRequestHandler : IRequestHandler<CreateWalletRequestCom
         return allowedDates.Contains(localDateOnly);
     }
 
-    private static bool IsWithdrawalUtcDateAllowed()
+    private static bool IsFridayWithdrawalDateAllowed(
+        BrandConfigurationDto configuration)
     {
-        var utcNow = DateTime.UtcNow;
+        var timeZone = GetWithdrawalTimeZone(configuration);
+        var localDateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
 
-        if (utcNow.DayOfWeek != DayOfWeek.Friday)
+        if (localDateTime.DayOfWeek != DayOfWeek.Friday)
             return false;
 
-        var startTime = new TimeSpan(0, 0, 0);
-        var endTime = new TimeSpan(24, 0, 0);
-        var currentTime = utcNow.TimeOfDay;
+        return IsInsideConfiguredHours(localDateTime.TimeOfDay, configuration);
+    }
+
+    private static TimeZoneInfo GetWithdrawalTimeZone(
+        BrandConfigurationDto configuration)
+    {
+        if (string.IsNullOrWhiteSpace(configuration.WithdrawalTimeZone))
+            throw new InvalidOperationException(
+                $"Withdrawal time zone is not configured for brand {configuration.BrandId}.");
+
+        return TimeZoneInfo.FindSystemTimeZoneById(configuration.WithdrawalTimeZone);
+    }
+
+    private static bool IsInsideConfiguredHours(
+        TimeSpan currentTime,
+        BrandConfigurationDto configuration)
+    {
+        if (configuration.WithdrawalStartHour is not int startHour ||
+            configuration.WithdrawalEndHour is not int endHour)
+        {
+            throw new InvalidOperationException(
+                $"Withdrawal hours are not configured for brand {configuration.BrandId}.");
+        }
+
+        var startTime = TimeSpan.FromHours(startHour);
+        var endTime = TimeSpan.FromHours(endHour);
         return currentTime >= startTime && currentTime <= endTime;
     }
 
@@ -141,17 +193,26 @@ public class CreateWalletRequestHandler : IRequestHandler<CreateWalletRequestCom
         return btcAddresses is not null && btcAddresses.Any();
     }
 
-    private async Task<bool> CheckFor10PercentPurchaseEarnings(int affiliateId, long brandId)
+    private async Task<bool> CheckFor10PercentPurchaseEarnings(
+        int affiliateId,
+        long brandId,
+        int? paymentGroupId)
     {
         var commissions = await _walletRepository.GetTotalCommissionsPaid(affiliateId, brandId);
-        var purchases = await _walletRepository.GetTotalAcquisitionsByAffiliateId(affiliateId, brandId);
+        var purchases = await _walletRepository.GetTotalAcquisitionsByAffiliateId(
+            affiliateId,
+            brandId,
+            paymentGroupId);
 
         var minimumPurchaseRequired = commissions * 0.10m;
 
         return purchases >= minimumPurchaseRequired;
     }
 
-    private async Task<int> CheckUserWithdrawalCap(int affiliateId, long brandId)
+    private async Task<decimal> CheckUserWithdrawalCap(
+        int affiliateId,
+        long brandId,
+        decimal configuredCap)
     {
         var users = new[] { affiliateId };
 
@@ -159,8 +220,8 @@ public class CreateWalletRequestHandler : IRequestHandler<CreateWalletRequestCom
         var directUsers = directUsersArray?.ToList() ?? new List<int>();
 
         if (directUsers.Contains(affiliateId))
-            return int.MaxValue;
+            return decimal.MaxValue;
 
-        return 75;
+        return configuredCap;
     }
 }

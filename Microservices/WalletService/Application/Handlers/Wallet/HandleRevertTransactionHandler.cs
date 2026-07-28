@@ -1,5 +1,6 @@
 using Ecosystem.Domain.Core.Caching;
 using Ecosystem.WalletService.Application.Extensions;
+using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Commands.Wallet;
 using Ecosystem.WalletService.Domain.Constants;
 using Ecosystem.WalletService.Domain.Enums;
@@ -23,6 +24,7 @@ public class HandleRevertTransactionHandler : IRequestHandler<HandleRevertTransa
     private readonly ICacheService _cacheService;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<HandleRevertTransactionHandler> _logger;
+    private readonly IConfigurationAdapter _configurationAdapter;
 
     public HandleRevertTransactionHandler(
         IWalletRepository walletRepository,
@@ -31,6 +33,7 @@ public class HandleRevertTransactionHandler : IRequestHandler<HandleRevertTransa
         IInvoiceDetailRepository invoiceDetailRepository,
         ICacheService cacheService,
         ITenantContext tenantContext,
+        IConfigurationAdapter configurationAdapter,
         ILogger<HandleRevertTransactionHandler> logger)
     {
         _walletRepository = walletRepository;
@@ -39,6 +42,7 @@ public class HandleRevertTransactionHandler : IRequestHandler<HandleRevertTransa
         _invoiceDetailRepository = invoiceDetailRepository;
         _cacheService = cacheService;
         _tenantContext = tenantContext;
+        _configurationAdapter = configurationAdapter;
         _logger = logger;
     }
 
@@ -49,7 +53,16 @@ public class HandleRevertTransactionHandler : IRequestHandler<HandleRevertTransa
         if (walletRequest == null)
             return false;
 
-        var creditRequest = CreateCreditTransactionRequest(walletRequest);
+        var brandId = _tenantContext.TenantId;
+        var brandConfiguration = await _configurationAdapter.GetBrandConfiguration(
+            brandId,
+            cancellationToken);
+        if (brandConfiguration is null)
+            return false;
+
+        var creditRequest = CreateCreditTransactionRequest(
+            walletRequest,
+            brandConfiguration.AdminUserName);
 
         switch (command.Option)
         {
@@ -78,7 +91,9 @@ public class HandleRevertTransactionHandler : IRequestHandler<HandleRevertTransa
         return true;
     }
 
-    private CreditTransactionRequest CreateCreditTransactionRequest(WalletsRequest walletRequest)
+    private static CreditTransactionRequest CreateCreditTransactionRequest(
+        WalletsRequest walletRequest,
+        string adminUserName)
     {
         return new CreditTransactionRequest
         {
@@ -87,7 +102,7 @@ public class HandleRevertTransactionHandler : IRequestHandler<HandleRevertTransa
             Concept = Constants.RevertEcoPoolConcept + $" Factura# {walletRequest.InvoiceNumber}",
             Credit = Convert.ToDouble(walletRequest.Amount),
             AffiliateUserName = walletRequest.AdminUserName!,
-            AdminUserName = Constants.AdminEcosystemUserName,
+            AdminUserName = adminUserName,
             ConceptType = WalletConceptType.revert_pool.ToString()
         };
     }

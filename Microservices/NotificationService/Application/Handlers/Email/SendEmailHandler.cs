@@ -1,5 +1,6 @@
 using System.Text;
 using Ecosystem.Domain.Core.MultiTenancy;
+using Ecosystem.NotificationService.Application.Adapters;
 using Ecosystem.NotificationService.Application.Commands.Email;
 using Ecosystem.NotificationService.Domain.Interfaces;
 using MediatR;
@@ -10,20 +11,20 @@ namespace Ecosystem.NotificationService.Application.Handlers.Email;
 public class SendEmailHandler : IRequestHandler<SendEmailCommand, bool>
 {
     private readonly IEmailTemplateRepository _templateRepository;
-    private readonly IBrandConfigurationRepository _brandRepository;
+    private readonly IBrandConfigurationReader _brandConfigurationReader;
     private readonly IEmailService _emailService;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<SendEmailHandler> _logger;
 
     public SendEmailHandler(
         IEmailTemplateRepository templateRepository,
-        IBrandConfigurationRepository brandRepository,
+        IBrandConfigurationReader brandConfigurationReader,
         IEmailService emailService,
         ITenantContext tenantContext,
         ILogger<SendEmailHandler> logger)
     {
         _templateRepository = templateRepository;
-        _brandRepository = brandRepository;
+        _brandConfigurationReader = brandConfigurationReader;
         _emailService = emailService;
         _tenantContext = tenantContext;
         _logger = logger;
@@ -37,14 +38,16 @@ public class SendEmailHandler : IRequestHandler<SendEmailCommand, bool>
             ?? throw new KeyNotFoundException(
                 $"Template '{request.TemplateKey}' not found for brand {brandId}");
 
-        var brand = await _brandRepository.GetByBrandIdAsync(brandId)
+        var brand = await _brandConfigurationReader.GetByBrandIdAsync(brandId, cancellationToken)
             ?? throw new KeyNotFoundException($"Brand configuration not found for brand {brandId}");
 
         var placeholders = new Dictionary<string, string>(request.Placeholders)
         {
             ["brandName"]    = brand.Name,
-            ["clientUrl"]    = brand.ClientUrl ?? string.Empty,
-            ["supportEmail"] = brand.SupportEmail ?? brand.SenderEmail,
+            ["clientUrl"]    = brand.ClientUrl,
+            ["supportEmail"] = string.IsNullOrWhiteSpace(brand.SupportEmail)
+                ? brand.SenderEmail
+                : brand.SupportEmail,
             ["senderName"]   = brand.SenderName,
         };
 

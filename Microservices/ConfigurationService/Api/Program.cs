@@ -53,8 +53,19 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors();
 app.UseHttpsRedirection();
 app.UseAuthorization();
+TenantResolutionMiddleware.AddSkipPrefix("/configuration.ConfigurationGrpc/");
 app.UseTenantResolution();
 app.MapHealthChecks("/health");
+app.MapGet("/health/contracts/brand-configuration-v1", () => Results.Ok(new
+{
+    status = "ready",
+    contract = "brand-configuration-v1"
+}));
+app.MapGet("/health/contracts/brand-configuration-v2", () => Results.Ok(new
+{
+    status = "ready",
+    contract = "brand-configuration-v2"
+}));
 app.MapGrpcService<ConfigurationGrpcService>();
 app.MapControllers();
 

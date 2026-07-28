@@ -38,7 +38,9 @@ public class ProcessAllQualificationsHandler : IRequestHandler<ProcessAllQualifi
     public async Task<BatchProcessingResult> Handle(ProcessAllQualificationsCommand request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Starting matrix qualifications processing. IDs: {Count}", request.UserIds?.Length ?? 0);
-        var brandId = _tenantContext.TenantId == 0 ? 2 : _tenantContext.TenantId;
+        var brandId = _tenantContext.TenantId;
+        if (brandId <= 0)
+            throw new InvalidOperationException("A valid tenant is required to process qualifications.");
 
         var result = new BatchProcessingResult
         {
