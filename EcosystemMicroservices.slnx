@@ -33,16 +33,19 @@
     <File Path="Infrastructure/k8s/sealed-secrets/spaces-credentials.yaml" />
   </Folder>
   <Folder Name="/Infrastructure/k8s/argocd/">
-    <File Path="Infrastructure/k8s/argocd/project.yaml" />
     <File Path="Infrastructure/k8s/argocd/app-of-apps.yaml" />
   </Folder>
   <Folder Name="/Infrastructure/k8s/argocd/apps/">
+    <File Path="Infrastructure/k8s/argocd/apps/ecosystem-project.yaml" />
     <File Path="Infrastructure/k8s/argocd/apps/account-service.yaml" />
     <File Path="Infrastructure/k8s/argocd/apps/wallet-service.yaml" />
     <File Path="Infrastructure/k8s/argocd/apps/inventory-service.yaml" />
     <File Path="Infrastructure/k8s/argocd/apps/configuration-service.yaml" />
     <File Path="Infrastructure/k8s/argocd/apps/notification-service.yaml" />
     <File Path="Infrastructure/k8s/argocd/apps/gateway-service.yaml" />
+    <File Path="Infrastructure/k8s/argocd/apps/ecosystem-web.yaml" />
+    <File Path="Infrastructure/k8s/argocd/apps/recycoin-web.yaml" />
+    <File Path="Infrastructure/k8s/argocd/apps/recybot-web.yaml" />
   </Folder>
   <Folder Name="/Infrastructure/k8s/services/" />
   <Folder Name="/Infrastructure/k8s/services/account-service/">

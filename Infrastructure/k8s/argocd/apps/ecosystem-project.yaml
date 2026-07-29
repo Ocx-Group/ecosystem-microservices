@@ -3,11 +3,16 @@ kind: AppProject
 metadata:
   name: ecosystem
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   description: Ecosystem Microservices - Prod
 
   sourceRepos:
     - https://github.com/Ocx-Group/ecosystem-microservices
+    - https://github.com/Ocx-Group/ecosystem-web
+    - https://github.com/Ocx-Group/recycoin-web
+    - https://github.com/Ocx-Group/recybot-web
 
   destinations:
     - namespace: ecosystem

@@ -1,0 +1,44 @@
+name: Verify Production Branding
+
+on:
+  workflow_dispatch:
+    inputs:
+      hosts:
+        description: Comma-separated public hostnames to verify
+        required: true
+        type: string
+      expected_brand_ids:
+        description: Optional JSON map, for example {"example.com":1}
+        required: false
+        default: "{}"
+        type: string
+      gateway_base_url:
+        description: Public gateway base URL
+        required: true
+        default: https://api.ecosystemfx.net
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify public branding contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify through the public gateway
+        shell: pwsh
+        env:
+          BRANDING_HOSTS: ${{ inputs.hosts }}
+          EXPECTED_BRAND_IDS: ${{ inputs.expected_brand_ids }}
+          GATEWAY_BASE_URL: ${{ inputs.gateway_base_url }}
+        run: |
+          $hosts = @($env:BRANDING_HOSTS.Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+          $expected = $env:EXPECTED_BRAND_IDS | ConvertFrom-Json -AsHashtable
+          ./Tools/Test-BrandingDeployment.ps1 `
+            -GatewayBaseUrl $env:GATEWAY_BASE_URL `
+            -HostName $hosts `
+            -ExpectedBrandByHost $expected
