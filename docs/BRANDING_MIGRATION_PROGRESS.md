@@ -35,9 +35,9 @@ actualizarse después de cada implementación, validación, commit o despliegue.
 | 2 | Hacer de `ConfigurationService` la única fuente de branding para notificaciones y PDFs | Implementado y validado localmente | Backend en commit `46369de`; pendiente de despliegue |
 | 3 | Sustituir reglas y valores codificados por `BrandId` en AccountService y WalletService | Implementado y validado localmente | Backend en commit `46369de`; pendiente de despliegue |
 | 4 | Retirar decisiones por marca restantes en InventoryService | Implementado y validado localmente | Backend en commit `477436e`; pendiente de despliegue |
-| 5 | Verificar que todas las webs obtengan identidad visual y datos públicos en tiempo de ejecución | Implementado y validado localmente | Endpoint en `5ed8af0`; webs pendientes de commit/despliegue |
-| 6 | Añadir pruebas de contrato, observabilidad y documentación operativa del flujo completo | Implementado y validado localmente | Código en `1cf605e`; documentación pendiente de commit |
-| 7 | Centralizar la entrega frontend en GitOps y verificarla sin acceso directo a pods | Implementado y validado localmente | Pendiente de commit/despliegue |
+| 5 | Verificar que todas las webs obtengan identidad visual y datos públicos en tiempo de ejecución | Implementado, validado y confirmado | Endpoint `5ed8af0`; webs `57dd242`, `20d123a`, `f4dc27f`, `028dec1` |
+| 6 | Añadir pruebas de contrato, observabilidad y documentación operativa del flujo completo | Implementado, validado y confirmado | Backend `1cf605e`; instrumentación incluida en commits de las webs |
+| 7 | Centralizar la entrega frontend en GitOps y verificarla sin acceso directo a pods | Implementado, validado y confirmado | GitOps `e42081a`; pipelines incluidos en commits frontend |
 
 ## Paso 1: migraciones de producción
 
@@ -290,8 +290,9 @@ Precondición operativa:
 
 ## Paso 5: branding de las webs en tiempo de ejecución
 
-Estado: endpoint confirmado en `5ed8af0` y webs validadas localmente; pendiente
-de commit de las webs, configuración central completa y despliegue.
+Estado: endpoint confirmado en `5ed8af0` y webs confirmadas en `57dd242`
+(`web`), `20d123a` (`recycoin`), `f4dc27f` (`housecoin`) y `028dec1`
+(`recybot`); pendiente de configuración central completa y despliegue.
 
 Webs auditadas:
 
@@ -389,8 +390,8 @@ Protección de infraestructura y datos:
 
 ## Paso 6: contrato, observabilidad y operación
 
-Estado: código confirmado en `1cf605e`; documentación pendiente de commit y
-despliegue.
+Estado: código confirmado en `1cf605e`, instrumentación web incluida en sus
+commits y documentación confirmada en `e42081a`; pendiente de despliegue.
 
 Pruebas automatizadas:
 
@@ -452,7 +453,8 @@ Pendiente operativo:
 
 ## Paso 7: entrega frontend completamente GitOps
 
-Estado: implementado y validado localmente; pendiente de commit y despliegue.
+Estado: GitOps y verificación confirmados en `e42081a`; pipelines frontend
+confirmados en `57dd242`, `20d123a` y `028dec1`; pendiente de despliegue.
 
 Centralización:
 
@@ -520,11 +522,11 @@ Precondiciones de despliegue:
   `477436e` y el endpoint del paso 5 en `5ed8af0`; ninguno está desplegado.
 - Los cambios de las cuatro webs del paso 5 y la instrumentación del paso 6
   permanecen en sus respectivos árboles de trabajo.
-- El código del paso 6 está confirmado en `1cf605e`; su documentación y el paso
-  7 permanecen en el árbol de trabajo de `ecosystem-microservices`.
-- El siguiente frente es confirmar los cambios de cada web, resolver la
-  incorporación de HouseCoin, completar la configuración empresarial y
-  ejecutar el despliegue controlado con sus verificaciones públicas.
+- Los pasos técnicos 1 a 7 están confirmados localmente en sus respectivos
+  repositorios; no se ha hecho push ni despliegue.
+- El siguiente frente es resolver la incorporación GitOps de HouseCoin,
+  completar la configuración empresarial y ejecutar el despliegue controlado
+  con sus verificaciones públicas.
 
 ## Cómo continuar
 
