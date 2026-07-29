@@ -30,6 +30,20 @@ public class BrandConfigurationController : BaseController
             : Ok(Success(result));
     }
 
+    [HttpGet("public/current")]
+    public async Task<IActionResult> GetPublicCurrent(
+        [FromQuery] string host,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(host))
+            return BadRequest(Fail("Host is required"));
+
+        var result = await _mediator.Send(new GetPublicBrandingByHostQuery(host), ct);
+        return result is null
+            ? NotFound(Fail($"Active branding not found for host {host}"))
+            : Ok(Success(result));
+    }
+
     [HttpPut]
     public async Task<IActionResult> Upsert([FromBody] UpsertBrandConfigurationCommand command, CancellationToken ct)
     {

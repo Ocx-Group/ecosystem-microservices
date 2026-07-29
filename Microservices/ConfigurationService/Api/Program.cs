@@ -54,6 +54,7 @@ app.UseCors();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 TenantResolutionMiddleware.AddSkipPrefix("/configuration.ConfigurationGrpc/");
+TenantResolutionMiddleware.AddSkipPrefix("/api/v1/brandconfiguration/public/");
 app.UseTenantResolution();
 app.MapHealthChecks("/health");
 app.MapGet("/health/contracts/brand-configuration-v1", () => Results.Ok(new
