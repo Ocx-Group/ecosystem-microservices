@@ -224,6 +224,9 @@
     <Project Path="Tools/Ecosystem.Migrator/Ecosystem.Migrator.csproj" />
     <File Path="Tools/Ecosystem.Migrator/Dockerfile" />
   </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/Ecosystem.ConfigurationService.ContractTests/Ecosystem.ConfigurationService.ContractTests.csproj" />
+  </Folder>
   <Folder Name="/.github/">
     <File Path=".github/workflows/deploy-prod.yml" />
     <File Path=".dockerignore" />

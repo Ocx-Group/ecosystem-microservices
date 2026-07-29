@@ -29,12 +29,35 @@ env:
   CLUSTER_NAME: ecosystem-prod-k8s
 
 jobs:
+  contract-tests:
+    name: Branding Contract Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+          cache: true
+          cache-dependency-path: Tests/Ecosystem.ConfigurationService.ContractTests/Ecosystem.ConfigurationService.ContractTests.csproj
+
+      - name: Test public branding contract
+        run: >-
+          dotnet test
+          Tests/Ecosystem.ConfigurationService.ContractTests/Ecosystem.ConfigurationService.ContractTests.csproj
+          --configuration Release
+          --nologo
+
   # ===========================================================================
   # JOB 1 — Build & push de todas las imagenes Docker
   # ===========================================================================
   build-and-push:
     name: Build & Push Docker Images
     runs-on: ubuntu-latest
+    needs: contract-tests
     outputs:
       version: ${{ steps.version.outputs.version }}
 

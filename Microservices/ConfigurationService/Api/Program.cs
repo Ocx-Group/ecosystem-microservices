@@ -67,6 +67,13 @@ app.MapGet("/health/contracts/brand-configuration-v2", () => Results.Ok(new
     status = "ready",
     contract = "brand-configuration-v2"
 }));
+app.MapGet("/health/contracts/public-branding-v1", () => Results.Ok(new
+{
+    status = "ready",
+    contract = "public-branding-v1",
+    endpoint = "/api/v1/brandconfiguration/public/current",
+    telemetryMeter = "Ecosystem.ConfigurationService.Branding"
+}));
 app.MapGrpcService<ConfigurationGrpcService>();
 app.MapControllers();
 

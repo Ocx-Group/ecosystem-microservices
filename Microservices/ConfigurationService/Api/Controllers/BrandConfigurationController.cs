@@ -39,9 +39,15 @@ public class BrandConfigurationController : BaseController
             return BadRequest(Fail("Host is required"));
 
         var result = await _mediator.Send(new GetPublicBrandingByHostQuery(host), ct);
-        return result is null
-            ? NotFound(Fail($"Active branding not found for host {host}"))
-            : Ok(Success(result));
+        if (result is null)
+        {
+            Response.Headers.CacheControl = "no-store";
+            return NotFound(Fail("Active branding not found for the requested host"));
+        }
+
+        Response.Headers.CacheControl = "public, max-age=300";
+        Response.Headers.Append("X-Branding-Contract", "public-branding-v1");
+        return Ok(Success(result));
     }
 
     [HttpPut]
