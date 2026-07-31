@@ -29,6 +29,54 @@ El cuerpo permitido contiene únicamente `brandId`, `clientId`, nombre, razón
 social, URL de cliente, soporte, tipo de documento, logo y colores. `clientId`
 identifica el tenant; no sustituye un token de autorización.
 
+## Acceso administrativo desde los dashboards
+
+Después de un login administrativo correcto, `AccountService` devuelve en el
+campo `token` un JWT de corta duración. Los dashboards deben enviarlo solo como
+Bearer token al consultar o guardar el branding:
+
+```text
+GET /api/v1/brandconfiguration/admin/current
+PUT /api/v1/brandconfiguration/admin/current
+Authorization: Bearer <token>
+```
+
+El contrato no recibe `BrandId`. `ConfigurationService` obtiene el tenant del
+claim `brand_id` firmado y exige el rol `Administrador`. `X-Client-ID` no se usa
+como autorización administrativa.
+
+El `PUT` permite modificar únicamente:
+
+- nombre y razón social;
+- identificador y tipo de documento;
+- URL del cliente;
+- correo y teléfono de soporte;
+- URL del logo;
+- colores primario, secundario y de fondo.
+
+No permite cambiar políticas de pagos, retiros, blockchain, notificaciones ni
+otros campos operativos. Los endpoints históricos que entregan la configuración
+completa requieren el scope interno `configuration_scope=all` y no deben ser
+consumidos por las webs.
+
+La versión actual guarda directamente la configuración vigente e invalida su
+caché. Borradores, publicación explícita, assets administrados, historial y
+rollback siguen pendientes; los dashboards no deben presentar esas capacidades
+hasta que existan en el backend.
+
+### Requisito criptográfico de despliegue
+
+Gateway, AccountService y ConfigurationService deben recibir desde un secreto
+administrado por GitOps:
+
+- la misma `Jwt:Key`, con al menos 32 bytes de entropía;
+- el mismo `Jwt:Issuer`;
+- el mismo `Jwt:Audience`.
+
+No desplegar la API administrativa con una clave placeholder o distinta entre
+servicios. La clave no debe almacenarse en `environment.ts`, ConfigMaps,
+imágenes, repositorios ni bundles del navegador.
+
 ## Precondiciones para configurar una marca activa
 
 Antes de publicar DNS o tráfico:
@@ -53,7 +101,9 @@ Desde la raíz de `ecosystem-microservices`:
 
 ```powershell
 dotnet test Tests\Ecosystem.ConfigurationService.ContractTests\Ecosystem.ConfigurationService.ContractTests.csproj
+dotnet test Tests\Ecosystem.AccountService.AuthenticationTests\Ecosystem.AccountService.AuthenticationTests.csproj
 dotnet build Microservices\ConfigurationService\Api\Ecosystem.ConfigurationService.Api.csproj
+dotnet build Microservices\AccountService\Api\Ecosystem.AccountService.Api.csproj -p:StaticWebAssetsEnabled=false
 ```
 
 El pipeline `Deploy to Production` ejecuta las pruebas de contrato antes de
@@ -70,6 +120,9 @@ Las pruebas cubren:
 - ausencia de campos administrativos, comisiones, retiros y blockchain.
 - nombres y números de los 35 campos del contrato gRPC interno consumido por
   notificaciones, cuentas, wallet e inventario.
+- aislamiento de escritura por el `brand_id` firmado y ausencia de `BrandId` en
+  el request administrativo;
+- claims, duración y rechazo de claves inseguras del JWT administrativo.
 
 ## Orden de despliegue
 

@@ -121,6 +121,10 @@ public static class IoCExtension
             configuration.GetSection(Application.Settings.AccountServiceSettings.SectionName));
         services.Configure<Application.Settings.GoogleAuthSettings>(
             configuration.GetSection(Application.Settings.GoogleAuthSettings.SectionName));
+        services.Configure<Application.Settings.JwtSettings>(
+            configuration.GetSection(Application.Settings.JwtSettings.SectionName));
+        services.AddSingleton<Application.Services.IAdminAccessTokenIssuer,
+            Application.Services.AdminAccessTokenIssuer>();
 
         services.InjectGrpcClients(configuration);
     }

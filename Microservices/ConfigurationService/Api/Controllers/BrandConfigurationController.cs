@@ -1,8 +1,11 @@
 using Asp.Versioning;
 using Ecosystem.ConfigurationService.Application.Commands.BrandConfiguration;
+using Ecosystem.ConfigurationService.Application.DTOs;
 using Ecosystem.ConfigurationService.Application.Queries.BrandConfiguration;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Ecosystem.ConfigurationService.Api.Controllers;
 
@@ -15,15 +18,21 @@ public class BrandConfigurationController : BaseController
     public BrandConfigurationController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet]
+    [Authorize(Policy = "BrandConfigurationFullAccess")]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
-        var result = await _mediator.Send(new GetAllBrandConfigurationsQuery(), ct);
-        return Ok(Success(result));
+        var brandId = GetAuthenticatedBrandId();
+        var result = await _mediator.Send(new GetBrandConfigurationByBrandIdQuery(brandId), ct);
+        return Ok(Success(result is null ? [] : new[] { result }));
     }
 
     [HttpGet("{brandId:long}")]
+    [Authorize(Policy = "BrandConfigurationFullAccess")]
     public async Task<IActionResult> GetByBrandId([FromRoute] long brandId, CancellationToken ct)
     {
+        if (brandId != GetAuthenticatedBrandId())
+            return Forbid();
+
         var result = await _mediator.Send(new GetBrandConfigurationByBrandIdQuery(brandId), ct);
         return result is null
             ? NotFound(Fail($"Brand configuration not found for BrandId {brandId}"))
@@ -31,6 +40,7 @@ public class BrandConfigurationController : BaseController
     }
 
     [HttpGet("public/current")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetPublicCurrent(
         [FromQuery] string host,
         CancellationToken ct)
@@ -51,18 +61,58 @@ public class BrandConfigurationController : BaseController
     }
 
     [HttpPut]
+    [Authorize(Policy = "BrandConfigurationFullAccess")]
     public async Task<IActionResult> Upsert([FromBody] UpsertBrandConfigurationCommand command, CancellationToken ct)
     {
+        if (command.BrandId != GetAuthenticatedBrandId())
+            return Forbid();
+
         var result = await _mediator.Send(command, ct);
         return Ok(Success(result));
     }
 
     [HttpDelete("{brandId:long}")]
+    [Authorize(Policy = "BrandConfigurationFullAccess")]
     public async Task<IActionResult> Delete([FromRoute] long brandId, CancellationToken ct)
     {
+        if (brandId != GetAuthenticatedBrandId())
+            return Forbid();
+
         var result = await _mediator.Send(new DeleteBrandConfigurationCommand(brandId), ct);
         return result is null
             ? NotFound(Fail($"Brand configuration not found for BrandId {brandId}"))
             : Ok(Success(result));
     }
+
+    [HttpGet("admin/current")]
+    [Authorize(Policy = "BrandAdministrator")]
+    public async Task<IActionResult> GetOwnBranding(CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetOwnBrandingQuery(), ct);
+        return result is null
+            ? NotFound(Fail("Brand configuration not found for the authenticated tenant"))
+            : Ok(Success(result));
+    }
+
+    [HttpPut("admin/current")]
+    [Authorize(Policy = "BrandAdministrator")]
+    public async Task<IActionResult> UpdateOwnBranding(
+        [FromBody] UpdateOwnBrandingRequest request,
+        CancellationToken ct)
+    {
+        var actorUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+        var actorUserName = User.Identity?.Name ?? "unknown";
+        var result = await _mediator.Send(
+            new UpdateOwnBrandingCommand(request, actorUserId, actorUserName),
+            ct);
+
+        return result is null
+            ? NotFound(Fail("Brand configuration not found for the authenticated tenant"))
+            : Ok(Success(result));
+    }
+
+    private long GetAuthenticatedBrandId()
+        => long.TryParse(User.FindFirstValue("brand_id"), out var brandId) && brandId > 0
+            ? brandId
+            : throw new UnauthorizedAccessException("Authenticated brand context is required.");
 }

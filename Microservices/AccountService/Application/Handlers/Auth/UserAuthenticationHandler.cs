@@ -3,6 +3,7 @@ using AutoMapper;
 using Ecosystem.AccountService.Application.DTOs;
 using Ecosystem.AccountService.Application.DTOs.Auth;
 using Ecosystem.AccountService.Application.Helpers;
+using Ecosystem.AccountService.Application.Services;
 using Ecosystem.AccountService.Domain.Interfaces;
 using Ecosystem.AccountService.Domain.Models;
 using Ecosystem.Domain.Core.MultiTenancy;
@@ -20,6 +21,7 @@ public class UserAuthenticationHandler : IRequestHandler<UserAuthenticationComma
     private readonly ITenantContext _tenantContext;
     private readonly IMapper _mapper;
     private readonly ILogger<UserAuthenticationHandler> _logger;
+    private readonly IAdminAccessTokenIssuer _adminAccessTokenIssuer;
 
     public UserAuthenticationHandler(
         IUserAffiliateInfoRepository userAffiliateInfoRepository,
@@ -28,6 +30,7 @@ public class UserAuthenticationHandler : IRequestHandler<UserAuthenticationComma
         IMasterPasswordRepository masterPasswordRepository,
         ITenantContext tenantContext,
         IMapper mapper,
+        IAdminAccessTokenIssuer adminAccessTokenIssuer,
         ILogger<UserAuthenticationHandler> logger)
     {
         _userAffiliateInfoRepository = userAffiliateInfoRepository;
@@ -36,6 +39,7 @@ public class UserAuthenticationHandler : IRequestHandler<UserAuthenticationComma
         _masterPasswordRepository = masterPasswordRepository;
         _tenantContext = tenantContext;
         _mapper = mapper;
+        _adminAccessTokenIssuer = adminAccessTokenIssuer;
         _logger = logger;
     }
 
@@ -77,7 +81,9 @@ public class UserAuthenticationHandler : IRequestHandler<UserAuthenticationComma
             movement.BrandId = _tenantContext.TenantId;
             await _loginMovementsRepository.CreateAsync(movement);
 
-            return new AuthResultDto { User = _mapper.Map<UserDto>(user) };
+            var userDto = _mapper.Map<UserDto>(user);
+            userDto.Token = _adminAccessTokenIssuer.Issue(user);
+            return new AuthResultDto { User = userDto };
         }
 
         return new AuthResultDto();

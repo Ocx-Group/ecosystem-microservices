@@ -54,6 +54,7 @@ onboarding de nuevos proyectos frontend o un dashboard central Brand Studio.
 | 5 | Verificar que las webs obtengan identidad visual y datos públicos en tiempo de ejecución | Implementado, validado y confirmado | Activas: `57dd242`, `20d123a`, `028dec1`; validación histórica de HouseCoin: `f4dc27f` |
 | 6 | Añadir pruebas de contrato, observabilidad y documentación operativa del flujo completo | Implementado, validado y confirmado | Backend `1cf605e`; instrumentación incluida en commits de las webs |
 | 7 | Centralizar la entrega frontend en GitOps y verificarla sin acceso directo a pods | Implementado, validado y confirmado | GitOps `e42081a`; pipelines incluidos en commits frontend |
+| 8 | Permitir que cada dashboard administre el branding de su propio tenant | Backend implementado y validado localmente | JWT administrativo y API `admin/current`; pantallas frontend y secreto productivo pendientes |
 
 ## Paso 1: migraciones de producción
 
@@ -536,6 +537,62 @@ Precondiciones de despliegue:
 - Deben completarse los datos centrales de cada marca antes de publicar las
   imágenes frontend.
 
+## Paso 8: configuración dinámica desde cada dashboard
+
+Estado: **backend implementado y validado localmente; integración frontend y
+despliegue pendientes**.
+
+Se añadió un contrato administrativo protegido a `ConfigurationService` para
+que `web`, `recycoin` y `recybot` puedan leer y modificar exclusivamente el
+branding de su propio tenant:
+
+```text
+GET /api/v1/brandconfiguration/admin/current
+PUT /api/v1/brandconfiguration/admin/current
+Authorization: Bearer <jwt-administrativo>
+```
+
+Decisiones de seguridad:
+
+- `AccountService` emite al iniciar sesión un JWT administrativo de corta
+  duración con el rol y el `brand_id` firmados;
+- los endpoints requieren rol `Administrador` y derivan el tenant del JWT;
+- el request de actualización no contiene `BrandId`, por lo que cambiar una
+  cabecera o el cuerpo no permite seleccionar otra marca;
+- `X-Client-ID` continúa siendo contexto de las APIs existentes, pero no es una
+  autoridad para editar branding;
+- los endpoints históricos que exponen la configuración completa requieren el
+  scope interno `configuration_scope=all`, que no se entrega al dashboard;
+- solo se modifican nombre, razón social, identificador, URL, soporte, tipo de
+  documento, logo y colores. Las políticas operativas quedan intactas;
+- la actualización invalida la caché de la marca y registra al actor en logs.
+
+Validaciones realizadas:
+
+- build de `AccountService` y `ConfigurationService` sin errores;
+- 20 pruebas de contrato de `ConfigurationService` aprobadas;
+- 2 pruebas del emisor JWT de `AccountService` aprobadas;
+- pruebas de aislamiento por tenant, contrato exacto, autorización y validación
+  de URL, correo y colores;
+- no se accedió ni modificó ninguna base de datos;
+- no se crearon migraciones ni se manipuló ningún pod o contexto Kubernetes.
+
+Precondición obligatoria antes de desplegar:
+
+- crear mediante secretos/GitOps una clave `Jwt:Key` de al menos 32 bytes y
+  entregarla con el mismo issuer y audience a Gateway, AccountService y
+  ConfigurationService. Ningún valor placeholder puede llegar a producción y
+  la clave nunca debe compilarse dentro de los frontends.
+
+Pendiente de esta etapa:
+
+- integrar primero el formulario administrativo de `web` como piloto;
+- replicarlo en `recycoin` y `recybot` respetando la UI propia de cada producto;
+- implementar preview, carga segura de assets, borradores, publicación,
+  historial y rollback en etapas posteriores;
+- realizar el despliegue y la validación externa únicamente por pipeline y
+  Argo CD.
+
 ## Hallazgos transversales
 
 - El backend de los pasos 2 y 3 está confirmado en `46369de`, el paso 4 en
@@ -545,9 +602,11 @@ Precondiciones de despliegue:
   trabajo futuro.
 - Los pasos técnicos 1 a 7 están confirmados localmente en sus respectivos
   repositorios; no se ha hecho push ni despliegue.
-- El siguiente frente es implementar endpoints administrativos protegidos en
-  `ConfigurationService` y permitir que los dashboards de `web`, `recycoin` y
-  `recybot` configuren únicamente los detalles de su propia marca.
+- Los endpoints administrativos protegidos de `ConfigurationService` y la
+  emisión del JWT administrativo están implementados y probados localmente.
+- El siguiente frente es integrar el formulario en el dashboard de `web` como
+  piloto. Después se replica la capacidad en `recycoin` y `recybot` sin unificar
+  sus vistas ni su lógica de producto.
 - No se continuará Ecosystem Brand Studio ni se incorporará HouseCoin a GitOps.
 
 ## Cómo continuar

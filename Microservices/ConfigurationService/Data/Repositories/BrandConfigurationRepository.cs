@@ -78,6 +78,34 @@ public class BrandConfigurationRepository : BaseRepository, IBrandConfigurationR
         return config;
     }
 
+    public async Task<BrandConfiguration?> UpdateBrandingAsync(
+        long brandId,
+        BrandConfiguration branding)
+    {
+        var existing = await Context.BrandConfigurations
+            .Include(x => x.Brand)
+            .FirstOrDefaultAsync(x => x.BrandId == brandId && x.DeletedAt == null);
+
+        if (existing is null)
+            return null;
+
+        existing.Brand.Name = branding.Brand.Name;
+        existing.CompanyName = branding.CompanyName;
+        existing.CompanyIdentifier = branding.CompanyIdentifier;
+        existing.ClientUrl = branding.ClientUrl;
+        existing.SupportEmail = branding.SupportEmail;
+        existing.SupportPhone = branding.SupportPhone;
+        existing.DocumentType = branding.DocumentType;
+        existing.LogoUrl = branding.LogoUrl;
+        existing.PrimaryColor = branding.PrimaryColor;
+        existing.SecondaryColor = branding.SecondaryColor;
+        existing.BackgroundColor = branding.BackgroundColor;
+        existing.UpdatedAt = DateTime.UtcNow;
+
+        await Context.SaveChangesAsync();
+        return existing;
+    }
+
     public async Task<BrandConfiguration?> DeleteAsync(long brandId)
     {
         var existing = await Context.BrandConfigurations

@@ -5,6 +5,7 @@ using Ecosystem.AccountService.Application.DTOs;
 using Ecosystem.AccountService.Application.DTOs.Auth;
 using Ecosystem.AccountService.Application.Helpers;
 using Ecosystem.AccountService.Application.Settings;
+using Ecosystem.AccountService.Application.Services;
 using Ecosystem.AccountService.Domain.Constants;
 using Ecosystem.AccountService.Domain.Enums;
 using Ecosystem.AccountService.Domain.Interfaces;
@@ -30,6 +31,7 @@ public class GoogleAuthenticationHandler : IRequestHandler<GoogleAuthenticationC
     private readonly GoogleAuthSettings _settings;
     private readonly ILogger<GoogleAuthenticationHandler> _logger;
     private readonly IConfigurationServiceAdapter _configurationServiceAdapter;
+    private readonly IAdminAccessTokenIssuer _adminAccessTokenIssuer;
 
     public GoogleAuthenticationHandler(
         IUserAffiliateInfoRepository affiliateRepository,
@@ -40,6 +42,7 @@ public class GoogleAuthenticationHandler : IRequestHandler<GoogleAuthenticationC
         IMapper mapper,
         IOptions<GoogleAuthSettings> settings,
         IConfigurationServiceAdapter configurationServiceAdapter,
+        IAdminAccessTokenIssuer adminAccessTokenIssuer,
         ILogger<GoogleAuthenticationHandler> logger)
     {
         _affiliateRepository = affiliateRepository;
@@ -50,6 +53,7 @@ public class GoogleAuthenticationHandler : IRequestHandler<GoogleAuthenticationC
         _mapper = mapper;
         _settings = settings.Value;
         _configurationServiceAdapter = configurationServiceAdapter;
+        _adminAccessTokenIssuer = adminAccessTokenIssuer;
         _logger = logger;
     }
 
@@ -171,7 +175,9 @@ public class GoogleAuthenticationHandler : IRequestHandler<GoogleAuthenticationC
         movement.BrandId = brandId;
         await _loginMovementsRepository.CreateAsync(movement);
 
-        return new AuthResultDto { User = _mapper.Map<UserDto>(user) };
+        var userDto = _mapper.Map<UserDto>(user);
+        userDto.Token = _adminAccessTokenIssuer.Issue(user);
+        return new AuthResultDto { User = userDto };
     }
 
     private async Task<UsersAffiliate> CreateAffiliateFromGoogle(
