@@ -7,6 +7,16 @@ que las webs cargan desde `ConfigurationService` según su hostname. El flujo no
 requiere cambios por `BrandId`, acceso directo a pods ni operaciones manuales
 sobre la base de datos.
 
+Alcance frontend vigente desde el 2026-07-31:
+
+- `ecosystem-web` (`web`), `recycoin-web` y `recybot-web` son las únicas
+  aplicaciones activas;
+- `housecoin` está **DEPRECATED** y queda fuera de este runbook;
+- no se crearán nuevas webs ni un frontend único;
+- los detalles de cada marca se administrarán desde el dashboard de su propia
+  web, siempre a través de endpoints protegidos de `ConfigurationService`;
+- el prototipo `ecosystem-branding-studio` no se desplegará.
+
 Contrato público:
 
 ```text
@@ -19,7 +29,7 @@ El cuerpo permitido contiene únicamente `brandId`, `clientId`, nombre, razón
 social, URL de cliente, soporte, tipo de documento, logo y colores. `clientId`
 identifica el tenant; no sustituye un token de autorización.
 
-## Precondiciones para habilitar una marca
+## Precondiciones para configurar una marca activa
 
 Antes de publicar DNS o tráfico:
 
@@ -31,7 +41,7 @@ Antes de publicar DNS o tráfico:
 4. Los campos operativos de los pasos anteriores, incluidos grupos de pago,
    reglas de retiros y plantillas de notificación, fueron confirmados por
    negocio.
-5. El dominio tiene TLS y enruta la web genérica correcta.
+5. El dominio tiene TLS y enruta una de las tres webs activas.
 6. La consulta pública devuelve exactamente la marca esperada.
 
 No se debe inventar una configuración faltante ni reutilizar el identificador

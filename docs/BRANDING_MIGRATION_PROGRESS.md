@@ -1,9 +1,9 @@
 # Migración del sistema de branding
 
-Última actualización: 2026-07-29
+Última actualización: 2026-07-31
 
-Estado general: recomendaciones implementadas localmente; pendiente de
-configuración empresarial, commits y despliegue controlado
+Estado general: migración técnica implementada localmente. El alcance frontend
+vigente se limita a `web`, `recycoin` y `recybot`; `housecoin` está deprecado.
 
 ## Objetivo
 
@@ -12,6 +12,22 @@ tener que modificar, recompilar o desplegar código específico por `BrandId`.
 
 Este documento es la referencia de continuidad para los siguientes pasos. Debe
 actualizarse después de cada implementación, validación, commit o despliegue.
+
+## Decisión de alcance vigente — 2026-07-31
+
+- Las únicas webs activas son `web` (Ecosystem), `recycoin` y `recybot`.
+- `housecoin` está **DEPRECATED**. No se incorporará a GitOps ni recibirá nuevas
+  funciones o pantallas administrativas dentro de este plan.
+- No se crearán nuevas webs, un frontend único, un generador de webs ni el
+  paquete `@ocx/runtime-branding`.
+- Cada web activa conserva sus vistas y su dashboard administrativo.
+- Cada dashboard configurará los detalles de su propia marca mediante endpoints
+  protegidos de `ConfigurationService`.
+- `ConfigurationService` sigue siendo la fuente central de verdad. Ningún
+  dashboard escribirá directamente en la base de datos.
+
+Esta decisión sustituye las recomendaciones anteriores sobre una cuarta web,
+onboarding de nuevos proyectos frontend o un dashboard central Brand Studio.
 
 ## Reglas de seguridad
 
@@ -35,7 +51,7 @@ actualizarse después de cada implementación, validación, commit o despliegue.
 | 2 | Hacer de `ConfigurationService` la única fuente de branding para notificaciones y PDFs | Implementado y validado localmente | Backend en commit `46369de`; pendiente de despliegue |
 | 3 | Sustituir reglas y valores codificados por `BrandId` en AccountService y WalletService | Implementado y validado localmente | Backend en commit `46369de`; pendiente de despliegue |
 | 4 | Retirar decisiones por marca restantes en InventoryService | Implementado y validado localmente | Backend en commit `477436e`; pendiente de despliegue |
-| 5 | Verificar que todas las webs obtengan identidad visual y datos públicos en tiempo de ejecución | Implementado, validado y confirmado | Endpoint `5ed8af0`; webs `57dd242`, `20d123a`, `f4dc27f`, `028dec1` |
+| 5 | Verificar que las webs obtengan identidad visual y datos públicos en tiempo de ejecución | Implementado, validado y confirmado | Activas: `57dd242`, `20d123a`, `028dec1`; validación histórica de HouseCoin: `f4dc27f` |
 | 6 | Añadir pruebas de contrato, observabilidad y documentación operativa del flujo completo | Implementado, validado y confirmado | Backend `1cf605e`; instrumentación incluida en commits de las webs |
 | 7 | Centralizar la entrega frontend en GitOps y verificarla sin acceso directo a pods | Implementado, validado y confirmado | GitOps `e42081a`; pipelines incluidos en commits frontend |
 
@@ -190,7 +206,7 @@ Validaciones realizadas:
 Limitaciones de validación:
 
 - El repositorio no contiene proyectos de pruebas automatizadas. La cobertura
-  por marcas actuales y por una marca nueva sigue pendiente.
+  de las tres aplicaciones activas sigue pendiente.
 - La compilación completa de `AccountService.Api` quedó impedida localmente por
   un archivo de caché Razor bloqueado en `Api/obj`. Las capas Application,
   Infra.IoC y todas sus dependencias sí compilaron. No se borró el directorio
@@ -290,15 +306,16 @@ Precondición operativa:
 
 ## Paso 5: branding de las webs en tiempo de ejecución
 
-Estado: endpoint confirmado en `5ed8af0` y webs confirmadas en `57dd242`
-(`web`), `20d123a` (`recycoin`), `f4dc27f` (`housecoin`) y `028dec1`
-(`recybot`); pendiente de configuración central completa y despliegue.
+Estado: endpoint confirmado en `5ed8af0` y webs activas confirmadas en `57dd242`
+(`web`), `20d123a` (`recycoin`) y `028dec1` (`recybot`); pendiente de
+configuración central completa y despliegue. La validación `f4dc27f` de
+`housecoin` se conserva como antecedente histórico, no como alcance activo.
 
 Webs auditadas:
 
 - `web` — Ecosystem, Angular 15.
 - `recycoin` — RecyCoin, Angular 20.
-- `housecoin` — HouseCoin, Angular 15.
+- `housecoin` — HouseCoin, Angular 15, **DEPRECATED**; referencia histórica.
 - `recybot` — Recybotia, Angular 20.
 
 Contrato público:
@@ -318,8 +335,9 @@ Contrato público:
 
 Inicialización de las webs:
 
-- Las cuatro aplicaciones cargan el branding por `window.location.hostname`
-  antes de iniciar la interfaz.
+- Las tres aplicaciones activas cargan el branding por
+  `window.location.hostname` antes de iniciar la interfaz. HouseCoin también lo
+  implementó históricamente, pero ya no forma parte del alcance.
 - La consulta tiene un límite de cinco segundos. Si ConfigurationService no
   está disponible, la aplicación inicia con sus recursos visuales anteriores
   como fallback.
@@ -348,9 +366,11 @@ Validaciones realizadas:
 - `ConfigurationService.Api`: compilación correcta, 0 errores.
 - Build de producción de `web`: correcta.
 - Build de producción de `recycoin`: correcta.
-- Build de producción de `housecoin`: correcta.
+- Build histórica de producción de `housecoin`: correcta antes de su
+  deprecación.
 - Build de producción de `recybot`: correcta.
-- TypeScript `--noEmit` correcto en las cuatro webs.
+- TypeScript `--noEmit` correcto en las tres webs activas; también se validó
+  HouseCoin antes de deprecarlo.
 - Búsqueda estática sin `environment.brand` ni asignaciones numéricas de
   `BrandId` en los servicios de tickets.
 - `git diff --check` correcto en los cinco repositorios; solo se reportaron
@@ -363,9 +383,9 @@ Limitaciones de validación:
 - No se hizo una prueba visual contra datos reales porque la configuración no
   está desplegada.
 - Las páginas conservan contenido empresarial propio de cada producto, como
-  términos legales, white papers, contratos y rutas de compra. Ese contenido
-  no es identidad visual y requeriría un CMS o un modelo público adicional si
-  se desea una única web completamente white-label.
+  términos legales, white papers, contratos y rutas de compra. Esta diferencia
+  es intencional: no se construirá una web única white-label. Cada dashboard
+  continuará administrando sus detalles específicos.
 
 Precondiciones operativas:
 
@@ -420,7 +440,7 @@ Observabilidad:
 - El contrato exitoso devuelve `X-Branding-Contract: public-branding-v1` y
   caché pública de cinco minutos; errores usan `no-store`.
 - Se añadió `/health/contracts/public-branding-v1`.
-- Las cuatro webs registran
+- Las tres webs activas registran
   `performance.getEntriesByName('ecosystem.branding.bootstrap')` y emiten
   `ecosystem:branding-bootstrap` con outcome, duración y marca resuelta.
 
@@ -435,8 +455,8 @@ Documentación:
 Validaciones realizadas:
 
 - 12 pruebas de contrato correctas.
-- TypeScript `--noEmit` correcto en `web`, `recycoin`, `housecoin` y
-  `recybot`.
+- TypeScript `--noEmit` correcto en `web`, `recycoin` y `recybot`. La validación
+  de `housecoin` fue histórica y no implica soporte futuro.
 - `ConfigurationService.Api` compila correctamente.
 - El aviso conocido de AutoMapper se mantiene fuera de alcance por decisión
   expresa.
@@ -461,8 +481,8 @@ Centralización:
 - El `app-of-apps` de `ecosystem-microservices` administra ahora las
   Applications de `ecosystem-web`, `recycoin-web` y `recybot-web`.
 - El AppProject `ecosystem` se encuentra dentro del directorio administrado por
-  el `app-of-apps`, con sync wave `-1`, y autoriza únicamente los cuatro
-  repositorios conocidos.
+  el `app-of-apps`, con sync wave `-1`, y autoriza los tres repositorios frontend
+  activos.
 - Cada frontend conserva promoción por tags inmutables mediante Argo CD Image
   Updater y sincronización automática.
 
@@ -485,20 +505,20 @@ Verificación externa:
 - La prueba no usa credenciales de Kubernetes, conexiones de base de datos ni
   acceso a servicios internos.
 
-HouseCoin:
+HouseCoin — decisión vigente:
 
-- `housecoin` no contiene manifiestos ni pipeline GitOps y su remoto actual es
-  `atorress91/house-coin`, fuera de `Ocx-Group`.
-- No se inventó un dominio, nombre de imagen o Application. Su incorporación
-  requiere confirmar primero repositorio canónico, hostname e imagen de
-  producción.
-- El branding dinámico de HouseCoin permanece implementado y compilable, pero
-  su entrega no forma parte del `app-of-apps` hasta resolver esos datos.
+- `housecoin` está **DEPRECATED**.
+- No se creará una Application, pipeline GitOps, imagen o dominio nuevo para
+  incorporarlo al sistema activo.
+- Su branding dinámico se conserva únicamente como código histórico. No se
+  añadirá la pantalla administrativa prevista para las tres webs activas.
+- Solo una corrección crítica y expresamente autorizada puede reabrir cambios en
+  ese proyecto.
 
 Validaciones realizadas:
 
-- YAML correcto en el AppProject, las tres Applications y los cuatro workflows
-  modificados o añadidos.
+- YAML correcto en el AppProject, las tres Applications activas y los workflows
+  involucrados en la validación histórica.
 - Referencias de la solución válidas después de mover el AppProject.
 - Sintaxis PowerShell correcta para el smoke test.
 - Búsqueda estática sin `kubectl`, kubeconfig, rollouts ni consultas de
@@ -520,13 +540,15 @@ Precondiciones de despliegue:
 
 - El backend de los pasos 2 y 3 está confirmado en `46369de`, el paso 4 en
   `477436e` y el endpoint del paso 5 en `5ed8af0`; ninguno está desplegado.
-- Los cambios de las cuatro webs del paso 5 y la instrumentación del paso 6
-  permanecen en sus respectivos árboles de trabajo.
+- Los cambios de las tres webs activas del paso 5 y la instrumentación del paso
+  6 permanecen en sus respectivos repositorios. HouseCoin queda fuera del
+  trabajo futuro.
 - Los pasos técnicos 1 a 7 están confirmados localmente en sus respectivos
   repositorios; no se ha hecho push ni despliegue.
-- El siguiente frente es resolver la incorporación GitOps de HouseCoin,
-  completar la configuración empresarial y ejecutar el despliegue controlado
-  con sus verificaciones públicas.
+- El siguiente frente es implementar endpoints administrativos protegidos en
+  `ConfigurationService` y permitir que los dashboards de `web`, `recycoin` y
+  `recybot` configuren únicamente los detalles de su propia marca.
+- No se continuará Ecosystem Brand Studio ni se incorporará HouseCoin a GitOps.
 
 ## Cómo continuar
 
@@ -537,3 +559,5 @@ Precondiciones de despliegue:
 4. Registrar aquí las decisiones, archivos modificados, validaciones y
    precondiciones de despliegue.
 5. No marcar un paso como desplegado hasta verificar el estado real del clúster.
+6. No crear nuevas webs ni reactivar HouseCoin sin una decisión expresa que
+   sustituya la del 2026-07-31.
