@@ -27,6 +27,14 @@
 #   - spaces-credentials    → access-key, secret-key (DigitalOcean Spaces)
 #   - registry-credentials  → .dockerconfigjson (DO Registry - generado por Terraform)
 #   - brevo-credentials     → api-key (Brevo transactional email API)
+#   - jwt-credentials       → key (JWT compartido por Gateway, Account y Configuration)
+#
+# JWT:
+#   - Debe generarse con un CSPRNG y contener al menos 32 bytes de entropía.
+#   - El valor en claro nunca debe escribirse ni commitearse.
+#   - GatewayService, AccountService y ConfigurationService consumen la misma key.
+#   - La rotación requiere actualizar el SealedSecret y reiniciar coordinadamente
+#     los tres deployments mediante GitOps.
 #
 # BREVO:
 #   kubectl create secret generic brevo-credentials `

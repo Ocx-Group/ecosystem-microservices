@@ -54,7 +54,7 @@ onboarding de nuevos proyectos frontend o un dashboard central Brand Studio.
 | 5 | Verificar que las webs obtengan identidad visual y datos públicos en tiempo de ejecución | Implementado, validado y confirmado | Activas: `57dd242`, `20d123a`, `028dec1`; validación histórica de HouseCoin: `f4dc27f` |
 | 6 | Añadir pruebas de contrato, observabilidad y documentación operativa del flujo completo | Implementado, validado y confirmado | Backend `1cf605e`; instrumentación incluida en commits de las webs |
 | 7 | Centralizar la entrega frontend en GitOps y verificarla sin acceso directo a pods | Implementado, validado y confirmado | GitOps `e42081a`; pipelines incluidos en commits frontend |
-| 8 | Permitir que cada dashboard administre el branding de su propio tenant | Backend implementado y validado localmente | JWT administrativo y API `admin/current`; pantallas frontend y secreto productivo pendientes |
+| 8 | Permitir que cada dashboard administre el branding de su propio tenant | Backend y secreto GitOps implementados localmente | JWT administrativo, API `admin/current` y SealedSecret listos; pantallas frontend y despliegue pendientes |
 
 ## Paso 1: migraciones de producción
 
@@ -577,12 +577,16 @@ Validaciones realizadas:
 - no se accedió ni modificó ninguna base de datos;
 - no se crearon migraciones ni se manipuló ningún pod o contexto Kubernetes.
 
-Precondición obligatoria antes de desplegar:
+Configuración criptográfica preparada para el despliegue:
 
-- crear mediante secretos/GitOps una clave `Jwt:Key` de al menos 32 bytes y
-  entregarla con el mismo issuer y audience a Gateway, AccountService y
-  ConfigurationService. Ningún valor placeholder puede llegar a producción y
-  la clave nunca debe compilarse dentro de los frontends.
+- se generó en memoria una clave aleatoria de 64 bytes y se cifró con el
+  certificado público de Sealed Secrets del clúster productivo;
+- `jwt-credentials.yaml` contiene únicamente el valor cifrado y Argo CD lo
+  materializará como Secret en el namespace `ecosystem` después del push;
+- Gateway, AccountService y ConfigurationService consumen la misma `Jwt:Key`,
+  `Jwt:Issuer=Ecosystem` y `Jwt:Audience=Ecosystem` desde sus deployments;
+- la clave en claro no se imprimió, no se escribió en disco y no se incorporó a
+  ConfigMaps, imágenes, frontends ni repositorios.
 
 Pendiente de esta etapa:
 

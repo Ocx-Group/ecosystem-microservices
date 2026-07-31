@@ -77,6 +77,14 @@ No desplegar la API administrativa con una clave placeholder o distinta entre
 servicios. La clave no debe almacenarse en `environment.ts`, ConfigMaps,
 imágenes, repositorios ni bundles del navegador.
 
+Estado GitOps del 2026-07-31: `jwt-credentials.yaml` ya contiene una clave
+generada a partir de 64 bytes aleatorios y cifrada para el controlador
+productivo de Sealed Secrets. Los deployments
+de Gateway, AccountService y ConfigurationService ya referencian ese Secret y
+declaran el mismo issuer y audience. Tras el push, Argo CD es responsable de
+crear el Secret y reconciliar los servicios; no se debe aplicar ni reiniciar
+nada manualmente.
+
 ## Precondiciones para configurar una marca activa
 
 Antes de publicar DNS o tráfico:

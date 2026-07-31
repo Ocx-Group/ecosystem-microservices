@@ -39,6 +39,15 @@ spec:
               value: "http://0.0.0.0:50051"
             - name: Kestrel__Endpoints__Grpc__Protocols
               value: "Http2"
+            - name: Jwt__Key
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-credentials
+                  key: key
+            - name: Jwt__Issuer
+              value: "Ecosystem"
+            - name: Jwt__Audience
+              value: "Ecosystem"
             - name: ConnectionStrings__PostgreSqlConnection
               valueFrom:
                 secretKeyRef:

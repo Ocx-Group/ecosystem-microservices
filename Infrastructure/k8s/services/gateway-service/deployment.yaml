@@ -66,6 +66,15 @@ spec:
                 configMapKeyRef:
                   name: gateway-config
                   key: Services__NotificationService
+            - name: Jwt__Key
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-credentials
+                  key: key
+            - name: Jwt__Issuer
+              value: "Ecosystem"
+            - name: Jwt__Audience
+              value: "Ecosystem"
             - name: RabbitMQ__Host
               valueFrom:
                 secretKeyRef:

@@ -55,6 +55,15 @@ spec:
               value: "378354244505-njjch822319jnpid67vbkd8gq8mnm9vq.apps.googleusercontent.com"
             - name: GoogleAuth__ClientIds__2
               value: "378354244505-og1ep1ouapeduggjj5l7r89uc9kqkg37.apps.googleusercontent.com" 
+            - name: Jwt__Key
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-credentials
+                  key: key
+            - name: Jwt__Issuer
+              value: "Ecosystem"
+            - name: Jwt__Audience
+              value: "Ecosystem"
             - name: ConnectionStrings__PostgreSqlConnection
               valueFrom:
                 secretKeyRef:
