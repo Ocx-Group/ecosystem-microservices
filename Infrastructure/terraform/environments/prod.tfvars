@@ -15,7 +15,13 @@ vpc_uuid = "50a6b3b3-fa0a-4a48-bd99-905a25759089"
 # Kubernetes - Cost-optimized for ~$200/mo budget
 # Nodes: 2 min, 4 max (s-2vcpu-4gb = $24/mo each)
 # Pod-level autoscaling se controla con HPA por servicio (min 2, max 5)
-k8s_version    = "1.35.1-do.3"
+#
+# Debe coincidir con la version real del cluster. DigitalOcean aplica upgrades
+# automaticos segun maintenance_policy, asi que este valor queda desactualizado
+# solo. Cuando eso pasa, el plan interpreta un downgrade, pide reemplazar el
+# cluster y prevent_destroy detiene todo el despliegue.
+# Verificar con: kubectl version -o json | jq -r .serverVersion.gitVersion
+k8s_version    = "1.36.0-do.1"
 k8s_node_size  = "s-2vcpu-4gb"
 k8s_node_count = 3
 k8s_auto_scale = true
