@@ -232,8 +232,12 @@ jobs:
             -input=false -lock=true -no-color \
             -out=tfplan-prod 2>&1 | tee plan-output.txt
 
-          # Guard: bloquear si el plan destruye/reemplaza recursos protegidos
-          PROTECTED='digitalocean_kubernetes_cluster|digitalocean_database_cluster|digitalocean_spaces_bucket\.main|digitalocean_container_registry'
+          # Guard: bloquear si el plan destruye/reemplaza recursos protegidos.
+          # digitalocean_domain y digitalocean_record entran porque la zona DNS
+          # depende de un modulo condicional (count sobre k8s_lb_ip): si esa
+          # variable llega vacia, el plan destruye ecosystemfx.net entero,
+          # incluido api.ecosystemfx.net, que es el gateway de las tres webs.
+          PROTECTED='digitalocean_kubernetes_cluster|digitalocean_database_cluster|digitalocean_spaces_bucket\.main|digitalocean_container_registry|digitalocean_domain|digitalocean_record'
           if grep -E "# .* will be (destroyed|replaced)" plan-output.txt | grep -E "$PROTECTED"; then
             echo "::error::Cambio destructivo detectado en recurso protegido. Revisar manualmente."
             exit 1
