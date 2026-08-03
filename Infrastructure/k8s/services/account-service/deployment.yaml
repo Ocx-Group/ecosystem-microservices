@@ -64,6 +64,11 @@ spec:
               value: "Ecosystem"
             - name: Jwt__Audience
               value: "Ecosystem"
+            # Upper bound accepted by AdminAccessTokenIssuer. The dashboards keep
+            # this token in memory for a full branding editing session and there is
+            # no refresh endpoint, so the default of 15 minutes expired mid-form.
+            - name: Jwt__AdminTokenLifetimeMinutes
+              value: "60"
             - name: ConnectionStrings__PostgreSqlConnection
               valueFrom:
                 secretKeyRef:

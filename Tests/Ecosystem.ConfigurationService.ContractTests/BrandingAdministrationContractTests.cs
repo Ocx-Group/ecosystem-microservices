@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Xunit;
 using BrandConfigurationEntity = Ecosystem.ConfigurationService.Domain.Models.BrandConfiguration;
+using BrandEntity = Ecosystem.ConfigurationService.Domain.Models.Brand;
 
 namespace Ecosystem.ConfigurationService.ContractTests;
 
@@ -106,10 +107,122 @@ public sealed class BrandingAdministrationContractTests
             new UpdateOwnBrandingCommand(ValidRequest(), "42", "admin"),
             CancellationToken.None);
 
-        Assert.NotNull(result);
+        Assert.Equal(UpdateOwnBrandingStatus.Updated, result.Status);
         Assert.Equal(7, repository.UpdatedBrandId);
-        Assert.Equal(7, result.BrandId);
+        Assert.Equal(7, result.Branding!.BrandId);
         Assert.Equal(7, provider.InvalidatedBrandId);
+    }
+
+    [Fact]
+    public async Task UpdateHandler_RejectsHostAlreadyOwnedByAnotherActiveBrand()
+    {
+        var repository = new RecordingRepository
+        {
+            Existing = { ActiveConfiguration(9, "https://www.brand-seven.example/portal") }
+        };
+        var provider = new RecordingBrandConfigurationProvider();
+        var handler = new UpdateOwnBrandingHandler(
+            repository,
+            provider,
+            new FixedTenantContext(7),
+            NullLogger<UpdateOwnBrandingHandler>.Instance);
+
+        var result = await handler.Handle(
+            new UpdateOwnBrandingCommand(ValidRequest(), "42", "admin"),
+            CancellationToken.None);
+
+        Assert.Equal(UpdateOwnBrandingStatus.HostConflict, result.Status);
+        Assert.Null(result.Branding);
+        Assert.Null(repository.UpdatedBrandId);
+        Assert.Null(provider.InvalidatedBrandId);
+    }
+
+    [Fact]
+    public async Task UpdateHandler_AllowsKeepingTheHostOwnedByTheSameBrand()
+    {
+        var repository = new RecordingRepository
+        {
+            Existing = { ActiveConfiguration(7, "https://brand-seven.example") }
+        };
+        var handler = new UpdateOwnBrandingHandler(
+            repository,
+            new RecordingBrandConfigurationProvider(),
+            new FixedTenantContext(7),
+            NullLogger<UpdateOwnBrandingHandler>.Instance);
+
+        var result = await handler.Handle(
+            new UpdateOwnBrandingCommand(ValidRequest(), "42", "admin"),
+            CancellationToken.None);
+
+        Assert.Equal(UpdateOwnBrandingStatus.Updated, result.Status);
+        Assert.Equal(7, repository.UpdatedBrandId);
+    }
+
+    [Theory]
+    [InlineData(false, null)]
+    [InlineData(true, "deleted")]
+    [InlineData(true, "brand-inactive")]
+    public async Task UpdateHandler_IgnoresHostsOfConfigurationsThatCannotResolve(
+        bool isActive,
+        string? disabledBy)
+    {
+        var other = ActiveConfiguration(9, "https://brand-seven.example");
+        other.IsActive = isActive;
+        if (disabledBy == "deleted") other.DeletedAt = DateTime.UtcNow;
+        if (disabledBy == "brand-inactive") other.Brand.IsActive = false;
+
+        var repository = new RecordingRepository { Existing = { other } };
+        var handler = new UpdateOwnBrandingHandler(
+            repository,
+            new RecordingBrandConfigurationProvider(),
+            new FixedTenantContext(7),
+            NullLogger<UpdateOwnBrandingHandler>.Instance);
+
+        var result = await handler.Handle(
+            new UpdateOwnBrandingCommand(ValidRequest(), "42", "admin"),
+            CancellationToken.None);
+
+        Assert.Equal(UpdateOwnBrandingStatus.Updated, result.Status);
+    }
+
+    [Fact]
+    public async Task UpdateHandler_RejectsClientUrlWithoutResolvableHost()
+    {
+        var repository = new RecordingRepository();
+        var provider = new RecordingBrandConfigurationProvider();
+        var handler = new UpdateOwnBrandingHandler(
+            repository,
+            provider,
+            new FixedTenantContext(7),
+            NullLogger<UpdateOwnBrandingHandler>.Instance);
+
+        var result = await handler.Handle(
+            new UpdateOwnBrandingCommand(
+                ValidRequest() with { ClientUrl = "   " },
+                "42",
+                "admin"),
+            CancellationToken.None);
+
+        Assert.Equal(UpdateOwnBrandingStatus.InvalidHost, result.Status);
+        Assert.Null(repository.UpdatedBrandId);
+        Assert.Null(provider.InvalidatedBrandId);
+    }
+
+    [Fact]
+    public async Task UpdateHandler_ReportsNotFoundWhenTheTenantHasNoConfiguration()
+    {
+        var handler = new UpdateOwnBrandingHandler(
+            new RecordingRepository { UpdateReturnsNull = true },
+            new RecordingBrandConfigurationProvider(),
+            new FixedTenantContext(7),
+            NullLogger<UpdateOwnBrandingHandler>.Instance);
+
+        var result = await handler.Handle(
+            new UpdateOwnBrandingCommand(ValidRequest(), "42", "admin"),
+            CancellationToken.None);
+
+        Assert.Equal(UpdateOwnBrandingStatus.NotFound, result.Status);
+        Assert.Null(result.Branding);
     }
 
     [Fact]
@@ -141,6 +254,14 @@ public sealed class BrandingAdministrationContractTests
         BackgroundColor = "#FFFFFF"
     };
 
+    private static BrandConfigurationEntity ActiveConfiguration(long brandId, string clientUrl) => new()
+    {
+        BrandId = brandId,
+        ClientUrl = clientUrl,
+        IsActive = true,
+        Brand = new BrandEntity { Id = brandId, Name = $"Brand {brandId}", IsActive = true }
+    };
+
     private static List<ValidationResult> Validate(object value)
     {
         var results = new List<ValidationResult>();
@@ -156,12 +277,14 @@ public sealed class BrandingAdministrationContractTests
     private sealed class RecordingRepository : IBrandConfigurationRepository
     {
         public long? UpdatedBrandId { get; private set; }
+        public List<BrandConfigurationEntity> Existing { get; } = [];
+        public bool UpdateReturnsNull { get; init; }
 
         public Task<BrandConfigurationEntity?> GetByBrandIdAsync(long brandId)
             => Task.FromResult<BrandConfigurationEntity?>(null);
 
         public Task<List<BrandConfigurationEntity>> GetAllAsync()
-            => Task.FromResult(new List<BrandConfigurationEntity>());
+            => Task.FromResult(Existing);
 
         public Task<BrandConfigurationEntity> UpsertAsync(BrandConfigurationEntity config)
             => Task.FromResult(config);
@@ -170,6 +293,9 @@ public sealed class BrandingAdministrationContractTests
             long brandId,
             BrandConfigurationEntity branding)
         {
+            if (UpdateReturnsNull)
+                return Task.FromResult<BrandConfigurationEntity?>(null);
+
             UpdatedBrandId = brandId;
             branding.BrandId = brandId;
             branding.UpdatedAt = DateTime.UtcNow;

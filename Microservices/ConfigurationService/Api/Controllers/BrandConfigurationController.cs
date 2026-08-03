@@ -106,9 +106,15 @@ public class BrandConfigurationController : BaseController
             new UpdateOwnBrandingCommand(request, actorUserId, actorUserName),
             ct);
 
-        return result is null
-            ? NotFound(Fail("Brand configuration not found for the authenticated tenant"))
-            : Ok(Success(result));
+        return result.Status switch
+        {
+            UpdateOwnBrandingStatus.Updated => Ok(Success(result.Branding!)),
+            UpdateOwnBrandingStatus.InvalidHost => BadRequest(
+                Fail("ClientUrl must contain a resolvable hostname")),
+            UpdateOwnBrandingStatus.HostConflict => Conflict(
+                Fail("ClientUrl already belongs to another active brand")),
+            _ => NotFound(Fail("Brand configuration not found for the authenticated tenant"))
+        };
     }
 
     private long GetAuthenticatedBrandId()

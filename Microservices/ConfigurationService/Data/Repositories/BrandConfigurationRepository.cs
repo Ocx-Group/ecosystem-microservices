@@ -86,7 +86,9 @@ public class BrandConfigurationRepository : BaseRepository, IBrandConfigurationR
             .Include(x => x.Brand)
             .FirstOrDefaultAsync(x => x.BrandId == brandId && x.DeletedAt == null);
 
-        if (existing is null)
+        // A configuration without its brand row cannot be renamed safely; treat it
+        // as absent so the caller answers 404 instead of faulting with a 500.
+        if (existing?.Brand is null)
             return null;
 
         existing.Brand.Name = branding.Brand.Name;
