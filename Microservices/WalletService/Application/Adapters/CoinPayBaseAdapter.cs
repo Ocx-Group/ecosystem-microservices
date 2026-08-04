@@ -27,8 +27,11 @@ public abstract class CoinPayBaseAdapter
     {
         _client = client;
         _tokenProvider = tokenProvider;
-        _sharedKey = appSettings.Value.CoinPay?.SecretKey
-                     ?? throw new InvalidOperationException("AppSettings:CoinPay:SecretKey is not configured.");
+        var secretKey = appSettings.Value.CoinPay?.SecretKey;
+        if (string.IsNullOrWhiteSpace(secretKey))
+            throw new InvalidOperationException("AppSettings:CoinPay:SecretKey is not configured.");
+
+        _sharedKey = secretKey;
     }
 
     protected Task<bool> IsValidSignature(SignatureParamsRequest request)

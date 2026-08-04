@@ -73,10 +73,17 @@ public class CoinPayTokenProvider : ICoinPayTokenProvider
 
     private async Task<string?> Authenticate(CancellationToken cancellationToken)
     {
-        var initialToken = _appSettings.CoinPay?.InitialToken
-                           ?? throw new InvalidOperationException("AppSettings:CoinPay:InitialToken is not configured.");
-        var secretKey = _appSettings.CoinPay?.SecretKey
-                        ?? throw new InvalidOperationException("AppSettings:CoinPay:SecretKey is not configured.");
+        var initialToken = _appSettings.CoinPay?.InitialToken;
+        var secretKey = _appSettings.CoinPay?.SecretKey;
+
+        // Checked for emptiness, not just null: the versioned appsettings.json ships these
+        // blank, and signing with a blank secret makes CoinPay reject every call — which
+        // then surfaces as a misleading "not found" instead of a configuration error.
+        if (string.IsNullOrWhiteSpace(initialToken) || string.IsNullOrWhiteSpace(secretKey))
+        {
+            throw new InvalidOperationException(
+                "AppSettings:CoinPay:SecretKey and AppSettings:CoinPay:InitialToken must be configured.");
+        }
 
         var idRequest = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
 
