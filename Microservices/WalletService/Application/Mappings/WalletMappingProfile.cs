@@ -109,10 +109,7 @@ public class WalletMappingProfile : Profile
             .ForMember(d => d.Token, map => map.Ignore())
             .ForMember(d => d.Ern, map => map.Ignore());
 
-        CreateMap<CreateCoinPayTransactionCommand, CreateTransactionRequest>();
-        CreateMap<CreateCoinPayChannelCommand, CreateChannelRequest>();
         CreateMap<CreateCoinPayAddressCommand, CreateAddresRequest>();
-        CreateMap<SendCoinPayFundsCommand, SendFundRequest>();
         CreateMap<CreateCoinPaymentCommand, ConPaymentRequest>();
 
         // gRPC → DTO  (string decimal fields require explicit parsing)

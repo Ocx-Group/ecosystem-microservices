@@ -10,7 +10,7 @@ using WalletRequestModel = Ecosystem.WalletService.Domain.Requests.WalletRequest
 
 namespace Ecosystem.WalletService.Application.Strategies;
 
-public class CoinPaymentsPaymentStrategy : ICoinPaymentsPaymentStrategy
+public class ExternalPaymentStrategy : IExternalPaymentStrategy
 {
     private readonly IProductValidationService _productValidator;
     private readonly IPaymentCalculator _calculator;
@@ -24,7 +24,7 @@ public class CoinPaymentsPaymentStrategy : ICoinPaymentsPaymentStrategy
     private readonly IConfigurationAdapter _configurationAdapter;
     private readonly IEventBus _eventBus;
 
-    public CoinPaymentsPaymentStrategy(
+    public ExternalPaymentStrategy(
         IProductValidationService productValidator,
         IPaymentCalculator calculator,
         IInvoiceDetailFactory invoiceFactory,
@@ -50,7 +50,8 @@ public class CoinPaymentsPaymentStrategy : ICoinPaymentsPaymentStrategy
         _eventBus = eventBus;
     }
 
-    public async Task<bool> ExecuteProductPayment(WalletRequestModel request, CoinPaymentType paymentType)
+    public async Task<bool> ExecuteProductPayment(
+        WalletRequestModel request, CoinPaymentType paymentType, string paymentMethod)
     {
         var validation = await _productValidator.ValidateAndGetProducts(request.ProductsList, request.BrandId);
         if (!validation.IsSuccess) return false;
@@ -66,9 +67,9 @@ public class CoinPaymentsPaymentStrategy : ICoinPaymentsPaymentStrategy
             .ForAffiliate(request.AffiliateId, request.AffiliateUserName)
             .WithConcept(Constants.EcoPoolProductCategory, nameof(WalletConceptType.purchasing_pool))
             .WithAmounts(calc)
-            .WithPaymentMethod(Constants.CoinPayments)
+            .WithPaymentMethod(paymentMethod)
             .WithInvoiceDetails(invoiceDetails)
-            .WithReceiptInfo(Constants.CoinPayments, request.ReceiptNumber, true)
+            .WithReceiptInfo(paymentMethod, request.ReceiptNumber, true)
             .WithSecretKey(request.SecretKey)
             .WithReason(reason)
             .BuildAsync(request.BrandId);
@@ -81,7 +82,7 @@ public class CoinPaymentsPaymentStrategy : ICoinPaymentsPaymentStrategy
         return true;
     }
 
-    public async Task<bool> ExecuteMembershipPayment(WalletRequestModel request)
+    public async Task<bool> ExecuteMembershipPayment(WalletRequestModel request, string paymentMethod)
     {
         var userInfo = await _accountAdapter.GetUserInfo(request.AffiliateId, request.BrandId);
         if (userInfo == null) return false;
@@ -98,9 +99,9 @@ public class CoinPaymentsPaymentStrategy : ICoinPaymentsPaymentStrategy
             .ForAffiliate(request.AffiliateId, request.AffiliateUserName)
             .WithConcept(Constants.Membership, nameof(WalletConceptType.purchasing_pool))
             .WithAmounts(calc)
-            .WithPaymentMethod(Constants.CoinPayments)
+            .WithPaymentMethod(paymentMethod)
             .WithInvoiceDetails(invoiceDetails)
-            .WithReceiptInfo(Constants.CoinPayments, request.ReceiptNumber, true)
+            .WithReceiptInfo(paymentMethod, request.ReceiptNumber, true)
             .WithSecretKey(request.SecretKey)
             .BuildAsync(request.BrandId);
 

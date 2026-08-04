@@ -83,6 +83,19 @@ public class CoinPay
     public string? SecretKey { get; set; }
     public string? InitialToken { get; set; }
     public int UserId { get; set; }
+
+    /// <summary>
+    /// Enforces HMAC verification of incoming webhooks. Off by default: the provider's
+    /// header name and dynamic key must be confirmed with CoinPay before turning it on,
+    /// otherwise every legitimate notification would be rejected.
+    /// </summary>
+    public bool RequireWebhookSignature { get; set; }
+
+    /// <summary>Header carrying the HMAC-SHA512 signature of an incoming webhook.</summary>
+    public string SignatureHeader { get; set; } = "X-Signature";
+
+    /// <summary>Shared dynamic key hashed together with IdUser and IdTransaction.</summary>
+    public string? DynamicKey { get; set; }
 }
 
 public class Pagadito

@@ -5,5 +5,6 @@ public enum CoinPaymentType
     EcoPool,
     Course,
     RecyCoin,
-    HouseCoin
+    HouseCoin,
+    ExitoJuntos
 }

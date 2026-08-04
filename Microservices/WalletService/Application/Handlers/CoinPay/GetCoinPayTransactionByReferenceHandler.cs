@@ -1,24 +1,24 @@
-using Ecosystem.WalletService.Application.Adapters;
 using Ecosystem.WalletService.Application.Queries.CoinPay;
-using Ecosystem.WalletService.Domain.Responses;
+using Ecosystem.WalletService.Domain.Constants;
+using Ecosystem.WalletService.Domain.Interfaces;
 using MediatR;
-using Microsoft.Extensions.Logging;
 
 namespace Ecosystem.WalletService.Application.Handlers.CoinPay;
 
-public class GetCoinPayTransactionByReferenceHandler : IRequestHandler<GetCoinPayTransactionByReferenceQuery, GetTransactionByIdResponse?>
+public class GetCoinPayTransactionByReferenceHandler : IRequestHandler<GetCoinPayTransactionByReferenceQuery, bool>
 {
-    private readonly ICoinPayAdapter _coinPayAdapter;
+    private readonly ITransactionRepository _transactionRepository;
 
-    public GetCoinPayTransactionByReferenceHandler(
-        ICoinPayAdapter coinPayAdapter,
-        ILogger<GetCoinPayTransactionByReferenceHandler> logger)
-    {
-        _coinPayAdapter = coinPayAdapter;
-    }
+    public GetCoinPayTransactionByReferenceHandler(ITransactionRepository transactionRepository)
+        => _transactionRepository = transactionRepository;
 
-    public async Task<GetTransactionByIdResponse?> Handle(GetCoinPayTransactionByReferenceQuery request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(GetCoinPayTransactionByReferenceQuery request, CancellationToken cancellationToken)
     {
-        return await _coinPayAdapter.GetTransactionByReference(request.Reference);
+        if (string.IsNullOrEmpty(request.Reference))
+            return false;
+
+        var transaction = await _transactionRepository.GetTransactionByReference(request.Reference);
+
+        return transaction is { Acredited: true, Status: Constants.CompletedStatusCode };
     }
 }

@@ -1,14 +1,11 @@
-using Ecosystem.WalletService.Domain.Responses;
+using Ecosystem.WalletService.Domain.DTOs.CoinPayDto;
+using Ecosystem.WalletService.Domain.Requests.CoinPayRequest;
 using MediatR;
 
 namespace Ecosystem.WalletService.Application.Commands.CoinPay;
 
-public record SendCoinPayFundsCommand : IRequest<SendFundsResponse?>
-{
-    public int IdCurrency { get; init; }
-    public int IdNetwork { get; init; }
-    public string? Address { get; init; }
-    public int Amount { get; init; }
-    public string? Details { get; init; }
-    public bool AmountPlusFee { get; init; }
-}
+/// <summary>
+/// Processes a batch of withdrawal requests: resolves each affiliate's payout address,
+/// sends the funds through CoinPay and records the matching wallet debit.
+/// </summary>
+public record SendCoinPayFundsCommand(WithDrawalRequest[] Requests) : IRequest<SendFundsDto>;

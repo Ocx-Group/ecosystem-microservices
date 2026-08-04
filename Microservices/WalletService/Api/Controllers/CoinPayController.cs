@@ -1,12 +1,11 @@
 using Asp.Versioning;
 using Ecosystem.WalletService.Application.Commands.CoinPay;
 using Ecosystem.WalletService.Application.Queries.CoinPay;
-using Ecosystem.WalletService.Domain.DTOs.CoinPayDto;
-using Ecosystem.WalletService.Domain.Extensions;
+using Ecosystem.WalletService.Domain.Configuration;
 using Ecosystem.WalletService.Domain.Requests.CoinPayRequest;
-using Ecosystem.WalletService.Domain.Responses;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
 namespace Ecosystem.WalletService.Api.Controllers;
@@ -17,8 +16,27 @@ namespace Ecosystem.WalletService.Api.Controllers;
 public class CoinPayController : BaseController
 {
     private const string NotificationProcessFailMessage = "The notification could not be processed.";
+
     private readonly IMediator _mediator;
-    public CoinPayController(IMediator mediator) => _mediator = mediator;
+    private readonly IOptions<ApplicationConfiguration> _appSettings;
+    private readonly ILogger<CoinPayController> _logger;
+
+    public CoinPayController(
+        IMediator mediator,
+        IOptions<ApplicationConfiguration> appSettings,
+        ILogger<CoinPayController> logger)
+    {
+        _mediator = mediator;
+        _appSettings = appSettings;
+        _logger = logger;
+    }
+
+    private string? ReadSignature()
+    {
+        var header = _appSettings.Value.CoinPay?.SignatureHeader;
+
+        return string.IsNullOrEmpty(header) ? null : Request.Headers[header].FirstOrDefault();
+    }
 
     [HttpPost("createTransaction")]
     public async Task<IActionResult> CreateTransaction([FromBody] CreateTransactionRequest request)
@@ -42,9 +60,11 @@ public class CoinPayController : BaseController
     {
         var command = new CreateCoinPayChannelCommand
         {
+            AffiliateId = request.AffiliateId,
+            Amount = request.Amount,
+            Products = request.Products,
             IdCurrency = request.CurrencyId,
             IdNetwork = request.NetworkId,
-            IdExternalIdentification = CommonExtensions.GenerateUniqueId(request.AffiliateId),
             TagName = request.UserName
         };
 
@@ -99,49 +119,27 @@ public class CoinPayController : BaseController
             if (webhookRequest is null)
                 return Ok(Fail(NotificationProcessFailMessage));
 
-            var result = await _mediator.Send(new ProcessCoinPayWebhookCommand(webhookRequest));
+            var result = await _mediator.Send(new ProcessCoinPayWebhookCommand(webhookRequest, ReadSignature()));
             return !result ? Ok(Fail(NotificationProcessFailMessage)) : Ok();
         }
         catch (Exception ex)
         {
-            return StatusCode(500, "Internal Server Error: " + ex.Message);
+            _logger.LogError(ex, "Unhandled error while processing the CoinPay webhook");
+            return StatusCode(500, NotificationProcessFailMessage);
         }
     }
 
     [HttpPost("sendFunds")]
-    public async Task<IActionResult> SendFunds([FromBody] SendFundRequest[] requests)
+    public async Task<IActionResult> SendFunds([FromBody] WithDrawalRequest[] requests)
     {
-        var result = new SendFundsDto();
-
-        foreach (var request in requests)
-        {
-            var command = new SendCoinPayFundsCommand
-            {
-                IdCurrency = request.IdCurrency,
-                IdNetwork = request.IdNetwork,
-                Address = request.Address,
-                Amount = request.Amount,
-                Details = request.Details,
-                AmountPlusFee = request.AmountPlusFee
-            };
-
-            var response = await _mediator.Send(command);
-
-            if (response is { StatusCode: 1 })
-                result.SuccessfulResponses.Add(response);
-            else if (response is not null)
-                result.FailedResponses.Add(response);
-            else
-                result.FailedResponses.Add(new SendFundsResponse { StatusCode = 0, Message = "Failed to send funds" });
-        }
-
+        var result = await _mediator.Send(new SendCoinPayFundsCommand(requests));
         return Ok(Success(result));
     }
 
     [HttpGet("getTransactionByReference")]
     public async Task<IActionResult> GetTransactionByReference([FromQuery] string reference)
     {
-        var result = await _mediator.Send(new GetCoinPayTransactionByReferenceQuery(reference));
-        return result is null ? Ok(Fail("The transaction not found")) : Ok(Success(result));
+        var isCredited = await _mediator.Send(new GetCoinPayTransactionByReferenceQuery(reference));
+        return Ok(Success(isCredited));
     }
 }

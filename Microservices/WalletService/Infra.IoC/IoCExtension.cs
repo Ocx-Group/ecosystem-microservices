@@ -5,6 +5,8 @@ using Ecosystem.WalletService.Application.Strategies;
 using Ecosystem.WalletService.Data.Context;
 using Ecosystem.WalletService.Data.Repositories;
 using Ecosystem.WalletService.Data.UnitOfWork;
+using Ecosystem.WalletService.Domain.Configuration;
+using Ecosystem.WalletService.Domain.Constants;
 using Ecosystem.WalletService.Domain.Interfaces;
 using Ecosystem.WalletService.Domain.Services;
 using Ecosystem.Grpc.Account;
@@ -24,6 +26,8 @@ public static class IoCExtension
 {
     public static void AddWalletServiceDependencies(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<ApplicationConfiguration>(configuration.GetSection("AppSettings"));
+
         services.AddWalletServiceDbContext(configuration);
         services.AddMultiTenancy<BrandTenantStore, ApiClientTokenValidator>();
         services.InjectAutoMapper();
@@ -32,6 +36,26 @@ public static class IoCExtension
         services.InjectRepositories();
         services.InjectDomainServices();
         services.InjectGrpcClients(configuration);
+        services.InjectPaymentGatewayClients(configuration);
+    }
+
+    private static void InjectPaymentGatewayClients(this IServiceCollection services, IConfiguration configuration)
+    {
+        var coinPayUrl = configuration["AppSettings:Endpoints:CoinPayURL"] ?? "https://api.coinpay.cr";
+
+        // Named client used by the token provider, which is a singleton and therefore
+        // must not hold a typed HttpClient of its own.
+        services.AddHttpClient(CoinPayConstants.HttpClientName, client =>
+        {
+            client.BaseAddress = new Uri(coinPayUrl);
+        });
+
+        services.AddSingleton<ICoinPayTokenProvider, CoinPayTokenProvider>();
+
+        services.AddHttpClient<ICoinPayAdapter, CoinPayAdapter>(client =>
+        {
+            client.BaseAddress = new Uri(coinPayUrl);
+        });
     }
 
     private static void InjectDomainServices(this IServiceCollection services)
@@ -47,7 +71,7 @@ public static class IoCExtension
 
         // Payment strategy
         services.AddScoped<IBalancePaymentStrategy, BalancePaymentStrategy>();
-        services.AddScoped<ICoinPaymentsPaymentStrategy, CoinPaymentsPaymentStrategy>();
+        services.AddScoped<IExternalPaymentStrategy, ExternalPaymentStrategy>();
 
         // PDF generation (browser singleton for Chromium reuse)
         services.AddSingleton<IBrowserProvider, BrowserProvider>();
@@ -101,6 +125,9 @@ public static class IoCExtension
         var connectionString = configuration.GetConnectionString("PostgreSqlConnection");
         services.AddDbContext<WalletServiceDbContext>(options =>
             options.UseNpgsql(connectionString));
+
+        // UnitOfWork takes the base DbContext, which AddDbContext does not register on its own.
+        services.AddScoped<DbContext>(sp => sp.GetRequiredService<WalletServiceDbContext>());
     }
 
     private static void InjectGrpcClients(this IServiceCollection services, IConfiguration configuration)

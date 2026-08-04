@@ -5,6 +5,7 @@ using Ecosystem.Infra.IoC;
 using Ecosystem.Infra.IoC.Extensions;
 using Ecosystem.Infra.IoC.MultiTenancy;
 using Ecosystem.WalletService.Api.Middlewares;
+using Ecosystem.WalletService.Domain.Constants;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,6 +64,9 @@ app.UseHttpsRedirection();
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseAuthorization();
 TenantResolutionMiddleware.AddSkipPrefix("/wallet.WalletGrpc/");
+// CoinPay posts notifications without an X-Client-ID header; the brand is resolved
+// from the stored transaction instead.
+TenantResolutionMiddleware.AddSkipPrefix(CoinPayConstants.WebhookPath);
 app.UseTenantResolution();
 app.MapHealthChecks("/health");
 app.MapControllers();
