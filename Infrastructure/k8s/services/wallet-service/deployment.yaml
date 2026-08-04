@@ -78,6 +78,20 @@ spec:
                 secretKeyRef:
                   name: rabbitmq-credentials
                   key: password
+            - name: AppSettings__Endpoints__CoinPayURL
+              value: "https://api.coinpay.cr"
+            - name: AppSettings__CoinPay__UserId
+              value: "46616"
+            - name: AppSettings__CoinPay__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: coinpay-credentials
+                  key: secret-key
+            - name: AppSettings__CoinPay__InitialToken
+              valueFrom:
+                secretKeyRef:
+                  name: coinpay-credentials
+                  key: initial-token
           resources:
             requests:
               memory: "256Mi"

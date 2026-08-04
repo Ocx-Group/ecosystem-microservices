@@ -28,6 +28,7 @@
 #   - registry-credentials  → .dockerconfigjson (DO Registry - generado por Terraform)
 #   - brevo-credentials     → api-key (Brevo transactional email API)
 #   - jwt-credentials       → key (JWT compartido por Gateway, Account y Configuration)
+#   - coinpay-credentials   → secret-key, initial-token (pasarela CoinPay CR)
 #
 # JWT:
 #   - Debe generarse con un CSPRNG y contener al menos 32 bytes de entropía.
@@ -46,6 +47,21 @@
 #     --controller-namespace=sealed-secrets `
 #     --controller-name=sealed-secrets-controller `
 #     < brevo-credentials.yaml > sealed-secrets/brevo-credentials.yaml
+#
+# COINPAY:
+#   Consumido por WalletService. La URL base y el UserId no son secretos y van
+#   como `value:` directo en services/wallet-service/deployment.yaml.
+#
+#   kubectl create secret generic coinpay-credentials `
+#     --namespace=ecosystem `
+#     --from-literal=secret-key="<COINPAY_SECRET_KEY>" `
+#     --from-literal=initial-token="<COINPAY_INITIAL_TOKEN>" `
+#     --dry-run=client -o yaml > coinpay-credentials.yaml
+#
+#   kubeseal --format=yaml `
+#     --controller-namespace=sealed-secrets `
+#     --controller-name=sealed-secrets-controller `
+#     < coinpay-credentials.yaml > sealed-secrets/coinpay-credentials.yaml
 #
 # SPACES:
 #   kubectl create secret generic spaces-credentials `
