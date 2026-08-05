@@ -62,11 +62,16 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseHttpsRedirection();
 app.UseMiddleware<ExceptionMiddleware>();
+app.UseMiddleware<IpnBufferingMiddleware>();
 app.UseAuthorization();
 TenantResolutionMiddleware.AddSkipPrefix("/wallet.WalletGrpc/");
 // CoinPay posts notifications without an X-Client-ID header; the brand is resolved
 // from the stored transaction instead.
 TenantResolutionMiddleware.AddSkipPrefix(CoinPayConstants.WebhookPath);
+// Same for CoinPayments. Beyond the missing header, tenant resolution reads the form when no
+// Authorization is present, which would consume the IPN body before the controller sees it.
+TenantResolutionMiddleware.AddSkipPrefix(CoinPaymentsConstants.IpnPath);
+TenantResolutionMiddleware.AddSkipPrefix(CoinPaymentsConstants.MatrixIpnPath);
 app.UseTenantResolution();
 app.MapHealthChecks("/health");
 app.MapControllers();

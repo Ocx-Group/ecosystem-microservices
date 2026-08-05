@@ -43,6 +43,8 @@ public class Endpoints
     public string? InventoryServiceURL { get; set; }
 
     public string? CoinPayURL { get; set; }
+
+    public string? ConPaymentsURL { get; set; }
 }
 
 public class EndpointTokens
@@ -63,14 +65,25 @@ public class EmailCredentials
 
 public class ConPayments
 {
-    public string Key { get; set; }
-    public string Secret { get; set; }
+    /// <summary>Public API key sent as the "key" parameter on every call.</summary>
+    public string? Key { get; set; }
 
-    public string IpnSecret { get; set; }
+    /// <summary>Private API key used to sign the request body with HMAC-SHA512.</summary>
+    public string? Secret { get; set; }
 
-    public string MerchantId { get; set; }
+    /// <summary>Secret configured in the CoinPayments merchant panel, used to sign incoming IPNs.</summary>
+    public string? IpnSecret { get; set; }
 
-    public string DebugEmail { get; set; }
+    public string? MerchantId { get; set; }
+
+    public string? DebugEmail { get; set; }
+
+    /// <summary>
+    /// Enforces HMAC verification of incoming IPNs. Off by default: the old service read the
+    /// header without ever validating it, so the configured IpnSecret has never been exercised
+    /// against real traffic and a wrong value would reject every legitimate payment.
+    /// </summary>
+    public bool RequireIpnSignature { get; set; }
 }
 
 public class SendingBlue

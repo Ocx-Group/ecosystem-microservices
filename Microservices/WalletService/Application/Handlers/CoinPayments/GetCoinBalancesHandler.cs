@@ -19,6 +19,6 @@ public class GetCoinBalancesHandler : IRequestHandler<GetCoinBalancesQuery, GetC
 
     public async Task<GetCoinBalancesResponse?> Handle(GetCoinBalancesQuery request, CancellationToken cancellationToken)
     {
-        return await _adapter.GetCoinBalances();
+        return await _adapter.GetCoinBalances(request.IncludeZeroBalances);
     }
 }

@@ -1,4 +1,6 @@
+using System.Text;
 using Asp.Versioning;
+using Ecosystem.WalletService.Api.Middlewares;
 using Ecosystem.WalletService.Application.Commands.CoinPayments;
 using Ecosystem.WalletService.Application.Queries.CoinPayments;
 using Ecosystem.WalletService.Domain.Requests.ConPaymentRequest;
@@ -18,7 +20,7 @@ public class CoinPaymentsController : BaseController
     [HttpGet("profile")]
     public async Task<IActionResult> GetProfile([FromQuery] string pbntag)
     {
-        var response = await _mediator.Send(new GetCoinPaymentsProfileQuery());
+        var response = await _mediator.Send(new GetCoinPaymentsProfileQuery(pbntag));
         if (string.IsNullOrEmpty(response?.Error) || response.Error.Equals("ok", StringComparison.OrdinalIgnoreCase))
             return Ok(response?.Result);
 
@@ -38,7 +40,7 @@ public class CoinPaymentsController : BaseController
     [HttpGet("getCoinBalances")]
     public async Task<IActionResult> GetCoinBalances([FromQuery] bool includeZeroBalances)
     {
-        var response = await _mediator.Send(new GetCoinBalancesQuery());
+        var response = await _mediator.Send(new GetCoinBalancesQuery(includeZeroBalances));
         return response?.Result is null
             ? Ok(Fail("Balances not found"))
             : Ok(Success(response.Result));
@@ -75,7 +77,7 @@ public class CoinPaymentsController : BaseController
     [HttpGet("getTransactionInfo")]
     public async Task<IActionResult> GetTransactionInfo([FromQuery] string idTransaction, [FromQuery] bool fullInfo)
     {
-        var response = await _mediator.Send(new GetCoinPaymentTransactionInfoQuery(idTransaction));
+        var response = await _mediator.Send(new GetCoinPaymentTransactionInfoQuery(idTransaction, fullInfo));
         return response?.Result is null
             ? Ok(Fail("Transaction not found"))
             : Ok(Success(response.Result));
@@ -89,14 +91,32 @@ public class CoinPaymentsController : BaseController
             header => header.Value.ToString(),
             StringComparer.OrdinalIgnoreCase);
 
-        var response = await _mediator.Send(new ProcessCoinPaymentsIpnCommand(ipnRequest, headers));
+        var rawBody = await ReadRawBody();
+
+        var response = await _mediator.Send(new ProcessCoinPaymentsIpnCommand(ipnRequest, headers, rawBody));
         return response ? Ok("IPN OK") : BadRequest("IPN ERROR");
     }
 
     [HttpPost("createMassWithdrawal")]
-    public async Task<IActionResult> CreateMassWithdrawal([FromBody] CoinPaymentMassWithdrawalRequest[] requests)
+    public async Task<IActionResult> CreateMassWithdrawal([FromBody] CoinPaymentsWithdrawalRequest[] requests)
     {
         var response = await _mediator.Send(new CreateMassWithdrawalCommand(requests));
         return response is null ? Ok(Fail("The withdrawal could not be created correctly")) : Ok(response);
+    }
+
+    /// <summary>
+    /// Re-reads the body that form binding already consumed. The provider signs the bytes exactly
+    /// as sent, so the digest cannot be checked against a re-serialised form collection.
+    /// <see cref="IpnBufferingMiddleware"/> is what makes the stream rewindable here.
+    /// </summary>
+    private async Task<string> ReadRawBody()
+    {
+        if (!Request.Body.CanSeek)
+            return string.Empty;
+
+        Request.Body.Seek(0, SeekOrigin.Begin);
+
+        using var reader = new StreamReader(Request.Body, Encoding.UTF8, leaveOpen: true);
+        return await reader.ReadToEndAsync();
     }
 }

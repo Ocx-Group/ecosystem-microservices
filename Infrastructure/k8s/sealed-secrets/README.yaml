@@ -29,6 +29,7 @@
 #   - brevo-credentials     → api-key (Brevo transactional email API)
 #   - jwt-credentials       → key (JWT compartido por Gateway, Account y Configuration)
 #   - coinpay-credentials   → secret-key, initial-token (pasarela CoinPay CR)
+#   - coinpayments-credentials → key, secret, ipn-secret, merchant-id (pasarela CoinPayments)
 #
 # JWT:
 #   - Debe generarse con un CSPRNG y contener al menos 32 bytes de entropía.
@@ -62,6 +63,24 @@
 #     --controller-namespace=sealed-secrets `
 #     --controller-name=sealed-secrets-controller `
 #     < coinpay-credentials.yaml > sealed-secrets/coinpay-credentials.yaml
+#
+# COINPAYMENTS:
+#   Consumido por WalletService. La URL base no es secreta y va como `value:` directo en
+#   services/wallet-service/deployment.yaml. `ipn-secret` es el valor configurado en el panel
+#   del comercio y solo se usa cuando AppSettings:ConPayments:RequireIpnSignature está en true.
+#
+#   kubectl create secret generic coinpayments-credentials `
+#     --namespace=ecosystem `
+#     --from-literal=key="<COINPAYMENTS_PUBLIC_KEY>" `
+#     --from-literal=secret="<COINPAYMENTS_PRIVATE_KEY>" `
+#     --from-literal=ipn-secret="<COINPAYMENTS_IPN_SECRET>" `
+#     --from-literal=merchant-id="<COINPAYMENTS_MERCHANT_ID>" `
+#     --dry-run=client -o yaml > coinpayments-credentials.yaml
+#
+#   kubeseal --format=yaml `
+#     --controller-namespace=sealed-secrets `
+#     --controller-name=sealed-secrets-controller `
+#     < coinpayments-credentials.yaml > sealed-secrets/coinpayments-credentials.yaml
 #
 # SPACES:
 #   kubectl create secret generic spaces-credentials `

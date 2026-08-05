@@ -19,6 +19,6 @@ public class GetCoinPaymentsProfileHandler : IRequestHandler<GetCoinPaymentsProf
 
     public async Task<GetBasicInfoResponse?> Handle(GetCoinPaymentsProfileQuery request, CancellationToken cancellationToken)
     {
-        return await _adapter.GetProfile();
+        return await _adapter.GetProfile(request.PbnTag);
     }
 }

@@ -46,6 +46,7 @@ public static class IoCExtension
         services.AddMassTransit(x =>
         {
             x.AddConsumer<UpdateActivationDateConsumer>();
+            x.AddConsumer<RevertActivationDateConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {

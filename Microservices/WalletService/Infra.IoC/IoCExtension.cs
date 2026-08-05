@@ -56,6 +56,14 @@ public static class IoCExtension
         {
             client.BaseAddress = new Uri(coinPayUrl);
         });
+
+        var conPaymentsUrl = configuration["AppSettings:Endpoints:ConPaymentsURL"]
+                             ?? "https://www.coinpayments.net";
+
+        services.AddHttpClient<ICoinPaymentsAdapter, CoinPaymentsAdapter>(client =>
+        {
+            client.BaseAddress = new Uri(conPaymentsUrl);
+        });
     }
 
     private static void InjectDomainServices(this IServiceCollection services)

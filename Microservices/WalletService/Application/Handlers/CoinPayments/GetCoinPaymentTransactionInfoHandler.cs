@@ -19,6 +19,6 @@ public class GetCoinPaymentTransactionInfoHandler : IRequestHandler<GetCoinPayme
 
     public async Task<GetTransactionInfoResponse?> Handle(GetCoinPaymentTransactionInfoQuery request, CancellationToken cancellationToken)
     {
-        return await _adapter.GetTransactionInfo(request.TxnId);
+        return await _adapter.GetTransactionInfo(request.TxnId, request.Full);
     }
 }

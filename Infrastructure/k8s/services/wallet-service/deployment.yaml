@@ -92,6 +92,28 @@ spec:
                 secretKeyRef:
                   name: coinpay-credentials
                   key: initial-token
+            - name: AppSettings__Endpoints__ConPaymentsURL
+              value: "https://www.coinpayments.net"
+            - name: AppSettings__ConPayments__Key
+              valueFrom:
+                secretKeyRef:
+                  name: coinpayments-credentials
+                  key: key
+            - name: AppSettings__ConPayments__Secret
+              valueFrom:
+                secretKeyRef:
+                  name: coinpayments-credentials
+                  key: secret
+            - name: AppSettings__ConPayments__IpnSecret
+              valueFrom:
+                secretKeyRef:
+                  name: coinpayments-credentials
+                  key: ipn-secret
+            - name: AppSettings__ConPayments__MerchantId
+              valueFrom:
+                secretKeyRef:
+                  name: coinpayments-credentials
+                  key: merchant-id
           resources:
             requests:
               memory: "256Mi"

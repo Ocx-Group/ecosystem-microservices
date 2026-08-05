@@ -3,4 +3,4 @@ using MediatR;
 
 namespace Ecosystem.WalletService.Application.Queries.CoinPayments;
 
-public record GetCoinPaymentsProfileQuery : IRequest<GetBasicInfoResponse?>;
+public record GetCoinPaymentsProfileQuery(string PbnTag) : IRequest<GetBasicInfoResponse?>;

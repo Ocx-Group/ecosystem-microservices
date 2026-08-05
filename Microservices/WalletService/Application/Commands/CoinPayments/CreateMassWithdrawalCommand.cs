@@ -4,4 +4,5 @@ using MediatR;
 
 namespace Ecosystem.WalletService.Application.Commands.CoinPayments;
 
-public record CreateMassWithdrawalCommand(IEnumerable<CoinPaymentMassWithdrawalRequest> Requests) : IRequest<CoinPaymentWithdrawalResponse?>;
+public record CreateMassWithdrawalCommand(
+    IReadOnlyList<CoinPaymentsWithdrawalRequest> Requests) : IRequest<CoinPaymentWithdrawalResponse?>;
