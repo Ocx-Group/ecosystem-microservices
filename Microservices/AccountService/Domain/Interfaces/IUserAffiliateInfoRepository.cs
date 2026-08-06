@@ -1,12 +1,15 @@
+using Ecosystem.AccountService.Domain.DTOs.PaginationDto;
 using Ecosystem.AccountService.Domain.Enums;
 using Ecosystem.AccountService.Domain.Models;
 using Ecosystem.AccountService.Domain.Models.CustomModels;
+using Ecosystem.AccountService.Domain.Requests.PaginationRequest;
 
 namespace Ecosystem.AccountService.Domain.Interfaces;
 
 public interface IUserAffiliateInfoRepository
 {
     Task<List<UsersAffiliate>> GetAffiliatesAsync(long brandId);
+    Task<PaginationDto<UsersAffiliate>> GetAffiliatesPagedAsync(long brandId, PaginationRequest request);
     Task<List<UsersAffiliate>> GetUsersWithoutAuthorization();
     Task<UsersAffiliate?> GetAffiliateByIdAsync(long id, long brandId);
     Task<List<AffiliatePersonalNetwork>> GetPersonalNetwork(int userId);

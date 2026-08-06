@@ -1,10 +1,12 @@
 using System.Data;
 using System.Runtime.CompilerServices;
 using Ecosystem.AccountService.Data.Context;
+using Ecosystem.AccountService.Domain.DTOs.PaginationDto;
 using Ecosystem.AccountService.Domain.Enums;
 using Ecosystem.AccountService.Domain.Interfaces;
 using Ecosystem.AccountService.Domain.Models;
 using Ecosystem.AccountService.Domain.Models.CustomModels;
+using Ecosystem.AccountService.Domain.Requests.PaginationRequest;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -16,6 +18,34 @@ public class UserAffiliateInfoRepository : BaseRepository, IUserAffiliateInfoRep
 
     public Task<List<UsersAffiliate>> GetAffiliatesAsync(long brandId)
         => Context.UsersAffiliates.Where(x => x.BrandId == brandId).AsNoTracking().ToListAsync();
+
+    public async Task<PaginationDto<UsersAffiliate>> GetAffiliatesPagedAsync(long brandId, PaginationRequest request)
+    {
+        var query = Context.UsersAffiliates.Where(x => x.BrandId == brandId);
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var pattern = $"%{request.Search.Trim()}%";
+            query = query.Where(x => EF.Functions.ILike(x.Username, pattern) || EF.Functions.ILike(x.Email, pattern));
+        }
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return new PaginationDto<UsersAffiliate>
+        {
+            CurrentPage = request.PageNumber,
+            PageSize = request.PageSize,
+            TotalCount = totalCount,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize),
+            Items = items
+        };
+    }
 
     public Task<List<UsersAffiliate>> GetUsersWithoutAuthorization()
         => Context.UsersAffiliates.Where(x => !x.CardIdAuthorization && !string.IsNullOrEmpty(x.ImagePathId))

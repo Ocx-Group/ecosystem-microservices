@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Ecosystem.AccountService.Application.Commands.Affiliate;
 using Ecosystem.AccountService.Application.Queries.Affiliate;
+using Ecosystem.AccountService.Domain.Requests.PaginationRequest;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,6 +28,13 @@ public class UserAffiliateInfoController : BaseController
     public async Task<IActionResult> GetUsers(CancellationToken ct)
     {
         var result = await _mediator.Send(new GetAffiliatesQuery(), ct);
+        return Ok(Success(result));
+    }
+
+    [HttpGet("get_all_paged")]
+    public async Task<IActionResult> GetUsersPaged([FromQuery] PaginationRequest request, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetAffiliatesPagedQuery(request), ct);
         return Ok(Success(result));
     }
 

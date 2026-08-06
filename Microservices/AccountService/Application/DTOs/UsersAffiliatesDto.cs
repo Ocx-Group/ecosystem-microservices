@@ -34,6 +34,9 @@ public class UsersAffiliatesDto
     [JsonProperty("father")] public int Father { get; set; }
     [JsonProperty("sponsor")] public int Sponsor { get; set; }
     [JsonProperty("binary_sponsor")] public int BinarySponsor { get; set; }
+    [JsonProperty("father_user_name")] public string? FatherUserName { get; set; }
+    [JsonProperty("sponsor_user_name")] public string? SponsorUserName { get; set; }
+    [JsonProperty("binary_sponsor_user_name")] public string? BinarySponsorUserName { get; set; }
     [JsonProperty("binary_matrix_side")] public byte BinaryMatrixSide { get; set; }
     [JsonProperty("side")] public byte Side { get; set; }
     [JsonProperty("authorization_date")] public DateTime? AuthorizationDate { get; set; }
