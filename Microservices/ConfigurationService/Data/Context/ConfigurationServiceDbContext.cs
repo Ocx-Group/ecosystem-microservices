@@ -433,6 +433,9 @@ public partial class ConfigurationServiceDbContext : DbContext
             entity.Property(e => e.BonusPercentage)
                 .HasDefaultValueSql("0")
                 .HasColumnName("bonus_percentage");
+            entity.Property(e => e.DailyBonusAlwaysDistribute)
+                .HasDefaultValueSql("false")
+                .HasColumnName("daily_bonus_always_distribute");
 
             // PDF / Invoice
             entity.Property(e => e.PdfTemplateName).HasColumnName("pdf_template_name");

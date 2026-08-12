@@ -21,7 +21,7 @@ public class ExternalPaymentStrategy : IExternalPaymentStrategy
     private readonly IWalletRepository _walletRepository;
     private readonly IAccountServiceAdapter _accountAdapter;
     private readonly IMembershipBonusService _membershipBonus;
-    private readonly IConfigurationAdapter _configurationAdapter;
+    private readonly IPurchaseBonusService _purchaseBonus;
     private readonly IEventBus _eventBus;
 
     public ExternalPaymentStrategy(
@@ -34,7 +34,7 @@ public class ExternalPaymentStrategy : IExternalPaymentStrategy
         IWalletRepository walletRepository,
         IAccountServiceAdapter accountAdapter,
         IMembershipBonusService membershipBonus,
-        IConfigurationAdapter configurationAdapter,
+        IPurchaseBonusService purchaseBonus,
         IEventBus eventBus)
     {
         _productValidator = productValidator;
@@ -46,7 +46,7 @@ public class ExternalPaymentStrategy : IExternalPaymentStrategy
         _walletRepository = walletRepository;
         _accountAdapter = accountAdapter;
         _membershipBonus = membershipBonus;
-        _configurationAdapter = configurationAdapter;
+        _purchaseBonus = purchaseBonus;
         _eventBus = eventBus;
     }
 
@@ -77,7 +77,7 @@ public class ExternalPaymentStrategy : IExternalPaymentStrategy
         var result = await _invoiceRepository.HandleDebitTransaction(debitRequest);
         if (result == null) return false;
 
-        await ExecutePostPaymentActions(request, debitRequest, result, invoiceDetails, paymentType);
+        await ExecutePostPaymentActions(request, debitRequest, result, invoiceDetails);
 
         return true;
     }
@@ -126,27 +126,11 @@ public class ExternalPaymentStrategy : IExternalPaymentStrategy
         WalletRequestModel request,
         DebitTransactionRequest debitRequest,
         Domain.CustomModels.InvoicesSpResponse result,
-        List<InvoiceDetailsTransactionRequest> invoiceDetails,
-        CoinPaymentType paymentType)
+        List<InvoiceDetailsTransactionRequest> invoiceDetails)
     {
         var userInfo = await _accountAdapter.GetUserInfo(request.AffiliateId, request.BrandId);
 
-        if (paymentType == CoinPaymentType.HouseCoin)
-        {
-            var brandConfig = await _configurationAdapter.GetBrandConfiguration(request.BrandId);
-
-            if (brandConfig is { CommissionEnabled: true, CommissionLevels.Length: > 0 })
-            {
-                await _walletRepository.DistributeCommissionsPerPurchaseAsync(new DistributeCommissionsRequest
-                {
-                    AffiliateId = request.AffiliateId,
-                    InvoiceAmount = debitRequest.Debit,
-                    BrandId = request.BrandId,
-                    AdminUserName = brandConfig.AdminUserName,
-                    LevelPercentages = brandConfig.CommissionLevels,
-                });
-            }
-        }
+        await _purchaseBonus.DistributeAsync(request, debitRequest.Debit);
 
         if (userInfo != null)
             await _notifications.SendPaymentConfirmation(userInfo, result, request, invoiceDetails);

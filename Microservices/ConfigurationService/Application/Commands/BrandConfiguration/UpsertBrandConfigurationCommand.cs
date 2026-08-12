@@ -20,6 +20,7 @@ public record UpsertBrandConfigurationCommand : IRequest<BrandConfigurationDto>
     public bool CommissionEnabled { get; init; }
     public decimal[] CommissionLevels { get; init; } = [];
     public decimal BonusPercentage { get; init; }
+    public bool DailyBonusAlwaysDistribute { get; init; }
 
     // PDF / Invoice
     public string PdfTemplateName { get; init; } = null!;

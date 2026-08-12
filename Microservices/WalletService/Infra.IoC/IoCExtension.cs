@@ -76,6 +76,7 @@ public static class IoCExtension
         services.AddScoped<IBalanceValidationService, BalanceValidationService>();
         services.AddScoped<IPaymentNotificationService, PaymentNotificationService>();
         services.AddScoped<IMembershipBonusService, MembershipBonusService>();
+        services.AddScoped<IPurchaseBonusService, PurchaseBonusService>();
 
         // Payment strategy
         services.AddScoped<IBalancePaymentStrategy, BalancePaymentStrategy>();

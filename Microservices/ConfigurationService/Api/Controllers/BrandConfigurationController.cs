@@ -117,6 +117,37 @@ public class BrandConfigurationController : BaseController
         };
     }
 
+    [HttpGet("admin/commissions")]
+    [Authorize(Policy = "BrandAdministrator")]
+    public async Task<IActionResult> GetOwnCommissionSettings(CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetOwnCommissionSettingsQuery(), ct);
+        return result is null
+            ? NotFound(Fail("Brand configuration not found for the authenticated tenant"))
+            : Ok(Success(result));
+    }
+
+    [HttpPut("admin/commissions")]
+    [Authorize(Policy = "BrandAdministrator")]
+    public async Task<IActionResult> UpdateOwnCommissionSettings(
+        [FromBody] UpdateCommissionSettingsRequest request,
+        CancellationToken ct)
+    {
+        var actorUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+        var actorUserName = User.Identity?.Name ?? "unknown";
+        var result = await _mediator.Send(
+            new UpdateOwnCommissionSettingsCommand(request, actorUserId, actorUserName),
+            ct);
+
+        return result.Status switch
+        {
+            UpdateCommissionSettingsStatus.Updated => Ok(Success(result.Settings!)),
+            UpdateCommissionSettingsStatus.InvalidLevels => BadRequest(
+                Fail(result.ValidationMessage ?? "The commission levels are invalid")),
+            _ => NotFound(Fail("Brand configuration not found for the authenticated tenant"))
+        };
+    }
+
     private long GetAuthenticatedBrandId()
         => long.TryParse(User.FindFirstValue("brand_id"), out var brandId) && brandId > 0
             ? brandId

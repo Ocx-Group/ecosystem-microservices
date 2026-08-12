@@ -24,6 +24,12 @@ public record BrandConfigurationDto
     public decimal[] CommissionLevels { get; init; } = [];
     public decimal BonusPercentage { get; init; }
 
+    /// <summary>
+    /// When false the purchase bonus is only distributed for purchases that opted in
+    /// via <c>WalletRequest.DailyBonusActivation</c>.
+    /// </summary>
+    public bool DailyBonusAlwaysDistribute { get; init; }
+
     // PDF / Invoice branding
     public string PdfTemplateName { get; init; } = null!;
     public string CompanyName { get; init; } = null!;

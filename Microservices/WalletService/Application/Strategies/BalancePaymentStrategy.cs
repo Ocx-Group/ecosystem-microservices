@@ -20,6 +20,7 @@ public class BalancePaymentStrategy : IBalancePaymentStrategy
     private readonly IWalletRepository _walletRepository;
     private readonly IAccountServiceAdapter _accountAdapter;
     private readonly IMembershipBonusService _membershipBonus;
+    private readonly IPurchaseBonusService _purchaseBonus;
     private readonly IEventBus _eventBus;
 
     public BalancePaymentStrategy(
@@ -32,6 +33,7 @@ public class BalancePaymentStrategy : IBalancePaymentStrategy
         IWalletRepository walletRepository,
         IAccountServiceAdapter accountAdapter,
         IMembershipBonusService membershipBonus,
+        IPurchaseBonusService purchaseBonus,
         IEventBus eventBus)
     {
         _productValidator = productValidator;
@@ -43,6 +45,7 @@ public class BalancePaymentStrategy : IBalancePaymentStrategy
         _walletRepository = walletRepository;
         _accountAdapter = accountAdapter;
         _membershipBonus = membershipBonus;
+        _purchaseBonus = purchaseBonus;
         _eventBus = eventBus;
     }
 
@@ -70,6 +73,8 @@ public class BalancePaymentStrategy : IBalancePaymentStrategy
 
         var result = await _walletRepository.DebitEcoPoolTransactionSp(debitRequest);
         if (result == null) return false;
+
+        await _purchaseBonus.DistributeAsync(request, debitRequest.Debit);
 
         var userInfo = await _accountAdapter.GetUserInfo(request.AffiliateId, request.BrandId);
         if (userInfo != null)
@@ -106,6 +111,8 @@ public class BalancePaymentStrategy : IBalancePaymentStrategy
 
         var result = await _walletRepository.AdminDebitTransaction(debitRequest);
         if (result == null) return false;
+
+        await _purchaseBonus.DistributeAsync(request, debitRequest.Debit);
 
         if (customPrice.HasValue)
         {

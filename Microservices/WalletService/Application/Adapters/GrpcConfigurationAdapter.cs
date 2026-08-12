@@ -107,6 +107,7 @@ public class GrpcConfigurationAdapter : IConfigurationAdapter
                 .Select(Convert.ToDecimal)
                 .ToArray(),
             BonusPercentage = Convert.ToDecimal(source.BonusPercentage),
+            DailyBonusAlwaysDistribute = source.DailyBonusAlwaysDistribute,
             PdfTemplateName = source.PdfTemplateName,
             CompanyName = source.CompanyName,
             CompanyIdentifier = source.HasCompanyIdentifier ? source.CompanyIdentifier : null,

@@ -72,6 +72,7 @@ message BrandConfigurationMessage {
   bool con_payment_enabled = 33;
   optional string con_payment_address = 34;
   optional int32 blockchain_network_id = 35;
+  bool daily_bonus_always_distribute = 36;
 }
 
 // MatrixConfiguration messages

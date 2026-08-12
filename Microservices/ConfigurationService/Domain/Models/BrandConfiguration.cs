@@ -26,6 +26,17 @@ public class BrandConfiguration
     public string CommissionLevelsJson { get; set; } = "[]";
     public decimal BonusPercentage { get; set; }
 
+    /// <summary>
+    /// When false (the default) the per-purchase bonus is only distributed if the
+    /// purchase itself opted in via <c>WalletRequest.DailyBonusActivation</c>. When
+    /// true every purchase of the brand distributes it.
+    ///
+    /// The flag is phrased so that its "off" state is the CLR default of
+    /// <see cref="bool"/>. A property defaulting to <c>true</c> would collide with
+    /// the store default on insert and silently ignore an operator turning it off.
+    /// </summary>
+    public bool DailyBonusAlwaysDistribute { get; set; }
+
     // PDF / Invoice branding
     public string PdfTemplateName { get; set; } = null!;
     public string CompanyName { get; set; } = null!;

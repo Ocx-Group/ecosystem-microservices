@@ -8,5 +8,10 @@ public interface IBrandConfigurationRepository
     Task<List<BrandConfiguration>> GetAllAsync();
     Task<BrandConfiguration> UpsertAsync(BrandConfiguration config);
     Task<BrandConfiguration?> UpdateBrandingAsync(long brandId, BrandConfiguration branding);
+    Task<BrandConfiguration?> UpdateCommissionSettingsAsync(
+        long brandId,
+        bool commissionEnabled,
+        decimal[] commissionLevels,
+        bool dailyBonusAlwaysDistribute);
     Task<BrandConfiguration?> DeleteAsync(long brandId);
 }

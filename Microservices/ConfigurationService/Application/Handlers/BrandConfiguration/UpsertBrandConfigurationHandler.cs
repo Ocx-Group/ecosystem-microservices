@@ -39,6 +39,7 @@ public class UpsertBrandConfigurationHandler
             CommissionEnabled = request.CommissionEnabled,
             CommissionLevelsJson = JsonSerializer.Serialize(request.CommissionLevels),
             BonusPercentage = request.BonusPercentage,
+            DailyBonusAlwaysDistribute = request.DailyBonusAlwaysDistribute,
             PdfTemplateName = request.PdfTemplateName,
             CompanyName = request.CompanyName,
             CompanyIdentifier = request.CompanyIdentifier,

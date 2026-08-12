@@ -1221,61 +1221,60 @@ public class WalletRepository : BaseRepository, IWalletRepository
         });
     }
 
+    /// <summary>
+    /// Faults are propagated on purpose. Swallowing them here returned an empty list,
+    /// which is indistinguishable from "the buyer had no upline", so a broken payout
+    /// looked exactly like a legitimate no-op. The caller decides how to react.
+    /// </summary>
     public async Task<List<int>> DistributeCommissionsPerPurchaseAsync(DistributeCommissionsRequest request)
     {
-        try
+        var beneficiaryIds = new List<int>();
+        await using var sqlConnection = new NpgsqlConnection(_appSettings.ConnectionStrings?.PostgreSqlConnection);
+        await sqlConnection.OpenAsync();
+
+        var query =
+            "SELECT * FROM wallet_service.distribute_commissions_per_purchase(@AffiliateId, @InvoiceAmount, @BrandId, @AdminUserName, @LevelPercentages)";
+
+        await using var cmd = new NpgsqlCommand(query, sqlConnection);
+
+        cmd.Parameters.Add(new NpgsqlParameter("@AffiliateId", NpgsqlDbType.Integer)
         {
-            var beneficiaryIds = new List<int>();
-            await using var sqlConnection = new NpgsqlConnection(_appSettings.ConnectionStrings?.PostgreSqlConnection);
-            await sqlConnection.OpenAsync();
+            Value = request.AffiliateId
+        });
 
-            var query =
-                "SELECT * FROM wallet_service.distribute_commissions_per_purchase(@AffiliateId, @InvoiceAmount, @BrandId, @AdminUserName, @LevelPercentages)";
-
-            await using var cmd = new NpgsqlCommand(query, sqlConnection);
-
-            cmd.Parameters.Add(new NpgsqlParameter("@AffiliateId", NpgsqlDbType.Integer)
-            {
-                Value = request.AffiliateId
-            });
-
-            cmd.Parameters.Add(new NpgsqlParameter("@InvoiceAmount", NpgsqlDbType.Numeric)
-            {
-                Value = request.InvoiceAmount
-            });
-
-            cmd.Parameters.Add(new NpgsqlParameter("@BrandId", NpgsqlDbType.Integer)
-            {
-                Value = request.BrandId
-            });
-
-            cmd.Parameters.Add(new NpgsqlParameter("@AdminUserName", NpgsqlDbType.Varchar)
-            {
-                Value = request.AdminUserName
-            });
-
-            var levelPercentagesParam =
-                new NpgsqlParameter("@LevelPercentages", NpgsqlDbType.Array | NpgsqlDbType.Numeric)
-                {
-                    Value = request.LevelPercentages
-                };
-            cmd.Parameters.Add(levelPercentagesParam);
-
-            await using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                beneficiaryIds.Add(reader.GetInt32(0));
-            }
-
-            await sqlConnection.CloseAsync();
-
-            return beneficiaryIds;
-        }
-        catch (Exception e)
+        cmd.Parameters.Add(new NpgsqlParameter("@InvoiceAmount", NpgsqlDbType.Numeric)
         {
-            Console.WriteLine($"Error distributing commissions: {e.Message}");
-            return new List<int>();
+            Value = request.InvoiceAmount
+        });
+
+        // The function declares p_brand_id as integer, so the long is narrowed here
+        // instead of letting Npgsql fail to resolve the overload.
+        cmd.Parameters.Add(new NpgsqlParameter("@BrandId", NpgsqlDbType.Integer)
+        {
+            Value = checked((int)request.BrandId)
+        });
+
+        cmd.Parameters.Add(new NpgsqlParameter("@AdminUserName", NpgsqlDbType.Varchar)
+        {
+            Value = request.AdminUserName
+        });
+
+        var levelPercentagesParam =
+            new NpgsqlParameter("@LevelPercentages", NpgsqlDbType.Array | NpgsqlDbType.Numeric)
+            {
+                Value = request.LevelPercentages
+            };
+        cmd.Parameters.Add(levelPercentagesParam);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            beneficiaryIds.Add(reader.GetInt32(0));
         }
+
+        await sqlConnection.CloseAsync();
+
+        return beneficiaryIds;
     }
 
     public async Task<decimal> GetTotalCommissionsPaid(long brandId)

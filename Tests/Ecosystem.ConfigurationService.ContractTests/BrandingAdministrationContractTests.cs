@@ -302,6 +302,13 @@ public sealed class BrandingAdministrationContractTests
             return Task.FromResult<BrandConfigurationEntity?>(branding);
         }
 
+        public Task<BrandConfigurationEntity?> UpdateCommissionSettingsAsync(
+            long brandId,
+            bool commissionEnabled,
+            decimal[] commissionLevels,
+            bool dailyBonusAlwaysDistribute)
+            => Task.FromResult<BrandConfigurationEntity?>(null);
+
         public Task<BrandConfigurationEntity?> DeleteAsync(long brandId)
             => Task.FromResult<BrandConfigurationEntity?>(null);
     }

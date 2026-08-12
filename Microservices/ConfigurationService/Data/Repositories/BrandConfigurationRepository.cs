@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Ecosystem.ConfigurationService.Data.Context;
 using Ecosystem.ConfigurationService.Domain.Interfaces;
 using Ecosystem.ConfigurationService.Domain.Models;
@@ -44,6 +45,7 @@ public class BrandConfigurationRepository : BaseRepository, IBrandConfigurationR
             existing.CommissionEnabled = config.CommissionEnabled;
             existing.CommissionLevelsJson = config.CommissionLevelsJson;
             existing.BonusPercentage = config.BonusPercentage;
+            existing.DailyBonusAlwaysDistribute = config.DailyBonusAlwaysDistribute;
             existing.PdfTemplateName = config.PdfTemplateName;
             existing.CompanyName = config.CompanyName;
             existing.CompanyIdentifier = config.CompanyIdentifier;
@@ -102,6 +104,28 @@ public class BrandConfigurationRepository : BaseRepository, IBrandConfigurationR
         existing.PrimaryColor = branding.PrimaryColor;
         existing.SecondaryColor = branding.SecondaryColor;
         existing.BackgroundColor = branding.BackgroundColor;
+        existing.UpdatedAt = DateTime.UtcNow;
+
+        await Context.SaveChangesAsync();
+        return existing;
+    }
+
+    public async Task<BrandConfiguration?> UpdateCommissionSettingsAsync(
+        long brandId,
+        bool commissionEnabled,
+        decimal[] commissionLevels,
+        bool dailyBonusAlwaysDistribute)
+    {
+        var existing = await Context.BrandConfigurations
+            .Include(x => x.Brand)
+            .FirstOrDefaultAsync(x => x.BrandId == brandId && x.DeletedAt == null);
+
+        if (existing is null)
+            return null;
+
+        existing.CommissionEnabled = commissionEnabled;
+        existing.CommissionLevelsJson = JsonSerializer.Serialize(commissionLevels);
+        existing.DailyBonusAlwaysDistribute = dailyBonusAlwaysDistribute;
         existing.UpdatedAt = DateTime.UtcNow;
 
         await Context.SaveChangesAsync();

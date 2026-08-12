@@ -150,7 +150,8 @@ public sealed class PublicBrandingContractTests
             "32:pool_validation_required",
             "33:con_payment_enabled",
             "34:con_payment_address",
-            "35:blockchain_network_id"
+            "35:blockchain_network_id",
+            "36:daily_bonus_always_distribute"
         };
 
         Assert.Equal(expected, actual);

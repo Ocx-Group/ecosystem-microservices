@@ -163,6 +163,7 @@ public class ConfigurationGrpcService : ConfigurationGrpc.ConfigurationGrpcBase
             EmailTemplateFolder = source.EmailTemplateFolder,
             CommissionEnabled = source.CommissionEnabled,
             BonusPercentage = decimal.ToDouble(source.BonusPercentage),
+            DailyBonusAlwaysDistribute = source.DailyBonusAlwaysDistribute,
             PdfTemplateName = source.PdfTemplateName,
             ActivateOnRegistration = source.ActivateOnRegistration,
             WithdrawalValidationType = source.WithdrawalValidationType,

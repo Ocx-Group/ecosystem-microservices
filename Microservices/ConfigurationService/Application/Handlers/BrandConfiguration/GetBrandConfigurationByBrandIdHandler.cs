@@ -49,6 +49,7 @@ public class GetBrandConfigurationByBrandIdHandler
             CommissionEnabled = entity.CommissionEnabled,
             CommissionLevels = commissionLevels,
             BonusPercentage = entity.BonusPercentage,
+            DailyBonusAlwaysDistribute = entity.DailyBonusAlwaysDistribute,
             PdfTemplateName = entity.PdfTemplateName,
             CompanyName = entity.CompanyName,
             CompanyIdentifier = entity.CompanyIdentifier,
