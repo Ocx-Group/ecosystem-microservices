@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 using System.Data;
 using Newtonsoft.Json;
@@ -1285,6 +1286,13 @@ public class WalletRepository : BaseRepository, IWalletRepository
     /// The call is wrapped in an explicit transaction because the function builds a
     /// TEMP TABLE ... ON COMMIT DROP; committing here is what disposes of it, and it
     /// also makes every wallet row of one run land together.
+    ///
+    /// The connection comes from the DbContext rather than from
+    /// <c>_appSettings.ConnectionStrings</c>: <c>ApplicationConfiguration</c> is bound to
+    /// the "AppSettings" section while the connection strings live at the configuration
+    /// root, so that property is always null. The context is configured from
+    /// <c>GetConnectionString("PostgreSqlConnection")</c> and is the only source that
+    /// actually resolves.
     /// </summary>
     public async Task<List<MonthlyCommissionItemDto>> CalculateMonthlyCommissionsAsync(
         DateOnly startDate,
@@ -1298,16 +1306,15 @@ public class WalletRepository : BaseRepository, IWalletRepository
     {
         var items = new List<MonthlyCommissionItemDto>();
 
-        await using var sqlConnection =
-            new NpgsqlConnection(_appSettings.ConnectionStrings?.PostgreSqlConnection);
-        await sqlConnection.OpenAsync();
-        await using var transaction = await sqlConnection.BeginTransactionAsync();
+        await using var transaction = await Context.Database.BeginTransactionAsync();
 
         const string query =
             "SELECT * FROM calculate_monthly_commissions(@StartDate, @EndDate, @InterestRate, "
             + "@WaitingDays, @PaymentGroup, @AdminUserName, @BrandId, @DryRun)";
 
-        await using var cmd = new NpgsqlCommand(query, sqlConnection, transaction);
+        await using var cmd = (NpgsqlCommand)Context.Database.GetDbConnection().CreateCommand();
+        cmd.CommandText = query;
+        cmd.Transaction = (NpgsqlTransaction)transaction.GetDbTransaction();
 
         cmd.Parameters.Add(new NpgsqlParameter("@StartDate", NpgsqlDbType.Date)
         {
