@@ -1309,7 +1309,7 @@ public class WalletRepository : BaseRepository, IWalletRepository
         await using var transaction = await Context.Database.BeginTransactionAsync();
 
         const string query =
-            "SELECT * FROM calculate_monthly_commissions(@StartDate, @EndDate, @InterestRate, "
+            "SELECT * FROM wallet_service.calculate_monthly_commissions(@StartDate, @EndDate, @InterestRate, "
             + "@WaitingDays, @PaymentGroup, @AdminUserName, @BrandId, @DryRun)";
 
         await using var cmd = (NpgsqlCommand)Context.Database.GetDbConnection().CreateCommand();
