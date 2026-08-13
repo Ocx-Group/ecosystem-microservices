@@ -7,6 +7,7 @@ using Npgsql;
 using NpgsqlTypes;
 using Ecosystem.WalletService.Data.Context;
 using Ecosystem.WalletService.Domain.CustomModels;
+using Ecosystem.WalletService.Domain.DTOs.MonthlyCommissionDto;
 using Ecosystem.WalletService.Domain.Models;
 using Ecosystem.WalletService.Domain.Interfaces;
 using Ecosystem.WalletService.Domain.Configuration;
@@ -1275,6 +1276,97 @@ public class WalletRepository : BaseRepository, IWalletRepository
         await sqlConnection.CloseAsync();
 
         return beneficiaryIds;
+    }
+
+    /// <summary>
+    /// Runs the monthly liquidation. Faults are propagated: a run that half-failed must
+    /// not look like a period where nobody earned anything.
+    ///
+    /// The call is wrapped in an explicit transaction because the function builds a
+    /// TEMP TABLE ... ON COMMIT DROP; committing here is what disposes of it, and it
+    /// also makes every wallet row of one run land together.
+    /// </summary>
+    public async Task<List<MonthlyCommissionItemDto>> CalculateMonthlyCommissionsAsync(
+        DateOnly startDate,
+        DateOnly endDate,
+        decimal interestRate,
+        int waitingDays,
+        int paymentGroupId,
+        string adminUserName,
+        long brandId,
+        bool dryRun)
+    {
+        var items = new List<MonthlyCommissionItemDto>();
+
+        await using var sqlConnection =
+            new NpgsqlConnection(_appSettings.ConnectionStrings?.PostgreSqlConnection);
+        await sqlConnection.OpenAsync();
+        await using var transaction = await sqlConnection.BeginTransactionAsync();
+
+        const string query =
+            "SELECT * FROM calculate_monthly_commissions(@StartDate, @EndDate, @InterestRate, "
+            + "@WaitingDays, @PaymentGroup, @AdminUserName, @BrandId, @DryRun)";
+
+        await using var cmd = new NpgsqlCommand(query, sqlConnection, transaction);
+
+        cmd.Parameters.Add(new NpgsqlParameter("@StartDate", NpgsqlDbType.Date)
+        {
+            Value = startDate
+        });
+
+        cmd.Parameters.Add(new NpgsqlParameter("@EndDate", NpgsqlDbType.Date)
+        {
+            Value = endDate
+        });
+
+        cmd.Parameters.Add(new NpgsqlParameter("@InterestRate", NpgsqlDbType.Numeric)
+        {
+            Value = interestRate
+        });
+
+        cmd.Parameters.Add(new NpgsqlParameter("@WaitingDays", NpgsqlDbType.Integer)
+        {
+            Value = waitingDays
+        });
+
+        cmd.Parameters.Add(new NpgsqlParameter("@PaymentGroup", NpgsqlDbType.Integer)
+        {
+            Value = paymentGroupId
+        });
+
+        cmd.Parameters.Add(new NpgsqlParameter("@AdminUserName", NpgsqlDbType.Text)
+        {
+            Value = adminUserName
+        });
+
+        // The function declares p_brand_id as integer, so the long is narrowed here
+        // instead of letting Npgsql fail to resolve the overload.
+        cmd.Parameters.Add(new NpgsqlParameter("@BrandId", NpgsqlDbType.Integer)
+        {
+            Value = checked((int)brandId)
+        });
+
+        cmd.Parameters.Add(new NpgsqlParameter("@DryRun", NpgsqlDbType.Boolean)
+        {
+            Value = dryRun
+        });
+
+        await using (var reader = await cmd.ExecuteReaderAsync())
+        {
+            while (await reader.ReadAsync())
+            {
+                items.Add(new MonthlyCommissionItemDto
+                {
+                    AffiliateId = reader.GetInt32(0),
+                    AffiliateUserName = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
+                    Credit = reader.GetDecimal(2)
+                });
+            }
+        }
+
+        await transaction.CommitAsync();
+
+        return items;
     }
 
     public async Task<decimal> GetTotalCommissionsPaid(long brandId)

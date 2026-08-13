@@ -151,7 +151,11 @@ public sealed class PublicBrandingContractTests
             "33:con_payment_enabled",
             "34:con_payment_address",
             "35:blockchain_network_id",
-            "36:daily_bonus_always_distribute"
+            "36:daily_bonus_always_distribute",
+            "37:monthly_commission_enabled",
+            "38:monthly_commission_interest_rate",
+            "39:monthly_commission_waiting_days",
+            "40:monthly_commission_payment_group_id"
         };
 
         Assert.Equal(expected, actual);

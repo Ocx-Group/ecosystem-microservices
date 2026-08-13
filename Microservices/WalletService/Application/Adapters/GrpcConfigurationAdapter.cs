@@ -108,6 +108,13 @@ public class GrpcConfigurationAdapter : IConfigurationAdapter
                 .ToArray(),
             BonusPercentage = Convert.ToDecimal(source.BonusPercentage),
             DailyBonusAlwaysDistribute = source.DailyBonusAlwaysDistribute,
+            MonthlyCommissionEnabled = source.MonthlyCommissionEnabled,
+            MonthlyCommissionInterestRate =
+                Convert.ToDecimal(source.MonthlyCommissionInterestRate),
+            MonthlyCommissionWaitingDays = source.MonthlyCommissionWaitingDays,
+            MonthlyCommissionPaymentGroupId = source.HasMonthlyCommissionPaymentGroupId
+                ? source.MonthlyCommissionPaymentGroupId
+                : null,
             PdfTemplateName = source.PdfTemplateName,
             CompanyName = source.CompanyName,
             CompanyIdentifier = source.HasCompanyIdentifier ? source.CompanyIdentifier : null,

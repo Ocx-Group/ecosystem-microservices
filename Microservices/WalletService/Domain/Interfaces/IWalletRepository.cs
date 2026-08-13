@@ -1,4 +1,5 @@
 using Ecosystem.WalletService.Domain.CustomModels;
+using Ecosystem.WalletService.Domain.DTOs.MonthlyCommissionDto;
 using Ecosystem.WalletService.Domain.Models;
 using Ecosystem.WalletService.Domain.Requests.WalletRequest;
 
@@ -57,6 +58,20 @@ public interface IWalletRepository
 
     Task<bool> CreditServiceBalanceTransaction(CreditTransactionRequest request);
     Task<List<int>> DistributeCommissionsPerPurchaseAsync(DistributeCommissionsRequest request);
+
+    /// <summary>
+    /// Runs <c>calculate_monthly_commissions</c>. With <paramref name="dryRun"/> the
+    /// rows describe what would be credited and nothing is written.
+    /// </summary>
+    Task<List<MonthlyCommissionItemDto>> CalculateMonthlyCommissionsAsync(
+        DateOnly startDate,
+        DateOnly endDate,
+        decimal interestRate,
+        int waitingDays,
+        int paymentGroupId,
+        string adminUserName,
+        long brandId,
+        bool dryRun);
     Task<decimal> GetTotalCommissionsPaid(long brandId);
     Task<decimal> GetCommissionsForAdminAsync(long brandId);
     Task<Wallet> CreateAsync(Wallet request);

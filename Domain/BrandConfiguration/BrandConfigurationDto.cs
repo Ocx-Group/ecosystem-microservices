@@ -30,6 +30,23 @@ public record BrandConfigurationDto
     /// </summary>
     public bool DailyBonusAlwaysDistribute { get; init; }
 
+    // Monthly commission liquidation
+
+    /// <summary>
+    /// While false WalletService refuses to run the monthly liquidation for the
+    /// brand, so a misconfigured brand cannot be paid out by accident.
+    /// </summary>
+    public bool MonthlyCommissionEnabled { get; init; }
+
+    /// <summary>Percentage of the invoice total paid for a full period.</summary>
+    public decimal MonthlyCommissionInterestRate { get; init; }
+
+    /// <summary>Days an invoice created inside the period waits before earning.</summary>
+    public int MonthlyCommissionWaitingDays { get; init; }
+
+    /// <summary>Payment group of the product this brand liquidates.</summary>
+    public int? MonthlyCommissionPaymentGroupId { get; init; }
+
     // PDF / Invoice branding
     public string PdfTemplateName { get; init; } = null!;
     public string CompanyName { get; init; } = null!;

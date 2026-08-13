@@ -148,6 +148,37 @@ public class BrandConfigurationController : BaseController
         };
     }
 
+    [HttpGet("admin/monthly-commissions")]
+    [Authorize(Policy = "BrandAdministrator")]
+    public async Task<IActionResult> GetOwnMonthlyCommissionSettings(CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetOwnMonthlyCommissionSettingsQuery(), ct);
+        return result is null
+            ? NotFound(Fail("Brand configuration not found for the authenticated tenant"))
+            : Ok(Success(result));
+    }
+
+    [HttpPut("admin/monthly-commissions")]
+    [Authorize(Policy = "BrandAdministrator")]
+    public async Task<IActionResult> UpdateOwnMonthlyCommissionSettings(
+        [FromBody] UpdateMonthlyCommissionSettingsRequest request,
+        CancellationToken ct)
+    {
+        var actorUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+        var actorUserName = User.Identity?.Name ?? "unknown";
+        var result = await _mediator.Send(
+            new UpdateOwnMonthlyCommissionSettingsCommand(request, actorUserId, actorUserName),
+            ct);
+
+        return result.Status switch
+        {
+            UpdateMonthlyCommissionSettingsStatus.Updated => Ok(Success(result.Settings!)),
+            UpdateMonthlyCommissionSettingsStatus.InvalidSettings => BadRequest(
+                Fail(result.ValidationMessage ?? "The monthly commission settings are invalid")),
+            _ => NotFound(Fail("Brand configuration not found for the authenticated tenant"))
+        };
+    }
+
     private long GetAuthenticatedBrandId()
         => long.TryParse(User.FindFirstValue("brand_id"), out var brandId) && brandId > 0
             ? brandId

@@ -73,6 +73,14 @@ message BrandConfigurationMessage {
   optional string con_payment_address = 34;
   optional int32 blockchain_network_id = 35;
   bool daily_bonus_always_distribute = 36;
+
+  // Monthly commission liquidation (calculate_monthly_commissions). Unrelated to
+  // the per-purchase fields above: this is the periodic payout an administrator
+  // triggers, and every brand liquidates a different payment group.
+  bool monthly_commission_enabled = 37;
+  double monthly_commission_interest_rate = 38;
+  int32 monthly_commission_waiting_days = 39;
+  optional int32 monthly_commission_payment_group_id = 40;
 }
 
 // MatrixConfiguration messages

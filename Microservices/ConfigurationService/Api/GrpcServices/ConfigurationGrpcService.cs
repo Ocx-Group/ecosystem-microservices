@@ -164,6 +164,9 @@ public class ConfigurationGrpcService : ConfigurationGrpc.ConfigurationGrpcBase
             CommissionEnabled = source.CommissionEnabled,
             BonusPercentage = decimal.ToDouble(source.BonusPercentage),
             DailyBonusAlwaysDistribute = source.DailyBonusAlwaysDistribute,
+            MonthlyCommissionEnabled = source.MonthlyCommissionEnabled,
+            MonthlyCommissionInterestRate = decimal.ToDouble(source.MonthlyCommissionInterestRate),
+            MonthlyCommissionWaitingDays = source.MonthlyCommissionWaitingDays,
             PdfTemplateName = source.PdfTemplateName,
             ActivateOnRegistration = source.ActivateOnRegistration,
             WithdrawalValidationType = source.WithdrawalValidationType,
@@ -184,6 +187,8 @@ public class ConfigurationGrpcService : ConfigurationGrpc.ConfigurationGrpcBase
             message.DefaultPaymentGroupId = source.DefaultPaymentGroupId.Value;
         if (source.TradingAcademyPaymentGroupId is not null)
             message.TradingAcademyPaymentGroupId = source.TradingAcademyPaymentGroupId.Value;
+        if (source.MonthlyCommissionPaymentGroupId is not null)
+            message.MonthlyCommissionPaymentGroupId = source.MonthlyCommissionPaymentGroupId.Value;
         if (source.WithdrawalTimeZone is not null)
             message.WithdrawalTimeZone = source.WithdrawalTimeZone;
         if (source.WithdrawalStartHour is not null)

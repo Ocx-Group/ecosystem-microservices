@@ -37,6 +37,33 @@ public class BrandConfiguration
     /// </summary>
     public bool DailyBonusAlwaysDistribute { get; set; }
 
+    // Monthly commission liquidation
+    //
+    // Feeds calculate_monthly_commissions. Unrelated to the per-purchase bonus
+    // above: this is the periodic payout run by an administrator from
+    // admin/calculate-commissions, and every brand liquidates a different
+    // product payment group at its own rate.
+
+    /// <summary>
+    /// While false the liquidation endpoint refuses to run for this brand. New
+    /// brands start disabled so nobody can trigger a payout before the rate,
+    /// the waiting days and the payment group have been reviewed.
+    /// </summary>
+    public bool MonthlyCommissionEnabled { get; set; }
+
+    /// <summary>Percentage of the invoice total paid for a full period.</summary>
+    public decimal MonthlyCommissionInterestRate { get; set; }
+
+    /// <summary>Days an invoice created inside the period waits before earning.</summary>
+    public int MonthlyCommissionWaitingDays { get; set; }
+
+    /// <summary>
+    /// The payment group of the product this brand liquidates. Nullable because a
+    /// brand that never liquidates has none, but it is required to enable the
+    /// feature.
+    /// </summary>
+    public int? MonthlyCommissionPaymentGroupId { get; set; }
+
     // PDF / Invoice branding
     public string PdfTemplateName { get; set; } = null!;
     public string CompanyName { get; set; } = null!;

@@ -437,6 +437,20 @@ public partial class ConfigurationServiceDbContext : DbContext
                 .HasDefaultValueSql("false")
                 .HasColumnName("daily_bonus_always_distribute");
 
+            // Monthly commission liquidation
+            entity.Property(e => e.MonthlyCommissionEnabled)
+                .HasDefaultValueSql("false")
+                .HasColumnName("monthly_commission_enabled");
+            entity.Property(e => e.MonthlyCommissionInterestRate)
+                .HasColumnType("numeric(5,2)")
+                .HasDefaultValueSql("0")
+                .HasColumnName("monthly_commission_interest_rate");
+            entity.Property(e => e.MonthlyCommissionWaitingDays)
+                .HasDefaultValueSql("0")
+                .HasColumnName("monthly_commission_waiting_days");
+            entity.Property(e => e.MonthlyCommissionPaymentGroupId)
+                .HasColumnName("monthly_commission_payment_group_id");
+
             // PDF / Invoice
             entity.Property(e => e.PdfTemplateName).HasColumnName("pdf_template_name");
             entity.Property(e => e.CompanyName).HasColumnName("company_name");

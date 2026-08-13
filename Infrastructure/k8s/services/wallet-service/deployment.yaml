@@ -53,6 +53,17 @@ spec:
               value: "http://inventory-service:50051"
             - name: GrpcServices__ConfigurationService
               value: "http://configuration-service:50051"
+            # Same secret as configuration-service and gateway-service: the admin JWT
+            # issued for the dashboard is what authorizes the monthly liquidation.
+            - name: Jwt__Key
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-credentials
+                  key: key
+            - name: Jwt__Issuer
+              value: "Ecosystem"
+            - name: Jwt__Audience
+              value: "Ecosystem"
             - name: ConnectionStrings__PostgreSqlConnection
               valueFrom:
                 secretKeyRef:

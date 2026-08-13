@@ -132,6 +132,30 @@ public class BrandConfigurationRepository : BaseRepository, IBrandConfigurationR
         return existing;
     }
 
+    public async Task<BrandConfiguration?> UpdateMonthlyCommissionSettingsAsync(
+        long brandId,
+        bool enabled,
+        decimal interestRate,
+        int waitingDays,
+        int? paymentGroupId)
+    {
+        var existing = await Context.BrandConfigurations
+            .Include(x => x.Brand)
+            .FirstOrDefaultAsync(x => x.BrandId == brandId && x.DeletedAt == null);
+
+        if (existing is null)
+            return null;
+
+        existing.MonthlyCommissionEnabled = enabled;
+        existing.MonthlyCommissionInterestRate = interestRate;
+        existing.MonthlyCommissionWaitingDays = waitingDays;
+        existing.MonthlyCommissionPaymentGroupId = paymentGroupId;
+        existing.UpdatedAt = DateTime.UtcNow;
+
+        await Context.SaveChangesAsync();
+        return existing;
+    }
+
     public async Task<BrandConfiguration?> DeleteAsync(long brandId)
     {
         var existing = await Context.BrandConfigurations

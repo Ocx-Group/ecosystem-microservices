@@ -13,5 +13,11 @@ public interface IBrandConfigurationRepository
         bool commissionEnabled,
         decimal[] commissionLevels,
         bool dailyBonusAlwaysDistribute);
+    Task<BrandConfiguration?> UpdateMonthlyCommissionSettingsAsync(
+        long brandId,
+        bool enabled,
+        decimal interestRate,
+        int waitingDays,
+        int? paymentGroupId);
     Task<BrandConfiguration?> DeleteAsync(long brandId);
 }

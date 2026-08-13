@@ -25,6 +25,8 @@ public sealed class BrandingAdministrationContractTests
     [Theory]
     [InlineData(nameof(BrandConfigurationController.GetOwnBranding))]
     [InlineData(nameof(BrandConfigurationController.UpdateOwnBranding))]
+    [InlineData(nameof(BrandConfigurationController.GetOwnMonthlyCommissionSettings))]
+    [InlineData(nameof(BrandConfigurationController.UpdateOwnMonthlyCommissionSettings))]
     public void DashboardEndpoints_RequireBrandAdministratorPolicy(string methodName)
     {
         var method = typeof(BrandConfigurationController).GetMethod(methodName);
@@ -239,6 +241,120 @@ public sealed class BrandingAdministrationContractTests
             CancellationToken.None));
     }
 
+    [Fact]
+    public void MonthlyCommissionRequest_DoesNotAllowClientSelectedBrandId()
+    {
+        Assert.Null(typeof(UpdateMonthlyCommissionSettingsRequest).GetProperty("BrandId"));
+    }
+
+    [Fact]
+    public async Task MonthlyCommissionHandler_UsesAuthenticatedTenantAndInvalidatesItsCache()
+    {
+        var repository = new RecordingRepository();
+        var provider = new RecordingBrandConfigurationProvider();
+
+        var result = await MonthlyCommissionHandler(repository, provider, tenantId: 7).Handle(
+            MonthlyCommissionCommand(ValidMonthlyCommissionRequest()),
+            CancellationToken.None);
+
+        Assert.Equal(UpdateMonthlyCommissionSettingsStatus.Updated, result.Status);
+        Assert.Equal(7, repository.UpdatedBrandId);
+        Assert.Equal(7, result.Settings!.BrandId);
+        Assert.Equal(7, provider.InvalidatedBrandId);
+    }
+
+    /// <summary>
+    /// The rate reaches the database as a NUMERIC(5,2). Storing it rounded is what keeps
+    /// the configured, displayed and actually paid percentages the same number.
+    /// </summary>
+    [Fact]
+    public async Task MonthlyCommissionHandler_RoundsTheRateToTheStoredScale()
+    {
+        var repository = new RecordingRepository();
+
+        var result = await MonthlyCommissionHandler(repository).Handle(
+            MonthlyCommissionCommand(
+                ValidMonthlyCommissionRequest() with { InterestRate = 4.005m }),
+            CancellationToken.None);
+
+        Assert.Equal(UpdateMonthlyCommissionSettingsStatus.Updated, result.Status);
+        Assert.Equal(4.01m, result.Settings!.InterestRate);
+    }
+
+    [Theory]
+    [InlineData(true, 4, 2, null)]      // enabled without a payment group
+    [InlineData(true, 0, 2, 11)]        // enabled with nothing to pay
+    [InlineData(false, -1, 2, 11)]      // negative rate
+    [InlineData(false, 101, 2, 11)]     // rate over the cap
+    [InlineData(false, 4, -1, 11)]      // negative waiting days
+    [InlineData(false, 4, 91, 11)]      // waiting days over the cap
+    [InlineData(false, 4, 2, 0)]        // non-positive payment group
+    public async Task MonthlyCommissionHandler_RejectsSettingsThatWouldBreakThePayout(
+        bool enabled, decimal interestRate, int waitingDays, int? paymentGroupId)
+    {
+        var repository = new RecordingRepository();
+        var provider = new RecordingBrandConfigurationProvider();
+
+        var result = await MonthlyCommissionHandler(repository, provider).Handle(
+            MonthlyCommissionCommand(new UpdateMonthlyCommissionSettingsRequest
+            {
+                Enabled = enabled,
+                InterestRate = interestRate,
+                WaitingDays = waitingDays,
+                PaymentGroupId = paymentGroupId
+            }),
+            CancellationToken.None);
+
+        Assert.Equal(UpdateMonthlyCommissionSettingsStatus.InvalidSettings, result.Status);
+        Assert.NotNull(result.ValidationMessage);
+        Assert.Null(result.Settings);
+        Assert.Null(repository.UpdatedBrandId);
+        Assert.Null(provider.InvalidatedBrandId);
+    }
+
+    [Fact]
+    public async Task MonthlyCommissionHandler_FailsClosedWithoutAuthenticatedTenant()
+    {
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            MonthlyCommissionHandler(tenantId: 0).Handle(
+                MonthlyCommissionCommand(ValidMonthlyCommissionRequest()),
+                CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task MonthlyCommissionHandler_ReportsNotFoundWhenTheTenantHasNoConfiguration()
+    {
+        var result = await MonthlyCommissionHandler(
+                new RecordingRepository { UpdateReturnsNull = true }).Handle(
+            MonthlyCommissionCommand(ValidMonthlyCommissionRequest()),
+            CancellationToken.None);
+
+        Assert.Equal(UpdateMonthlyCommissionSettingsStatus.NotFound, result.Status);
+        Assert.Null(result.Settings);
+    }
+
+    private static UpdateOwnMonthlyCommissionSettingsHandler MonthlyCommissionHandler(
+        RecordingRepository? repository = null,
+        RecordingBrandConfigurationProvider? provider = null,
+        long tenantId = 7)
+        => new(
+            repository ?? new RecordingRepository(),
+            provider ?? new RecordingBrandConfigurationProvider(),
+            new FixedTenantContext(tenantId),
+            NullLogger<UpdateOwnMonthlyCommissionSettingsHandler>.Instance);
+
+    private static UpdateOwnMonthlyCommissionSettingsCommand MonthlyCommissionCommand(
+        UpdateMonthlyCommissionSettingsRequest request)
+        => new(request, "42", "admin");
+
+    private static UpdateMonthlyCommissionSettingsRequest ValidMonthlyCommissionRequest() => new()
+    {
+        Enabled = true,
+        InterestRate = 4m,
+        WaitingDays = 2,
+        PaymentGroupId = 11
+    };
+
     private static UpdateOwnBrandingRequest ValidRequest() => new()
     {
         Name = "Brand Seven",
@@ -308,6 +424,28 @@ public sealed class BrandingAdministrationContractTests
             decimal[] commissionLevels,
             bool dailyBonusAlwaysDistribute)
             => Task.FromResult<BrandConfigurationEntity?>(null);
+
+        public Task<BrandConfigurationEntity?> UpdateMonthlyCommissionSettingsAsync(
+            long brandId,
+            bool enabled,
+            decimal interestRate,
+            int waitingDays,
+            int? paymentGroupId)
+        {
+            if (UpdateReturnsNull)
+                return Task.FromResult<BrandConfigurationEntity?>(null);
+
+            UpdatedBrandId = brandId;
+            return Task.FromResult<BrandConfigurationEntity?>(new BrandConfigurationEntity
+            {
+                BrandId = brandId,
+                MonthlyCommissionEnabled = enabled,
+                MonthlyCommissionInterestRate = interestRate,
+                MonthlyCommissionWaitingDays = waitingDays,
+                MonthlyCommissionPaymentGroupId = paymentGroupId,
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
 
         public Task<BrandConfigurationEntity?> DeleteAsync(long brandId)
             => Task.FromResult<BrandConfigurationEntity?>(null);
