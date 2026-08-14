@@ -1303,14 +1303,61 @@ public class WalletRepository : BaseRepository, IWalletRepository
         string adminUserName,
         long brandId,
         bool dryRun)
+        => await ExecuteMonthlyCommissionsAsync(
+            "SELECT * FROM wallet_service.calculate_monthly_commissions(@StartDate, @EndDate, @InterestRate, "
+            + "@WaitingDays, @PaymentGroup, @AdminUserName, @BrandId, @DryRun)",
+            startDate,
+            endDate,
+            interestRate,
+            waitingDays,
+            adminUserName,
+            brandId,
+            dryRun,
+            cmd => cmd.Parameters.Add(new NpgsqlParameter("@PaymentGroup", NpgsqlDbType.Integer)
+            {
+                Value = paymentGroupId
+            }));
+
+    /// <inheritdoc />
+    public async Task<List<MonthlyCommissionItemDto>> CalculateMonthlyCommissionsByInvoiceAsync(
+        DateOnly startDate,
+        DateOnly endDate,
+        decimal interestRate,
+        int waitingDays,
+        string adminUserName,
+        long brandId,
+        bool dryRun)
+        => await ExecuteMonthlyCommissionsAsync(
+            "SELECT * FROM wallet_service.calculate_monthly_commissions_by_invoice(@StartDate, @EndDate, "
+            + "@InterestRate, @WaitingDays, @AdminUserName, @BrandId, @DryRun)",
+            startDate,
+            endDate,
+            interestRate,
+            waitingDays,
+            adminUserName,
+            brandId,
+            dryRun);
+
+    /// <summary>
+    /// Shared plumbing for the two liquidation functions. They differ only in their name
+    /// and in whether a payment group is passed, so <paramref name="addExtraParameters"/>
+    /// carries that difference and everything the transaction and the reader do stays
+    /// written once.
+    /// </summary>
+    private async Task<List<MonthlyCommissionItemDto>> ExecuteMonthlyCommissionsAsync(
+        string query,
+        DateOnly startDate,
+        DateOnly endDate,
+        decimal interestRate,
+        int waitingDays,
+        string adminUserName,
+        long brandId,
+        bool dryRun,
+        Action<NpgsqlCommand>? addExtraParameters = null)
     {
         var items = new List<MonthlyCommissionItemDto>();
 
         await using var transaction = await Context.Database.BeginTransactionAsync();
-
-        const string query =
-            "SELECT * FROM wallet_service.calculate_monthly_commissions(@StartDate, @EndDate, @InterestRate, "
-            + "@WaitingDays, @PaymentGroup, @AdminUserName, @BrandId, @DryRun)";
 
         await using var cmd = (NpgsqlCommand)Context.Database.GetDbConnection().CreateCommand();
         cmd.CommandText = query;
@@ -1336,17 +1383,14 @@ public class WalletRepository : BaseRepository, IWalletRepository
             Value = waitingDays
         });
 
-        cmd.Parameters.Add(new NpgsqlParameter("@PaymentGroup", NpgsqlDbType.Integer)
-        {
-            Value = paymentGroupId
-        });
+        addExtraParameters?.Invoke(cmd);
 
         cmd.Parameters.Add(new NpgsqlParameter("@AdminUserName", NpgsqlDbType.Text)
         {
             Value = adminUserName
         });
 
-        // The function declares p_brand_id as integer, so the long is narrowed here
+        // The functions declare p_brand_id as integer, so the long is narrowed here
         // instead of letting Npgsql fail to resolve the overload.
         cmd.Parameters.Add(new NpgsqlParameter("@BrandId", NpgsqlDbType.Integer)
         {

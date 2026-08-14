@@ -29,8 +29,31 @@ public sealed class UpdateOwnMonthlyCommissionSettingsHandler(
         var interestRate = Math.Round(
             settings.InterestRate, 2, MidpointRounding.AwayFromZero);
 
+        // Read first, because the source decides whether a payment group is required and
+        // an omitted Source means "keep whatever is stored" rather than "PaymentGroup".
+        var current = await repository.GetByBrandIdAsync(brandId);
+
+        if (current is null)
+            return new UpdateMonthlyCommissionSettingsResult(
+                UpdateMonthlyCommissionSettingsStatus.NotFound, null);
+
+        var requestedSource = settings.Source ?? current.MonthlyCommissionSource;
+
+        if (!MonthlyCommissionSources.IsValid(requestedSource))
+            return new UpdateMonthlyCommissionSettingsResult(
+                UpdateMonthlyCommissionSettingsStatus.InvalidSettings,
+                null,
+                $"The monthly commission source must be "
+                + $"'{MonthlyCommissionSources.PaymentGroup}' or "
+                + $"'{MonthlyCommissionSources.InvoiceTotal}'.");
+
+        // Stored in the canonical casing so the column never accumulates variants.
+        var source = MonthlyCommissionSources.IsInvoiceTotal(requestedSource)
+            ? MonthlyCommissionSources.InvoiceTotal
+            : MonthlyCommissionSources.PaymentGroup;
+
         var validationMessage = Validate(
-            settings.Enabled, interestRate, settings.WaitingDays, settings.PaymentGroupId);
+            settings.Enabled, interestRate, settings.WaitingDays, settings.PaymentGroupId, source);
 
         if (validationMessage is not null)
         {
@@ -47,7 +70,8 @@ public sealed class UpdateOwnMonthlyCommissionSettingsHandler(
             settings.Enabled,
             interestRate,
             settings.WaitingDays,
-            settings.PaymentGroupId);
+            settings.PaymentGroupId,
+            source);
 
         if (saved is null)
             return new UpdateMonthlyCommissionSettingsResult(
@@ -60,14 +84,16 @@ public sealed class UpdateOwnMonthlyCommissionSettingsHandler(
 
         logger.LogInformation(
             "Monthly commission settings updated for BrandId {BrandId} by admin user {ActorUserId} ({ActorUserName}): "
-            + "enabled={Enabled}, rate={InterestRate}, waitingDays={WaitingDays}, paymentGroup={PaymentGroupId}",
+            + "enabled={Enabled}, rate={InterestRate}, waitingDays={WaitingDays}, paymentGroup={PaymentGroupId}, "
+            + "source={Source}",
             brandId,
             request.ActorUserId,
             request.ActorUserName,
             settings.Enabled,
             interestRate,
             settings.WaitingDays,
-            settings.PaymentGroupId);
+            settings.PaymentGroupId,
+            source);
 
         return new UpdateMonthlyCommissionSettingsResult(
             UpdateMonthlyCommissionSettingsStatus.Updated,
@@ -80,7 +106,7 @@ public sealed class UpdateOwnMonthlyCommissionSettingsHandler(
     /// <c>calculate_monthly_commissions</c>, which credits wallets.
     /// </summary>
     private static string? Validate(
-        bool enabled, decimal interestRate, int waitingDays, int? paymentGroupId)
+        bool enabled, decimal interestRate, int waitingDays, int? paymentGroupId, string source)
     {
         if (interestRate < 0)
             return "The interest rate cannot be negative.";
@@ -98,8 +124,12 @@ public sealed class UpdateOwnMonthlyCommissionSettingsHandler(
             return "The payment group must be a positive identifier.";
 
         // Without a payment group the function has nothing to select invoices by, so
-        // enabling the feature would either pay nothing or fault at run time.
-        if (enabled && paymentGroupId is null)
+        // enabling the feature would either pay nothing or fault at run time. Under the
+        // InvoiceTotal source the group is not used at all, so requiring it there would
+        // only force an admin to pick a meaningless value.
+        if (enabled
+            && paymentGroupId is null
+            && !MonthlyCommissionSources.IsInvoiceTotal(source))
             return "A payment group is required while the monthly commission is enabled.";
 
         if (enabled && interestRate == 0)

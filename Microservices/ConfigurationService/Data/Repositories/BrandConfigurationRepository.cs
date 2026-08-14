@@ -137,7 +137,8 @@ public class BrandConfigurationRepository : BaseRepository, IBrandConfigurationR
         bool enabled,
         decimal interestRate,
         int waitingDays,
-        int? paymentGroupId)
+        int? paymentGroupId,
+        string source)
     {
         var existing = await Context.BrandConfigurations
             .Include(x => x.Brand)
@@ -150,6 +151,7 @@ public class BrandConfigurationRepository : BaseRepository, IBrandConfigurationR
         existing.MonthlyCommissionInterestRate = interestRate;
         existing.MonthlyCommissionWaitingDays = waitingDays;
         existing.MonthlyCommissionPaymentGroupId = paymentGroupId;
+        existing.MonthlyCommissionSource = source;
         existing.UpdatedAt = DateTime.UtcNow;
 
         await Context.SaveChangesAsync();

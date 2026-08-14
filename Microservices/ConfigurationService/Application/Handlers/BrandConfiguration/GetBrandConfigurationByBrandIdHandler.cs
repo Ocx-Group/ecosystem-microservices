@@ -54,6 +54,7 @@ public class GetBrandConfigurationByBrandIdHandler
             MonthlyCommissionInterestRate = entity.MonthlyCommissionInterestRate,
             MonthlyCommissionWaitingDays = entity.MonthlyCommissionWaitingDays,
             MonthlyCommissionPaymentGroupId = entity.MonthlyCommissionPaymentGroupId,
+            MonthlyCommissionSource = entity.MonthlyCommissionSource,
             PdfTemplateName = entity.PdfTemplateName,
             CompanyName = entity.CompanyName,
             CompanyIdentifier = entity.CompanyIdentifier,

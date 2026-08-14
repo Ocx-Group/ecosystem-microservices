@@ -312,6 +312,64 @@ public sealed class BrandingAdministrationContractTests
         Assert.Null(provider.InvalidatedBrandId);
     }
 
+    /// <summary>
+    /// RecyBot liquidates on the invoice total, and that procedure takes no payment group.
+    /// Demanding one anyway would make the only brand that needs it impossible to enable.
+    /// </summary>
+    [Fact]
+    public async Task MonthlyCommissionHandler_AllowsAnEnabledInvoiceTotalBrandWithoutAPaymentGroup()
+    {
+        var repository = new RecordingRepository
+        {
+            StoredMonthlyCommissionSource = MonthlyCommissionSources.InvoiceTotal
+        };
+
+        var result = await MonthlyCommissionHandler(repository).Handle(
+            MonthlyCommissionCommand(
+                ValidMonthlyCommissionRequest() with { PaymentGroupId = null }),
+            CancellationToken.None);
+
+        Assert.Equal(UpdateMonthlyCommissionSettingsStatus.Updated, result.Status);
+        Assert.Equal(MonthlyCommissionSources.InvoiceTotal, result.Settings!.Source);
+    }
+
+    /// <summary>
+    /// The three dashboards do not send this field. Treating its absence as a reset would
+    /// switch RecyBot back to a procedure that finds none of its invoices, silently, the
+    /// next time an administrator saved the rate.
+    /// </summary>
+    [Fact]
+    public async Task MonthlyCommissionHandler_KeepsTheStoredSourceWhenTheRequestOmitsIt()
+    {
+        var repository = new RecordingRepository
+        {
+            StoredMonthlyCommissionSource = MonthlyCommissionSources.InvoiceTotal
+        };
+
+        var result = await MonthlyCommissionHandler(repository).Handle(
+            MonthlyCommissionCommand(ValidMonthlyCommissionRequest()),
+            CancellationToken.None);
+
+        Assert.Equal(UpdateMonthlyCommissionSettingsStatus.Updated, result.Status);
+        Assert.Equal(
+            MonthlyCommissionSources.InvoiceTotal,
+            repository.UpdatedMonthlyCommissionSource);
+    }
+
+    [Fact]
+    public async Task MonthlyCommissionHandler_RejectsAnUnknownSource()
+    {
+        var repository = new RecordingRepository();
+
+        var result = await MonthlyCommissionHandler(repository).Handle(
+            MonthlyCommissionCommand(
+                ValidMonthlyCommissionRequest() with { Source = "WholeLedger" }),
+            CancellationToken.None);
+
+        Assert.Equal(UpdateMonthlyCommissionSettingsStatus.InvalidSettings, result.Status);
+        Assert.Null(repository.UpdatedBrandId);
+    }
+
     [Fact]
     public async Task MonthlyCommissionHandler_FailsClosedWithoutAuthenticatedTenant()
     {
@@ -393,11 +451,25 @@ public sealed class BrandingAdministrationContractTests
     private sealed class RecordingRepository : IBrandConfigurationRepository
     {
         public long? UpdatedBrandId { get; private set; }
+        public string? UpdatedMonthlyCommissionSource { get; private set; }
         public List<BrandConfigurationEntity> Existing { get; } = [];
         public bool UpdateReturnsNull { get; init; }
 
+        /// <summary>
+        /// The stored source this repository reports. The monthly commission handler reads
+        /// the brand before validating, because an omitted source on the request means
+        /// "keep what is stored".
+        /// </summary>
+        public string StoredMonthlyCommissionSource { get; init; } = "PaymentGroup";
+
         public Task<BrandConfigurationEntity?> GetByBrandIdAsync(long brandId)
-            => Task.FromResult<BrandConfigurationEntity?>(null);
+            => Task.FromResult(UpdateReturnsNull
+                ? null
+                : new BrandConfigurationEntity
+                {
+                    BrandId = brandId,
+                    MonthlyCommissionSource = StoredMonthlyCommissionSource
+                });
 
         public Task<List<BrandConfigurationEntity>> GetAllAsync()
             => Task.FromResult(Existing);
@@ -430,12 +502,14 @@ public sealed class BrandingAdministrationContractTests
             bool enabled,
             decimal interestRate,
             int waitingDays,
-            int? paymentGroupId)
+            int? paymentGroupId,
+            string source)
         {
             if (UpdateReturnsNull)
                 return Task.FromResult<BrandConfigurationEntity?>(null);
 
             UpdatedBrandId = brandId;
+            UpdatedMonthlyCommissionSource = source;
             return Task.FromResult<BrandConfigurationEntity?>(new BrandConfigurationEntity
             {
                 BrandId = brandId,
@@ -443,6 +517,7 @@ public sealed class BrandingAdministrationContractTests
                 MonthlyCommissionInterestRate = interestRate,
                 MonthlyCommissionWaitingDays = waitingDays,
                 MonthlyCommissionPaymentGroupId = paymentGroupId,
+                MonthlyCommissionSource = source,
                 UpdatedAt = DateTime.UtcNow
             });
         }

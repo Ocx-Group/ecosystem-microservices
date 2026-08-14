@@ -115,6 +115,11 @@ public class GrpcConfigurationAdapter : IConfigurationAdapter
             MonthlyCommissionPaymentGroupId = source.HasMonthlyCommissionPaymentGroupId
                 ? source.MonthlyCommissionPaymentGroupId
                 : null,
+            // A proto3 string defaults to "" rather than null, and an unrecognised value
+            // means the same thing here: fall back to the long-standing procedure.
+            MonthlyCommissionSource = MonthlyCommissionSources.IsInvoiceTotal(source.MonthlyCommissionSource)
+                ? MonthlyCommissionSources.InvoiceTotal
+                : MonthlyCommissionSources.PaymentGroup,
             PdfTemplateName = source.PdfTemplateName,
             CompanyName = source.CompanyName,
             CompanyIdentifier = source.HasCompanyIdentifier ? source.CompanyIdentifier : null,

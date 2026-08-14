@@ -81,6 +81,10 @@ message BrandConfigurationMessage {
   double monthly_commission_interest_rate = 38;
   int32 monthly_commission_waiting_days = 39;
   optional int32 monthly_commission_payment_group_id = 40;
+  // "PaymentGroup" or "InvoiceTotal": which of the two liquidation procedures runs.
+  // Not optional — an empty string from an older ConfigurationService falls back to
+  // the payment-group procedure, which is the behaviour that predates this field.
+  string monthly_commission_source = 41;
 }
 
 // MatrixConfiguration messages

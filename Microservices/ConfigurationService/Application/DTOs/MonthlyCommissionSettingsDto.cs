@@ -27,6 +27,12 @@ public sealed record MonthlyCommissionSettingsDto
     /// <summary>Payment group of the product this brand liquidates.</summary>
     public int? PaymentGroupId { get; init; }
 
+    /// <summary>
+    /// <c>PaymentGroup</c> or <c>InvoiceTotal</c> — which stored procedure liquidates
+    /// this brand. See <c>MonthlyCommissionSources</c> in the shared kernel.
+    /// </summary>
+    public string Source { get; init; } = "PaymentGroup";
+
     public DateTime UpdatedAt { get; init; }
 }
 
@@ -46,6 +52,14 @@ public sealed record UpdateMonthlyCommissionSettingsRequest
     public int WaitingDays { get; init; }
 
     public int? PaymentGroupId { get; init; }
+
+    /// <summary>
+    /// Nullable so that omitting it leaves the stored source untouched. The three
+    /// dashboards do not send this field, and treating "absent" as "reset to
+    /// PaymentGroup" would silently switch RecyBot back to a procedure that finds none
+    /// of its invoices the next time an admin saves the rate.
+    /// </summary>
+    public string? Source { get; init; }
 }
 
 public static class MonthlyCommissionSettingsLimits

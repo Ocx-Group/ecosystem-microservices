@@ -18,6 +18,7 @@ public interface IBrandConfigurationRepository
         bool enabled,
         decimal interestRate,
         int waitingDays,
-        int? paymentGroupId);
+        int? paymentGroupId,
+        string source);
     Task<BrandConfiguration?> DeleteAsync(long brandId);
 }

@@ -1,3 +1,4 @@
+using Ecosystem.Domain.Core.BrandConfiguration;
 using Ecosystem.Domain.Core.Caching;
 using Ecosystem.Domain.Core.MultiTenancy;
 using Ecosystem.WalletService.Application.Adapters;
@@ -76,8 +77,16 @@ public class CalculateMonthlyCommissionsHandler
         var paymentGroupId = request.PaymentGroupId
             ?? brandConfiguration.MonthlyCommissionPaymentGroupId;
 
+        // Which of the two stored procedures runs is a property of the brand's data, not
+        // of the request: RecyBot's invoices carry no rows in invoices_details, so the
+        // payment-group procedure — which reaches an invoice through its details — finds
+        // none of them. The screen cannot override this.
+        var byInvoiceTotal = MonthlyCommissionSources.IsInvoiceTotal(
+            brandConfiguration.MonthlyCommissionSource);
+
         var validationMessage = Validate(
-            request.StartDate, request.EndDate, interestRate, waitingDays, paymentGroupId);
+            request.StartDate, request.EndDate, interestRate, waitingDays, paymentGroupId,
+            byInvoiceTotal);
 
         if (validationMessage is not null)
         {
@@ -89,15 +98,24 @@ public class CalculateMonthlyCommissionsHandler
                 CalculateMonthlyCommissionsStatus.InvalidRequest, null, validationMessage);
         }
 
-        var items = await _walletRepository.CalculateMonthlyCommissionsAsync(
-            request.StartDate,
-            request.EndDate,
-            interestRate,
-            waitingDays,
-            paymentGroupId!.Value,
-            brandConfiguration.AdminUserName,
-            brandId,
-            request.DryRun);
+        var items = byInvoiceTotal
+            ? await _walletRepository.CalculateMonthlyCommissionsByInvoiceAsync(
+                request.StartDate,
+                request.EndDate,
+                interestRate,
+                waitingDays,
+                brandConfiguration.AdminUserName,
+                brandId,
+                request.DryRun)
+            : await _walletRepository.CalculateMonthlyCommissionsAsync(
+                request.StartDate,
+                request.EndDate,
+                interestRate,
+                waitingDays,
+                paymentGroupId!.Value,
+                brandConfiguration.AdminUserName,
+                brandId,
+                request.DryRun);
 
         var result = new MonthlyCommissionResultDto
         {
@@ -108,7 +126,10 @@ public class CalculateMonthlyCommissionsHandler
             EndDate = request.EndDate,
             InterestRate = interestRate,
             WaitingDays = waitingDays,
-            PaymentGroupId = paymentGroupId.Value,
+            PaymentGroupId = byInvoiceTotal ? null : paymentGroupId,
+            Source = byInvoiceTotal
+                ? MonthlyCommissionSources.InvoiceTotal
+                : MonthlyCommissionSources.PaymentGroup,
             Items = items
         };
 
@@ -117,10 +138,11 @@ public class CalculateMonthlyCommissionsHandler
             _logger.LogInformation(
                 "Monthly commission simulated for BrandId {BrandId} by admin user {ActorUserId} ({ActorUserName}): "
                 + "period {StartDate}..{EndDate}, rate={InterestRate}, waitingDays={WaitingDays}, "
-                + "paymentGroup={PaymentGroupId} — {RowsAffected} affiliates, {TotalCredit} total",
+                + "source={Source}, paymentGroup={PaymentGroupId} — {RowsAffected} affiliates, "
+                + "{TotalCredit} total",
                 brandId, command.ActorUserId, command.ActorUserName,
                 request.StartDate, request.EndDate, interestRate, waitingDays,
-                paymentGroupId.Value, result.RowsAffected, result.TotalCredit);
+                result.Source, result.PaymentGroupId, result.RowsAffected, result.TotalCredit);
 
             return new CalculateMonthlyCommissionsResult(
                 CalculateMonthlyCommissionsStatus.Completed, result);
@@ -134,10 +156,11 @@ public class CalculateMonthlyCommissionsHandler
         _logger.LogInformation(
             "Monthly commission liquidated for BrandId {BrandId} by admin user {ActorUserId} ({ActorUserName}): "
             + "period {StartDate}..{EndDate}, rate={InterestRate}, waitingDays={WaitingDays}, "
-            + "paymentGroup={PaymentGroupId} — {RowsAffected} affiliates credited, {TotalCredit} total",
+            + "source={Source}, paymentGroup={PaymentGroupId} — {RowsAffected} affiliates credited, "
+            + "{TotalCredit} total",
             brandId, command.ActorUserId, command.ActorUserName,
             request.StartDate, request.EndDate, interestRate, waitingDays,
-            paymentGroupId.Value, result.RowsAffected, result.TotalCredit);
+            result.Source, result.PaymentGroupId, result.RowsAffected, result.TotalCredit);
 
         return new CalculateMonthlyCommissionsResult(
             CalculateMonthlyCommissionsStatus.Completed, result);
@@ -152,7 +175,8 @@ public class CalculateMonthlyCommissionsHandler
         DateOnly endDate,
         decimal interestRate,
         int waitingDays,
-        int? paymentGroupId)
+        int? paymentGroupId,
+        bool byInvoiceTotal)
     {
         if (startDate > endDate)
             return "The start date cannot be after the end date.";
@@ -178,7 +202,9 @@ public class CalculateMonthlyCommissionsHandler
         if (waitingDays > days)
             return "The waiting days cannot exceed the length of the period.";
 
-        if (paymentGroupId is null or <= 0)
+        // The by-invoice procedure takes no payment group at all, so demanding one would
+        // block the only brand that uses it.
+        if (!byInvoiceTotal && paymentGroupId is null or <= 0)
             return "A payment group is required to liquidate.";
 
         return null;

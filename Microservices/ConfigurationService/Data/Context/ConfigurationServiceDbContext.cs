@@ -450,6 +450,10 @@ public partial class ConfigurationServiceDbContext : DbContext
                 .HasColumnName("monthly_commission_waiting_days");
             entity.Property(e => e.MonthlyCommissionPaymentGroupId)
                 .HasColumnName("monthly_commission_payment_group_id");
+            entity.Property(e => e.MonthlyCommissionSource)
+                .HasMaxLength(32)
+                .HasDefaultValueSql("'PaymentGroup'")
+                .HasColumnName("monthly_commission_source");
 
             // PDF / Invoice
             entity.Property(e => e.PdfTemplateName).HasColumnName("pdf_template_name");

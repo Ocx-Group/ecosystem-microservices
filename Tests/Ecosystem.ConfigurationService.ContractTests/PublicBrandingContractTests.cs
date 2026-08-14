@@ -155,7 +155,8 @@ public sealed class PublicBrandingContractTests
             "37:monthly_commission_enabled",
             "38:monthly_commission_interest_rate",
             "39:monthly_commission_waiting_days",
-            "40:monthly_commission_payment_group_id"
+            "40:monthly_commission_payment_group_id",
+            "41:monthly_commission_source"
         };
 
         Assert.Equal(expected, actual);

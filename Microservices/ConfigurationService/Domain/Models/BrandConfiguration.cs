@@ -59,10 +59,24 @@ public class BrandConfiguration
 
     /// <summary>
     /// The payment group of the product this brand liquidates. Nullable because a
-    /// brand that never liquidates has none, but it is required to enable the
-    /// feature.
+    /// brand that never liquidates has none, and because the
+    /// <see cref="MonthlyCommissionSources.InvoiceTotal"/> source ignores it; it is
+    /// required to enable the feature under the payment-group source.
     /// </summary>
     public int? MonthlyCommissionPaymentGroupId { get; set; }
+
+    /// <summary>
+    /// Which stored procedure WalletService calls for this brand. The accepted values
+    /// live in <c>Ecosystem.Domain.Core.BrandConfiguration.MonthlyCommissionSources</c>
+    /// (<c>PaymentGroup</c> / <c>InvoiceTotal</c>); the literal is repeated here because
+    /// this project deliberately has no reference to the shared kernel. Defaults to the
+    /// payment-group variant, so an existing brand keeps behaving exactly as before.
+    ///
+    /// RecyBot needs <c>InvoiceTotal</c>: its invoices came over from RecyCoin through
+    /// a data migration that wrote no <c>invoices_details</c> rows, and the
+    /// payment-group procedure reaches invoices only through their details.
+    /// </summary>
+    public string MonthlyCommissionSource { get; set; } = "PaymentGroup";
 
     // PDF / Invoice branding
     public string PdfTemplateName { get; set; } = null!;

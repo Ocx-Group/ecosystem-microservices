@@ -47,6 +47,11 @@ public record BrandConfigurationDto
     /// <summary>Payment group of the product this brand liquidates.</summary>
     public int? MonthlyCommissionPaymentGroupId { get; init; }
 
+    /// <summary>
+    /// Which liquidation procedure this brand uses — see <see cref="MonthlyCommissionSources"/>.
+    /// </summary>
+    public string MonthlyCommissionSource { get; init; } = MonthlyCommissionSources.PaymentGroup;
+
     // PDF / Invoice branding
     public string PdfTemplateName { get; init; } = null!;
     public string CompanyName { get; init; } = null!;

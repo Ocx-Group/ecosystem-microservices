@@ -24,7 +24,18 @@ public sealed record MonthlyCommissionResultDto
     /// <summary>The parameters actually used, after brand defaults were applied.</summary>
     public decimal InterestRate { get; init; }
     public int WaitingDays { get; init; }
-    public int PaymentGroupId { get; init; }
+
+    /// <summary>
+    /// Null when the brand liquidates on the invoice total, since that procedure takes
+    /// no payment group.
+    /// </summary>
+    public int? PaymentGroupId { get; init; }
+
+    /// <summary>
+    /// Which procedure ran — <c>PaymentGroup</c> or <c>InvoiceTotal</c>. Echoed back so a
+    /// run that returns nothing can be told apart from a run against the wrong source.
+    /// </summary>
+    public string Source { get; init; } = string.Empty;
 
     public IReadOnlyList<MonthlyCommissionItemDto> Items { get; init; } = [];
 }

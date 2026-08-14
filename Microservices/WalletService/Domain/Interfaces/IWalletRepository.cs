@@ -72,6 +72,21 @@ public interface IWalletRepository
         string adminUserName,
         long brandId,
         bool dryRun);
+
+    /// <summary>
+    /// Runs <c>calculate_monthly_commissions_by_invoice</c>, which sums
+    /// <c>invoices.total_invoice</c> without joining <c>invoices_details</c> and so takes
+    /// no payment group. For brands whose invoices carry no detail rows — see
+    /// <c>MonthlyCommissionSources.InvoiceTotal</c>.
+    /// </summary>
+    Task<List<MonthlyCommissionItemDto>> CalculateMonthlyCommissionsByInvoiceAsync(
+        DateOnly startDate,
+        DateOnly endDate,
+        decimal interestRate,
+        int waitingDays,
+        string adminUserName,
+        long brandId,
+        bool dryRun);
     Task<decimal> GetTotalCommissionsPaid(long brandId);
     Task<decimal> GetCommissionsForAdminAsync(long brandId);
     Task<Wallet> CreateAsync(Wallet request);

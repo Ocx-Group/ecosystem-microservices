@@ -167,6 +167,7 @@ public class ConfigurationGrpcService : ConfigurationGrpc.ConfigurationGrpcBase
             MonthlyCommissionEnabled = source.MonthlyCommissionEnabled,
             MonthlyCommissionInterestRate = decimal.ToDouble(source.MonthlyCommissionInterestRate),
             MonthlyCommissionWaitingDays = source.MonthlyCommissionWaitingDays,
+            MonthlyCommissionSource = source.MonthlyCommissionSource,
             PdfTemplateName = source.PdfTemplateName,
             ActivateOnRegistration = source.ActivateOnRegistration,
             WithdrawalValidationType = source.WithdrawalValidationType,

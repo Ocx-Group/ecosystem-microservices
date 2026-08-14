@@ -28,6 +28,7 @@ public sealed class GetOwnMonthlyCommissionSettingsHandler(
         InterestRate = entity.MonthlyCommissionInterestRate,
         WaitingDays = entity.MonthlyCommissionWaitingDays,
         PaymentGroupId = entity.MonthlyCommissionPaymentGroupId,
+        Source = entity.MonthlyCommissionSource,
         UpdatedAt = entity.UpdatedAt
     };
 }
