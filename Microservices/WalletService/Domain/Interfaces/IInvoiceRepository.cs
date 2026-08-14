@@ -1,5 +1,6 @@
 using Ecosystem.WalletService.Domain.CustomModels;
 using Ecosystem.WalletService.Domain.Models;
+using Ecosystem.WalletService.Domain.DTOs.InvoiceDto;
 using Ecosystem.WalletService.Domain.DTOs.PaginationDto;
 using Ecosystem.WalletService.Domain.Requests.PaginationRequest;
 using Ecosystem.WalletService.Domain.Requests.WalletRequest;
@@ -26,5 +27,6 @@ public interface IInvoiceRepository
     Task<List<InvoiceModelOneAndTwoResponse>?> GetAllInvoicesModelOneAndTwo();
     Task<int> CountDetailsModel3ByPaymentGroup(int userId, long brandId);
     Task<decimal> GetTotalAdquisitionsAdmin(long brandId, int paymentGroupId);
+    Task<List<MonthlyPurchasesDto>> GetMonthlyPurchasesTotals(long brandId, DateTime startDate);
     IAsyncEnumerable<List<Invoice>> GetInvoicesInBatches(DateTime? startDate, DateTime? endDate, int batchSize, long brandId);
 }

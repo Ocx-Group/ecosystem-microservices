@@ -31,6 +31,16 @@ public class InvoiceController : BaseController
         return Ok(Success(result));
     }
 
+    [HttpGet("GetMonthlyPurchasesSummary")]
+    public async Task<IActionResult> GetMonthlyPurchasesSummary([FromQuery] int months = 12)
+    {
+        if (months is < 1 or > 60)
+            return BadRequest(Fail("The months parameter must be between 1 and 60."));
+
+        var result = await _mediator.Send(new GetMonthlyPurchasesSummaryQuery(months));
+        return Ok(Success(result));
+    }
+
     [HttpPost("RevertCoinPaymentTransactions")]
     public async Task<IActionResult> RevertCoinPaymentTransactions()
     {

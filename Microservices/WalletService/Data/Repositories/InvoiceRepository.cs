@@ -11,6 +11,7 @@ using Ecosystem.WalletService.Domain.Models;
 using Ecosystem.WalletService.Domain.Interfaces;
 using Ecosystem.WalletService.Domain.Configuration;
 using Ecosystem.WalletService.Domain.Constants;
+using Ecosystem.WalletService.Domain.DTOs.InvoiceDto;
 using Ecosystem.WalletService.Domain.DTOs.PaginationDto;
 using Ecosystem.WalletService.Domain.Requests.PaginationRequest;
 using Ecosystem.WalletService.Domain.Requests.WalletRequest;
@@ -406,7 +407,23 @@ public class InvoiceRepository : BaseRepository, IInvoiceRepository
                 x.Invoice.BrandId == brandId &&
                 x.PaymentGroupId == paymentGroupId)
             .SumAsync(x => x.BaseAmount ?? 0);
-    
+
+    public Task<List<MonthlyPurchasesDto>> GetMonthlyPurchasesTotals(long brandId, DateTime startDate)
+        => Context.Invoices
+            .Where(x => x.BrandId == brandId &&
+                        x.Status &&
+                        !x.CancellationDate.HasValue &&
+                        !x.DeletedAt.HasValue &&
+                        x.CreatedAt >= startDate)
+            .GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month })
+            .Select(g => new MonthlyPurchasesDto
+            {
+                Year = g.Key.Year,
+                Month = g.Key.Month,
+                TotalAmount = g.Sum(x => x.TotalInvoice ?? 0)
+            })
+            .ToListAsync();
+
     public async IAsyncEnumerable<List<Invoice>> GetInvoicesInBatches(DateTime? startDate, DateTime? endDate, int batchSize, long brandId)
     {
         int skip = 0;
