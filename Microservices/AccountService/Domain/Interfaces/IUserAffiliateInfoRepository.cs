@@ -38,6 +38,7 @@ public interface IUserAffiliateInfoRepository
     Task<int> GetDirectAffiliatesCount(int affiliateId);
     Task<long[]> WhatUsersHave2Children(long[] affiliateIds);
     Task<ICollection<UsersAffiliate>?> GetLastRegisteredUsers(long brandId);
+    Task<List<MonthlyRegistrations>> GetMonthlyRegistrationsTotals(long brandId, DateTime startDate);
     Task<List<UsersAffiliate>> GetChildrenByFatherId(int fatherId, long brandId);
     Task<List<MatrixTree>> GetMatrixFamilyTreeByMatrixType(int maxLevels, byte isAdmin, int matrixType, int id = 0);
     Task<int> CountQualifiedChildrenByMatrixAsync(int userId, int matrixType);

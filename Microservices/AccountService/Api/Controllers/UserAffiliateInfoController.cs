@@ -283,4 +283,16 @@ public class UserAffiliateInfoController : BaseController
         var result = await _mediator.Send(new GetLastRegisteredUsersQuery(), ct);
         return Ok(Success(result));
     }
+
+    [HttpGet("getMonthlyRegistrationsSummary")]
+    public async Task<IActionResult> GetMonthlyRegistrationsSummary([FromQuery] int? months, CancellationToken ct)
+    {
+        var requestedMonths = months ?? 12;
+
+        if (requestedMonths is < 1 or > 60)
+            return Ok(Fail("The months parameter must be between 1 and 60."));
+
+        var result = await _mediator.Send(new GetMonthlyRegistrationsSummaryQuery(requestedMonths), ct);
+        return Ok(Success(result));
+    }
 }

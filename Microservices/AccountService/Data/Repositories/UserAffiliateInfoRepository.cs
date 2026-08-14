@@ -271,6 +271,20 @@ public class UserAffiliateInfoRepository : BaseRepository, IUserAffiliateInfoRep
             .Take(8).AsNoTracking().ToListAsync();
     }
 
+    public Task<List<MonthlyRegistrations>> GetMonthlyRegistrationsTotals(long brandId, DateTime startDate)
+        => Context.UsersAffiliates
+            .Where(x => x.BrandId == brandId &&
+                        x.DeletedAt == null &&
+                        x.CreatedAt >= startDate)
+            .GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month })
+            .Select(g => new MonthlyRegistrations
+            {
+                Year = g.Key.Year,
+                Month = g.Key.Month,
+                Total = g.LongCount()
+            })
+            .ToListAsync();
+
     public async Task<List<UsersAffiliate>> GetChildrenByFatherId(int fatherId, long brandId)
     {
         return await Context.UsersAffiliates
