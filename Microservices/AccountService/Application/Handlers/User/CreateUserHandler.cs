@@ -23,6 +23,11 @@ public class CreateUserHandler : IRequestHandler<CreateUserCommand, UserDto?>
 
     public async Task<UserDto?> Handle(CreateUserCommand request, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrEmpty(request.UserName)
+            || string.IsNullOrEmpty(request.Email)
+            || string.IsNullOrEmpty(request.Password))
+            return null;
+
         var passwordHash = PasswordHelper.HashPassword(request.Password);
 
         if (string.IsNullOrEmpty(passwordHash))

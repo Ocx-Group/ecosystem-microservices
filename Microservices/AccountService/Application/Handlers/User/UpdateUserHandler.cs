@@ -27,15 +27,16 @@ public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, UserDto?>
         if (user is null || string.IsNullOrEmpty(user.Username) || string.IsNullOrEmpty(user.Email))
             return null;
 
-        user.Username = request.UserName ?? "";
-        user.Name = request.Name;
-        user.LastName = request.LastName;
-        user.Email = request.Email ?? "";
-        user.RolId = request.RolId;
-        user.Phone = request.Phone;
-        user.Address = request.Address;
-        user.Observation = request.Observation;
-        user.Status = request.Status;
+        // A field absent from the payload must leave the stored value untouched.
+        user.Username = request.UserName ?? user.Username;
+        user.Name = request.Name ?? user.Name;
+        user.LastName = request.LastName ?? user.LastName;
+        user.Email = request.Email ?? user.Email;
+        user.RolId = request.RolId ?? user.RolId;
+        user.Phone = request.Phone ?? user.Phone;
+        user.Address = request.Address ?? user.Address;
+        user.Observation = request.Observation ?? user.Observation;
+        user.Status = request.Status ?? user.Status;
         user.BrandId = _tenantContext.TenantId;
 
         user = await _userRepository.UpdateUserAsync(user);

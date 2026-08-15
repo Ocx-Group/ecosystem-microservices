@@ -41,7 +41,7 @@ public class UpdateAffiliateHandler : IRequestHandler<UpdateAffiliateCommand, Us
         user.LegalAuthorizedFirst = request.LegalAuthorizedFirst ?? user.LegalAuthorizedFirst;
         user.LegalAuthorizedSecond = request.LegalAuthorizedSecond ?? user.LegalAuthorizedSecond;
         user.Sponsor = request.Sponsor ?? user.Sponsor;
-        user.TermsConditions = request.TermsConditions;
+        user.TermsConditions = request.TermsConditions ?? user.TermsConditions;
         user.BrandId = _tenantContext.TenantId;
         user.BeneficiaryEmail = request.BeneficiaryEmail ?? user.BeneficiaryEmail;
         user.BeneficiaryPhone = request.BeneficiaryPhone ?? user.BeneficiaryPhone;

@@ -38,6 +38,18 @@ public class CreateAffiliateHandler : IRequestHandler<CreateAffiliateCommand, Se
 
     public async Task<ServicesResponse> Handle(CreateAffiliateCommand request, CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(request.UserName)
+            || string.IsNullOrWhiteSpace(request.Email)
+            || string.IsNullOrWhiteSpace(request.Password))
+        {
+            return new ServicesResponse
+            {
+                Success = false,
+                Message = "UserName, Email and Password are required.",
+                Code = 400
+            };
+        }
+
         var brandId = _tenantContext.TenantId;
         var brandConfiguration = await _configurationServiceAdapter
             .GetBrandConfigurationAsync(brandId, ct);

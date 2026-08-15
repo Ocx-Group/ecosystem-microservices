@@ -25,10 +25,10 @@ public class UpdateUserProfileHandler : IRequestHandler<UpdateUserProfileCommand
         var user = await _repo.GetAffiliateByIdAsync(request.Id, _tenantContext.TenantId);
         if (user is null) return null;
 
-        user.Identification = request.Identification;
-        user.BinaryMatrixSide = request.BinaryMatrixSide;
+        user.Identification = request.Identification ?? user.Identification;
+        user.BinaryMatrixSide = request.BinaryMatrixSide ?? user.BinaryMatrixSide;
         user.Address = request.Address ?? user.Address;
-        user.Phone = request.Phone;
+        user.Phone = request.Phone ?? user.Phone;
         user.Zipcode = request.ZipCode ?? user.Zipcode;
         user.Country = request.Country ?? user.Country;
         user.Birthday = request.Birthday ?? user.Birthday;

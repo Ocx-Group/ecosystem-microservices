@@ -228,6 +228,7 @@
     <File Path="Tools/Ecosystem.Migrator/Dockerfile" />
   </Folder>
   <Folder Name="/Tests/">
+    <Project Path="Tests/Ecosystem.AccountService.AuthenticationTests/Ecosystem.AccountService.AuthenticationTests.csproj" />
     <Project Path="Tests/Ecosystem.ConfigurationService.ContractTests/Ecosystem.ConfigurationService.ContractTests.csproj" />
   </Folder>
   <Folder Name="/.github/">

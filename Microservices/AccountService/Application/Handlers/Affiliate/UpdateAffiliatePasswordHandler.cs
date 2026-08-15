@@ -23,6 +23,9 @@ public class UpdateAffiliatePasswordHandler : IRequestHandler<UpdateAffiliatePas
 
     public async Task<UsersAffiliatesDto?> Handle(UpdateAffiliatePasswordCommand request, CancellationToken ct)
     {
+        if (string.IsNullOrEmpty(request.Password) || string.IsNullOrEmpty(request.NewPassword))
+            return null;
+
         var user = await _repo.GetAffiliateByIdAsync(request.Id, _tenantContext.TenantId);
         if (user is null) return null;
 

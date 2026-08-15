@@ -23,6 +23,9 @@ public class UpdatePasswordHandler : IRequestHandler<UpdatePasswordCommand, User
 
     public async Task<UserDto?> Handle(UpdatePasswordCommand request, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrEmpty(request.Password) || string.IsNullOrEmpty(request.NewPassword))
+            return null;
+
         var user = await _userRepository.GetUserByIdAsync(request.Id, _tenantContext.TenantId);
 
         if (user is null)

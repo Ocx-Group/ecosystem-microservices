@@ -29,10 +29,11 @@ public class UpdatePrivilegeHandler : IRequestHandler<UpdatePrivilegeCommand, Pr
         if (existing is null)
             return null;
 
-        existing.CanCreate = request.CanCreate;
-        existing.CanEdit = request.CanEdit;
-        existing.CanRead = request.CanRead;
-        existing.CanDelete = request.CanDelete;
+        // A flag absent from the payload must leave the stored permission untouched.
+        existing.CanCreate = request.CanCreate ?? existing.CanCreate;
+        existing.CanEdit = request.CanEdit ?? existing.CanEdit;
+        existing.CanRead = request.CanRead ?? existing.CanRead;
+        existing.CanDelete = request.CanDelete ?? existing.CanDelete;
 
         var updated = await _repo.UpdatePrivilegeAsync(existing);
         return _mapper.Map<PrivilegesDto>(updated);
