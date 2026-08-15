@@ -14,6 +14,8 @@ using Ecosystem.Grpc.Configuration;
 using Ecosystem.Grpc.Inventory;
 using Ecosystem.Infra.IoC.MultiTenancy;
 using FluentValidation;
+using Grpc.Core;
+using Grpc.Net.Client.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -146,7 +148,8 @@ public static class IoCExtension
         services.AddGrpcClient<InventoryGrpc.InventoryGrpcClient>(o =>
         {
             o.Address = new Uri(inventoryServiceUrl);
-        });
+        })
+        .ConfigurePrimaryHttpMessageHandler(CreateResilientGrpcHandler);
 
         services.AddScoped<IInventoryServiceAdapter, GrpcInventoryServiceAdapter>();
 
@@ -154,14 +157,68 @@ public static class IoCExtension
         services.AddGrpcClient<AccountGrpc.AccountGrpcClient>(o =>
         {
             o.Address = new Uri(accountServiceUrl);
-        });
+        })
+        .ConfigurePrimaryHttpMessageHandler(CreateResilientGrpcHandler);
         services.AddScoped<IAccountServiceAdapter, GrpcAccountServiceAdapter>();
 
         var configurationServiceUrl = configuration["GrpcServices:ConfigurationService"] ?? "https://localhost:5301";
         services.AddGrpcClient<ConfigurationGrpc.ConfigurationGrpcClient>(o =>
         {
             o.Address = new Uri(configurationServiceUrl);
-        });
+
+            // Only this client retries. Every method on ConfigurationGrpc is a read, so a
+            // second attempt cannot double-apply anything; the Account and Inventory
+            // clients carry operations that must not be replayed blindly.
+            o.ChannelOptionsActions.Add(
+                channel => channel.ServiceConfig = ReadOnlyRetryServiceConfig());
+        })
+        .ConfigurePrimaryHttpMessageHandler(CreateResilientGrpcHandler);
         services.AddScoped<IConfigurationAdapter, GrpcConfigurationAdapter>();
     }
+
+    /// <summary>
+    /// gRPC keeps one long-lived HTTP/2 connection per sibling service in the pool. With
+    /// the default handler that connection outlives the other end: Kestrel closes an idle
+    /// HTTP/2 connection after 130 seconds, and the client finds out only when it tries to
+    /// send on it — surfacing as an intermittent "Exception while reading from stream"
+    /// against a service that is perfectly healthy.
+    ///
+    /// Retiring pooled connections well before that window, and pinging the ones that stay
+    /// open, keeps a request from ever landing on a dead connection.
+    /// </summary>
+    private static SocketsHttpHandler CreateResilientGrpcHandler() => new()
+    {
+        PooledConnectionIdleTimeout = TimeSpan.FromSeconds(60),
+        KeepAlivePingDelay = TimeSpan.FromSeconds(50),
+        KeepAlivePingTimeout = TimeSpan.FromSeconds(20),
+        KeepAlivePingPolicy = HttpKeepAlivePingPolicy.Always,
+        EnableMultipleHttp2Connections = true
+    };
+
+    /// <summary>
+    /// Transparent retry for the read-only configuration calls, so a connection that dies
+    /// anyway — a rolling deploy of ConfigurationService, a dropped idle connection — costs
+    /// a few hundred milliseconds instead of a 500 in the caller's face.
+    ///
+    /// <c>Unavailable</c> is the connection that never opened; <c>Internal</c> is the one
+    /// that broke mid-response, which is the shape this failure takes.
+    /// </summary>
+    private static ServiceConfig ReadOnlyRetryServiceConfig() => new()
+    {
+        MethodConfigs =
+        {
+            new MethodConfig
+            {
+                Names = { MethodName.Default },
+                RetryPolicy = new RetryPolicy
+                {
+                    MaxAttempts = 3,
+                    InitialBackoff = TimeSpan.FromMilliseconds(200),
+                    MaxBackoff = TimeSpan.FromSeconds(2),
+                    BackoffMultiplier = 2,
+                    RetryableStatusCodes = { StatusCode.Unavailable, StatusCode.Internal }
+                }
+            }
+        }
+    };
 }

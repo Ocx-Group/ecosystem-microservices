@@ -1,5 +1,6 @@
 using AutoMapper;
 using Ecosystem.Domain.Core.BrandConfiguration;
+using Ecosystem.Domain.Core.Caching;
 using Ecosystem.Grpc.Configuration;
 using Ecosystem.WalletService.Domain.Responses;
 using Microsoft.Extensions.Logging;
@@ -10,15 +11,26 @@ public class GrpcConfigurationAdapter : IConfigurationAdapter
 {
     private readonly ConfigurationGrpc.ConfigurationGrpcClient _client;
     private readonly IMapper _mapper;
+    private readonly ICacheService _cache;
     private readonly ILogger<GrpcConfigurationAdapter> _logger;
+
+    /// <summary>
+    /// How long a brand configuration survives here without being re-read. Short compared
+    /// with ConfigurationService's own 24 hours, because this copy is only invalidated by
+    /// a message from the other service: the TTL is what limits the damage if one is ever
+    /// missed, and re-reading a handful of times an hour costs nothing.
+    /// </summary>
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(10);
 
     public GrpcConfigurationAdapter(
         ConfigurationGrpc.ConfigurationGrpcClient client,
         IMapper mapper,
+        ICacheService cache,
         ILogger<GrpcConfigurationAdapter> logger)
     {
         _client = client;
         _mapper = mapper;
+        _cache = cache;
         _logger = logger;
     }
 
@@ -59,10 +71,25 @@ public class GrpcConfigurationAdapter : IConfigurationAdapter
         }
     }
 
+    /// <summary>
+    /// Reads the brand configuration, preferring the shared Redis copy over a gRPC round
+    /// trip. Every wallet operation needs this, so without the cache each one opened a
+    /// call to ConfigurationService — more latency, and one more chance to land on a
+    /// dropped HTTP/2 connection.
+    ///
+    /// The entry is dropped by ConfigurationService itself: every handler that changes a
+    /// brand calls <c>InvalidateCacheAsync</c>, which deletes this key alongside its own.
+    /// </summary>
     public async Task<BrandConfigurationDto?> GetBrandConfiguration(
         long brandId,
         CancellationToken cancellationToken = default)
     {
+        var cacheKey = BrandConfigurationCacheKeys.Downstream(brandId);
+        var cached = await _cache.Get<BrandConfigurationDto>(cacheKey);
+
+        if (cached is not null)
+            return cached;
+
         try
         {
             var response = await _client.GetBrandConfigurationAsync(
@@ -79,7 +106,13 @@ public class GrpcConfigurationAdapter : IConfigurationAdapter
                 return null;
             }
 
-            return MapBrandConfiguration(response.Configuration);
+            var configuration = MapBrandConfiguration(response.Configuration);
+
+            // A miss is never cached: an unknown brand is usually a misrouted request, and
+            // remembering it would keep the brand broken after it is created.
+            await _cache.Set(cacheKey, configuration, CacheDuration);
+
+            return configuration;
         }
         catch (Exception ex)
         {

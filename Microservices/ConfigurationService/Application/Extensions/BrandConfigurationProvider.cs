@@ -17,8 +17,6 @@ public class BrandConfigurationProvider : IBrandConfigurationProvider
     private readonly ILogger<BrandConfigurationProvider> _logger;
     private readonly IMapper _mapper;
 
-    private const string CachePrefix = "brand_config";
-    private const string AllConfigsCacheKey = $"{CachePrefix}:all";
     private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(24);
 
     public BrandConfigurationProvider(
@@ -35,7 +33,7 @@ public class BrandConfigurationProvider : IBrandConfigurationProvider
 
     public async Task<BrandConfigurationDto?> GetByBrandIdAsync(long brandId)
     {
-        var cacheKey = $"{CachePrefix}:{brandId}";
+        var cacheKey = BrandConfigurationCacheKeys.Own(brandId);
 
         return await _cache.GetOrSet(cacheKey, CacheDuration, async () =>
         {
@@ -48,7 +46,7 @@ public class BrandConfigurationProvider : IBrandConfigurationProvider
 
     public async Task<IReadOnlyList<BrandConfigurationDto>> GetAllAsync()
     {
-        return await _cache.GetOrSet(AllConfigsCacheKey, CacheDuration, async () =>
+        return await _cache.GetOrSet(BrandConfigurationCacheKeys.All, CacheDuration, async () =>
         {
             var entities = await _repository.GetAllAsync();
             return (IReadOnlyList<BrandConfigurationDto>)entities
@@ -62,11 +60,17 @@ public class BrandConfigurationProvider : IBrandConfigurationProvider
     {
         if (brandId.HasValue)
         {
-            await _cache.Delete($"{CachePrefix}:{brandId.Value}");
+            await _cache.Delete(BrandConfigurationCacheKeys.Own(brandId.Value));
+
+            // The downstream services cache what they fetched over gRPC under their own
+            // key. Dropping only the local one would leave WalletService liquidating at
+            // the previous rate until its entry expired on its own.
+            await _cache.Delete(BrandConfigurationCacheKeys.Downstream(brandId.Value));
+
             _logger.LogInformation("Invalidated brand config cache for BrandId {BrandId}", brandId.Value);
         }
 
         // Always invalidate the "all" cache
-        await _cache.Delete(AllConfigsCacheKey);
+        await _cache.Delete(BrandConfigurationCacheKeys.All);
     }
 }
