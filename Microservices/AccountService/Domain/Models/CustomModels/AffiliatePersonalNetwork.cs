@@ -46,4 +46,13 @@ public class AffiliatePersonalNetwork
     [Column("activation_date")]
     [JsonProperty("activationDate")]
     public DateTime? ActivationDate { get; set; }
+
+    /// <summary>
+    /// Telefono del afiliado. La funcion account_service.get_personal_network no lo
+    /// devuelve: por eso va [NotMapped] (si no, EF lo buscaria como columna del
+    /// resultado y la consulta fallaria) y se completa en GetPersonalNetworkHandler.
+    /// </summary>
+    [NotMapped]
+    [JsonProperty("phone")]
+    public string? Phone { get; set; }
 }
