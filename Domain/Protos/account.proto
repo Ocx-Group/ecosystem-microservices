@@ -64,6 +64,7 @@ message PersonalNetworkMessage {
   string latitude = 7;
   string longitude = 8;
   string country_name = 9;
+  int32 level = 10;
 }
 
 // 1. GetUserInfo

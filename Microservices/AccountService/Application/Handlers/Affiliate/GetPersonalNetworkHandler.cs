@@ -39,6 +39,41 @@ public class GetPersonalNetworkHandler : IRequestHandler<GetPersonalNetworkQuery
                 item.Phone = phone;
         }
 
+        SetNetworkLevels(network, request.UserId);
+
         return network;
+    }
+
+    private static void SetNetworkLevels(List<AffiliatePersonalNetwork> network, int rootUserId)
+    {
+        var childrenByFather = network
+            .GroupBy(item => (long)item.Father)
+            .ToDictionary(group => group.Key, group => group.ToList());
+        var visited = new HashSet<long>();
+        var pending = new Queue<(long AffiliateId, int Level)>();
+        pending.Enqueue((rootUserId, 0));
+
+        while (pending.Count > 0)
+        {
+            var (affiliateId, level) = pending.Dequeue();
+
+            if (!childrenByFather.TryGetValue(affiliateId, out var children))
+                continue;
+
+            foreach (var child in children)
+            {
+                if (!visited.Add(child.Id))
+                    continue;
+
+                child.Level = level + 1;
+                pending.Enqueue((child.Id, child.Level));
+            }
+        }
+
+        // La funcion de base de datos deberia devolver una red conectada al usuario
+        // consultado. Si hubiera datos historicos huerfanos, se mantiene el contrato
+        // de niveles positivos sin impedir que aparezcan en la respuesta.
+        foreach (var item in network.Where(item => item.Level == 0))
+            item.Level = 1;
     }
 }

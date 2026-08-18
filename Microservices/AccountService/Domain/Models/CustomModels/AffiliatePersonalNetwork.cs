@@ -55,4 +55,12 @@ public class AffiliatePersonalNetwork
     [NotMapped]
     [JsonProperty("phone")]
     public string? Phone { get; set; }
+
+    /// <summary>
+    /// Profundidad del afiliado dentro de la red consultada. Los afiliados
+    /// directos pertenecen al nivel 1.
+    /// </summary>
+    [NotMapped]
+    [JsonProperty("level")]
+    public int Level { get; set; }
 }
