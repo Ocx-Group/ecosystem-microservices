@@ -47,20 +47,14 @@ public class AffiliatePersonalNetwork
     [JsonProperty("activationDate")]
     public DateTime? ActivationDate { get; set; }
 
-    /// <summary>
-    /// Telefono del afiliado. La funcion account_service.get_personal_network no lo
-    /// devuelve: por eso va [NotMapped] (si no, EF lo buscaria como columna del
-    /// resultado y la consulta fallaria) y se completa en GetPersonalNetworkHandler.
-    /// </summary>
-    [NotMapped]
     [JsonProperty("phone")]
     public string? Phone { get; set; }
 
     /// <summary>
     /// Profundidad del afiliado dentro de la red consultada. Los afiliados
-    /// directos pertenecen al nivel 1.
+    /// directos pertenecen al nivel 1. Lo calcula el CTE recursivo de
+    /// account_service.get_personal_network.
     /// </summary>
-    [NotMapped]
     [JsonProperty("level")]
     public int Level { get; set; }
 }
